@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🌿 MORGAN HUB V5.0 (ADVANCED LUCK MULTIPLIER & VISUAL BOOSTER) 🌿
+-- 🌿 MORGAN HUB V5.0 (ADMIN COMMANDS, OP FUN & INFINITE SKILLS FIXED) 🌿
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -10,6 +10,8 @@ local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TextChatService = game:GetService("TextChatService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -37,7 +39,13 @@ local Settings = {
     LuckMultiplier = false,
     LuckPower = 100,
     FlySpeed = 12,
-    FarmDistance = 8
+    FarmDistance = 8,
+    -- OP FUN & SKILL SETTINGS
+    OPFun = false,
+    NoCooldown = false,
+    NoItemRequired = false,
+    GodMode = false,
+    LoopKillTarget = nil
 }
 
 -- FRUIT ICONS
@@ -138,14 +146,14 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -40, 0, 40)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🌿 MORGAN HUB V5.0"
+Title.Text = "🌿 MORGAN HUB V5.0 (OP FUN EDITION)"
 Title.TextColor3 = Color3.fromRGB(0, 255, 140)
-Title.TextSize = 16
+Title.TextSize = 15
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- INTERACTIVE ADVANCED LUCK BOOSTER GUI
+-- LUCK FRAME
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -186,7 +194,6 @@ LuckStatus.Font = Enum.Font.GothamBold
 LuckStatus.TextSize = 12
 LuckStatus.Parent = LuckFrame
 
--- Dynamic Chance Calculator (Gacha Simulation Display)
 local ChanceDisplay = Instance.new("TextLabel")
 ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
 ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
@@ -413,7 +420,7 @@ local function addSlider(text, min, max, default, callback)
         end
     end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input)
         end
@@ -421,6 +428,11 @@ local function addSlider(text, min, max, default, callback)
 end
 
 -- MENU ITEMS
+addToggle("⚡ OP Fun Mode / Fast Admin", Settings.OPFun, function(v) Settings.OPFun = v end)
+addToggle("🔥 No Skill Cooldown (Sınırsız Skill)", Settings.NoCooldown, function(v) Settings.NoCooldown = v end)
+addToggle("🗡️ No Item Needed (İtem Tutmadan Skill)", Settings.NoItemRequired, function(v) Settings.NoItemRequired = v end)
+addToggle("🛡️ God Mode / Semi-God", Settings.GodMode, function(v) Settings.GodMode = v end)
+
 addToggle("🍀 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
@@ -439,9 +451,102 @@ addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.
 addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
 addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
 
--- SETTINGS SECTION
 addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
 addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+
+-- =============================================================
+-- OP FUN & INFINITE SKILL ENGINE (NO ITEM / NO COOLDOWN FIX)
+-- =============================================================
+-- Skill atarken elinde item bulunma şartı ve bekleme süresini kaldırma mekanizması
+local function fireSkillBypass(skillKey)
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    -- Elinde eşya yoksa bile Backpack üzerindeki araçların skillini ateşler
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not tool and Settings.NoItemRequired then
+        tool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
+    end
+
+    if tool then
+        pcall(function()
+            -- Remote Event Çağrısı (Otomatik yetenek tetikleme)
+            local remote = tool:FindFirstChild("Remote") or tool:FindFirstChildOfClass("RemoteEvent") or ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("CommF_")
+            if remote then
+                if remote:IsA("RemoteEvent") then
+                    remote:FireServer(skillKey, Camera.CFrame.LookVector)
+                elseif remote:IsA("RemoteFunction") then
+                    remote:InvokeServer(skillKey, Camera.CFrame.LookVector)
+                end
+            end
+        end)
+    end
+end
+
+-- Tuş Dinleyici (Z, X, C, V, F Yetenekleri İtem Olmadan ve Bekleme Süresi Olmadan Kullanılır)
+table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if Settings.NoItemRequired or Settings.NoCooldown then
+        local key = input.KeyCode.Name
+        if key == "Z" or key == "X" or key == "C" or key == "V" or key == "F" then
+            fireSkillBypass(key)
+        end
+    end
+end))
+
+-- God Mode Loop
+table.insert(Connections, RunService.Stepped:Connect(function()
+    if Settings.GodMode and LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChild("Humanoid")
+        if hum then
+            hum.Health = hum.MaxHealth
+        end
+    end
+end))
+
+-- =============================================================
+-- CHAT ADMIN COMMANDS ENGINE (/opfun & ADMIN COMMANDS)
+-- =============================================================
+local function executeAdminCommand(msg)
+    local args = string.split(msg, " ")
+    local cmd = string.lower(args[1])
+
+    if cmd == "/opfun" then
+        Settings.OPFun = not Settings.OPFun
+        Settings.NoCooldown = Settings.OPFun
+        Settings.NoItemRequired = Settings.OPFun
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "🌿 MORGAN HUB ADMIN",
+            Text = "OP Fun Modu: " .. (Settings.OPFun and "AÇIK" or "KAPALI"),
+            Duration = 3
+        })
+    elseif cmd == "/killall" then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") then
+                p.Character.Humanoid.Health = 0
+            end
+        end
+    elseif cmd == "/god" then
+        Settings.GodMode = not Settings.GodMode
+    elseif cmd == "/bringall" then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local myPos = LocalPlayer.Character.HumanoidRootPart.CFrame
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    p.Character.HumanoidRootPart.CFrame = myPos * CFrame.new(0, 0, -3)
+                end
+            end
+        end
+    elseif cmd == "/speed" and args[2] then
+        local spd = tonumber(args[2]) or 16
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = spd
+        end
+    end
+end
+
+-- Chat Hook (Yeni ve Eski Chat Sistemini Destekler)
+table.insert(Connections, LocalPlayer.Chatted:Connect(executeAdminCommand))
 
 -- =============================================================
 -- AUTO STORE FRUIT ENGINE
@@ -753,6 +858,7 @@ YesBtn.MouseButton1Click:Connect(function()
     Settings.FruitESP = false
     Settings.AutoStore = false
     Settings.LuckMultiplier = false
+    Settings.OPFun = false
 
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.PlatformStand = false
@@ -774,6 +880,6 @@ end)
 -- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V5.0",
-    Text = "Luck Booster & Live Slider UI Loaded!",
-    Duration = 4
+    Text = "OP Fun, Admin Commands & Infinite Skills Loaded!",
+    Duration = 5
 })
