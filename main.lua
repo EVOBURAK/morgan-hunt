@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V5.0 (ESP + AIMBOT + AUTO PLAYER HUNT) 🌿
+-- 🌿 MORGAN HUB V6.0 (SMOOTH FLY HUNT + ESP + AIMBOT) 🌿
 -- =============================================================
 
 if not table.find({2753915549, 4442272183, 7449423635}, game.PlaceId) then
@@ -26,26 +26,27 @@ player.Idled:Connect(function()
 end)
 
 -- Temizlik
-if player.PlayerGui:FindFirstChild("MorganHubV5") then
-    player.PlayerGui.MorganHubV5:Destroy()
+if player.PlayerGui:FindFirstChild("MorganHubV6") then
+    player.PlayerGui.MorganHubV6:Destroy()
 end
 
 -- =============================================================
--- AYARLAR VE STATE (DURUM) YÖNETİMİ
+-- AYARLAR
 -- =============================================================
 local Settings = {
     ESP = false,
     Aimbot = false,
     AutoHunt = false,
-    SkillMode = "1", -- "1" veya "2"
-    TargetPlayer = nil
+    SkillMode = "1",
+    TargetPlayer = nil,
+    FlySpeed = 70 -- Yavaş ve akıcı uçuş hızı (İstersen değiştirebilirsin)
 }
 
 -- =============================================================
 -- GUI MİMARİSİ
 -- =============================================================
 local hub = Instance.new("ScreenGui")
-hub.Name = "MorganHubV5"
+hub.Name = "MorganHubV6"
 hub.ResetOnSpawn = false
 hub.Parent = player.PlayerGui
 
@@ -65,7 +66,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "🌿 MORGAN HUB V5.0 (HUNT + AIM)"
+title.Text = "🌿 MORGAN HUB V6.0 (SMOOTH FLY)"
 title.TextColor3 = Color3.fromRGB(0, 255, 150)
 title.TextSize = 16
 title.Font = Enum.Font.GothamBold
@@ -144,10 +145,9 @@ local function addToggle(text, callback)
     end)
 end
 
--- MENÜ BUTONLARI
 addToggle("👁️ ESP (Oyuncu Kutuları & İsimler)", function(v) Settings.ESP = v end)
 addToggle("🎯 Silent Aimbot (Otomatik Nişan)", function(v) Settings.Aimbot = v end)
-addToggle("⚔️ Auto Player Hunt (Oyuncuları Avla)", function(v) Settings.AutoHunt = v end)
+addToggle("🕊️ Auto Player Hunt (Uçarak Takip Et)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
 -- ESP SİSTEMİ
@@ -181,7 +181,7 @@ for _, p in pairs(Players:GetPlayers()) do createESP(p) end
 Players.PlayerAdded:Connect(createESP)
 
 -- =============================================================
--- SKİLL VE TUŞ BASMA MEKANİZMASI (1 ve 2 TUŞLARI)
+-- SKİLL VE TUŞ BASMA MEKANİZMASI
 -- =============================================================
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
@@ -191,7 +191,6 @@ local function pressKey(key)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
 end
 
--- Tuş Dinleyici (1 ve 2 Tuşları)
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode == Enum.KeyCode.One then
@@ -217,10 +216,9 @@ local function castSkills()
 end
 
 -- =============================================================
--- KIRMIZI YAZI / KORUMA VE ÖLÜM KONTROLÜ
+-- ÖLÜM VE KIRMIZI YAZI KONTROLÜ
 -- =============================================================
 local function checkRedTextOrSafeZone()
-    -- Oyundaki bildirim/hata yazılarını kontrol et (Safe Zone vb.)
     local playerGui = player:FindFirstChild("PlayerGui")
     if playerGui then
         for _, gui in pairs(playerGui:GetDescendants()) do
@@ -235,20 +233,49 @@ local function checkRedTextOrSafeZone()
 end
 
 -- =============================================================
--- OYUNCU TAKİP VE SALDIRI DÖNGÜSÜ (AUTO HUNT & AIMBOT)
+-- UÇUŞ MOTORU (TP OLMADAN YAVAŞÇA FLY YAPMA)
+-- =============================================================
+local flyVelocity = nil
+local flyGyro = nil
+
+local function updateFlyPhysics(enable)
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local root = char.HumanoidRootPart
+
+    if enable then
+        if not flyVelocity then
+            flyVelocity = Instance.new("BodyVelocity")
+            flyVelocity.MaxForce = Vector3.new(1,1,1) * 1000000
+            flyVelocity.Velocity = Vector3.zero
+            flyVelocity.Parent = root
+        end
+        if not flyGyro then
+            flyGyro = Instance.new("BodyGyro")
+            flyGyro.MaxTorque = Vector3.new(1,1,1) * 1000000
+            flyGyro.CFrame = root.CFrame
+            flyGyro.Parent = root
+        end
+    else
+        if flyVelocity then flyVelocity:Destroy() flyVelocity = nil end
+        if flyGyro then flyGyro:Destroy() flyGyro = nil end
+    end
+end
+
+-- =============================================================
+-- ANA DÖNGÜ (HUNT + AIMBOT)
 -- =============================================================
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.05) do
         pcall(function()
             local char = player.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local root = char.HumanoidRootPart
 
-            -- AIMBOT VE HUNT İÇİN HEDEF BULMA
             if Settings.AutoHunt or Settings.Aimbot then
                 local target = Settings.TargetPlayer
-                
-                -- Hedef Geçersizse Yeni Hedef Seç
+
+                -- Hedef Öldüyse ("died"), Canı Bittiğiyse veya Kırmızı Yazı Çıktıysa Değiştir
                 if not target or not target.Character or not target.Character:FindFirstChild("Humanoid") or target.Character.Humanoid.Health <= 0 or checkRedTextOrSafeZone() then
                     Settings.TargetPlayer = nil
                     for _, p in pairs(Players:GetPlayers()) do
@@ -260,27 +287,43 @@ task.spawn(function()
                     end
                 end
 
-                -- Hedef Varsa Saldırı/Takip Et
                 if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
                     local targetRoot = target.Character.HumanoidRootPart
 
-                    -- Aimbot: Kamerayı Hedefe Kilitle
+                    -- Aimbot Kamerayı Kilitler
                     if Settings.Aimbot then
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetRoot.Position)
                     end
 
-                    -- Auto Hunt: Yanına Uç ve Vur
+                    -- Uçarak Hedefe Gitme (TP Yok!)
                     if Settings.AutoHunt then
-                        -- Hedefin arkasında/üstünde dur
-                        root.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 3)
+                        updateFlyPhysics(true)
                         
-                        -- Otomatik Tıklama + Yetenekler
-                        VirtualUser:CaptureController()
-                        VirtualUser:ClickButton1(Vector2.new(500, 500))
-                        
-                        castSkills()
+                        local targetPosition = targetRoot.Position + Vector3.new(0, 3, 0)
+                        local direction = (targetPosition - root.Position)
+                        local distance = direction.Magnitude
+
+                        if distance > 6 then
+                            -- Yavaşça uçarak süzül
+                            flyVelocity.Velocity = direction.Unit * Settings.FlySpeed
+                            flyGyro.CFrame = CFrame.new(root.Position, targetPosition)
+                        else
+                            -- Hedefin yanına ulaşınca dur ve saldır
+                            flyVelocity.Velocity = Vector3.zero
+                            flyGyro.CFrame = CFrame.new(root.Position, targetPosition)
+
+                            VirtualUser:CaptureController()
+                            VirtualUser:ClickButton1(Vector2.new(500, 500))
+                            castSkills()
+                        end
+                    else
+                        updateFlyPhysics(false)
                     end
+                else
+                    updateFlyPhysics(false)
                 end
+            else
+                updateFlyPhysics(false)
             end
         end)
     end
@@ -288,7 +331,7 @@ end)
 
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
-    Title = "🌿 MORGAN HUB V5.0",
-    Text = "ESP, Aimbot ve Auto Hunt Hazır! (1 ve 2 Tuşlarını Kullanabilirsin)",
+    Title = "🌿 MORGAN HUB V6.0",
+    Text = "Yavaş uçuşlu hedef takibi aktif!",
     Duration = 4
 })
