@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V6.0 (SMOOTH FLY HUNT + ESP + AIMBOT) 🌿
+-- 🌿 MORGAN HUB V1.0 (OFFICIAL RELEASE) 🌿
 -- =============================================================
 
 if not table.find({2753915549, 4442272183, 7449423635}, game.PlaceId) then
@@ -11,7 +11,6 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 
@@ -26,8 +25,8 @@ player.Idled:Connect(function()
 end)
 
 -- Temizlik
-if player.PlayerGui:FindFirstChild("MorganHubV6") then
-    player.PlayerGui.MorganHubV6:Destroy()
+if player.PlayerGui:FindFirstChild("MorganHubV1") then
+    player.PlayerGui.MorganHubV1:Destroy()
 end
 
 -- =============================================================
@@ -39,17 +38,40 @@ local Settings = {
     AutoHunt = false,
     SkillMode = "1",
     TargetPlayer = nil,
-    FlySpeed = 70 -- Yavaş ve akıcı uçuş hızı (İstersen değiştirebilirsin)
+    FlySpeed = 70
 }
 
 -- =============================================================
 -- GUI MİMARİSİ
 -- =============================================================
 local hub = Instance.new("ScreenGui")
-hub.Name = "MorganHubV6"
+hub.Name = "MorganHubV1"
 hub.ResetOnSpawn = false
 hub.Parent = player.PlayerGui
 
+-- MENÜYÜ AÇIP KAPATMA LOGOSU (TOGGLE BUTTON)
+local toggleLogo = Instance.new("TextButton")
+toggleLogo.Name = "MorganToggleLogo"
+toggleLogo.Size = UDim2.new(0, 50, 0, 50)
+toggleLogo.Position = UDim2.new(0, 15, 0.15, 0)
+toggleLogo.BackgroundColor3 = Color3.fromRGB(15, 20, 28)
+toggleLogo.BorderSizePixel = 0
+toggleLogo.Text = "🌿"
+toggleLogo.TextSize = 26
+toggleLogo.Active = true
+toggleLogo.Draggable = true
+toggleLogo.Parent = hub
+
+local logoCorner = Instance.new("UICorner")
+logoCorner.CornerRadius = UDim.new(1, 0)
+logoCorner.Parent = toggleLogo
+
+local logoStroke = Instance.new("UIStroke")
+logoStroke.Color = Color3.fromRGB(0, 255, 150)
+logoStroke.Thickness = 2
+logoStroke.Parent = toggleLogo
+
+-- ANA PENCERE
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 480, 0, 360)
 main.Position = UDim2.new(0.5, -240, 0.5, -180)
@@ -62,11 +84,16 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 10)
 mainCorner.Parent = main
 
+-- Logo Tıklama (Aç/Kapat Mantığı)
+toggleLogo.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
+end)
+
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "🌿 MORGAN HUB V6.0 (SMOOTH FLY)"
+title.Text = "🌿 MORGAN HUB V1.0"
 title.TextColor3 = Color3.fromRGB(0, 255, 150)
 title.TextSize = 16
 title.Font = Enum.Font.GothamBold
@@ -81,7 +108,7 @@ close.Text = "✕"
 close.TextColor3 = Color3.fromRGB(255, 255, 255)
 close.Font = Enum.Font.GothamBold
 close.Parent = main
-close.MouseButton1Click:Connect(function() hub:Destroy() end)
+close.MouseButton1Click:Connect(function() main.Visible = false end)
 
 local container = Instance.new("ScrollingFrame")
 container.Size = UDim2.new(1, -20, 1, -55)
@@ -181,7 +208,7 @@ for _, p in pairs(Players:GetPlayers()) do createESP(p) end
 Players.PlayerAdded:Connect(createESP)
 
 -- =============================================================
--- SKİLL VE TUŞ BASMA MEKANİZMASI
+-- SKİLL VE TUŞ BASMA MEKANİZMASI (1 VE 2 MODLARI)
 -- =============================================================
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
@@ -233,7 +260,7 @@ local function checkRedTextOrSafeZone()
 end
 
 -- =============================================================
--- UÇUŞ MOTORU (TP OLMADAN YAVAŞÇA FLY YAPMA)
+-- YAVAŞ UÇUŞ MOTORU (SMOOTH FLY)
 -- =============================================================
 local flyVelocity = nil
 local flyGyro = nil
@@ -263,7 +290,7 @@ local function updateFlyPhysics(enable)
 end
 
 -- =============================================================
--- ANA DÖNGÜ (HUNT + AIMBOT)
+-- ANA DÖNGÜ (AUTO HUNT + AIMBOT)
 -- =============================================================
 task.spawn(function()
     while task.wait(0.05) do
@@ -275,7 +302,6 @@ task.spawn(function()
             if Settings.AutoHunt or Settings.Aimbot then
                 local target = Settings.TargetPlayer
 
-                -- Hedef Öldüyse ("died"), Canı Bittiğiyse veya Kırmızı Yazı Çıktıysa Değiştir
                 if not target or not target.Character or not target.Character:FindFirstChild("Humanoid") or target.Character.Humanoid.Health <= 0 or checkRedTextOrSafeZone() then
                     Settings.TargetPlayer = nil
                     for _, p in pairs(Players:GetPlayers()) do
@@ -290,12 +316,10 @@ task.spawn(function()
                 if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
                     local targetRoot = target.Character.HumanoidRootPart
 
-                    -- Aimbot Kamerayı Kilitler
                     if Settings.Aimbot then
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetRoot.Position)
                     end
 
-                    -- Uçarak Hedefe Gitme (TP Yok!)
                     if Settings.AutoHunt then
                         updateFlyPhysics(true)
                         
@@ -304,11 +328,9 @@ task.spawn(function()
                         local distance = direction.Magnitude
 
                         if distance > 6 then
-                            -- Yavaşça uçarak süzül
                             flyVelocity.Velocity = direction.Unit * Settings.FlySpeed
                             flyGyro.CFrame = CFrame.new(root.Position, targetPosition)
                         else
-                            -- Hedefin yanına ulaşınca dur ve saldır
                             flyVelocity.Velocity = Vector3.zero
                             flyGyro.CFrame = CFrame.new(root.Position, targetPosition)
 
@@ -331,7 +353,7 @@ end)
 
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
-    Title = "🌿 MORGAN HUB V6.0",
-    Text = "Yavaş uçuşlu hedef takibi aktif!",
-    Duration = 4
+    Title = "🌿 MORGAN HUB V1.0",
+    Text = "Açıp kapatmak için sol üstteki logonun (🌿) üstüne tıkla!",
+    Duration = 5
 })
