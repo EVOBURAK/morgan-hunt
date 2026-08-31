@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (REAL CLIENT-SIDE V4, TDB & PERMS) 🌿
+-- 🌿 MORGAN HUB V1.0 (ULTRA LOGO FRUIT ESP + WORKING V4 & SWORDS) 🌿
 -- =============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -11,6 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -51,12 +52,12 @@ ScreenGui.Parent = CoreGui
 -- LOGO BUTTON
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
-ToggleLogo.Size = UDim2.new(0, 45, 0, 45)
+ToggleLogo.Size = UDim2.new(0, 48, 0, 48)
 ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
 ToggleLogo.BackgroundColor3 = Color3.fromRGB(15, 22, 18)
 ToggleLogo.BorderSizePixel = 0
 ToggleLogo.Text = "🌿"
-ToggleLogo.TextSize = 24
+ToggleLogo.TextSize = 26
 ToggleLogo.Active = true
 ToggleLogo.Draggable = true
 ToggleLogo.Parent = ScreenGui
@@ -73,8 +74,8 @@ LogoStroke.Parent = ToggleLogo
 -- ANA MENÜ PENCERESİ
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 440, 0, 420)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -210)
+MainFrame.Size = UDim2.new(0, 440, 0, 430)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -215)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -239,81 +240,75 @@ local function addToggle(text, callback)
     end)
 end
 
--- MENÜ BUTONLARI
+-- MENÜ ELEMANLARI
 addToggle("👁️ Player ESP (Oyuncu Kutuları)", function(v) Settings.ESP = v end)
-addToggle("🍎 Fruit Spawner ESP (Meyve Bulucu)", function(v) Settings.FruitESP = v end)
-addToggle("🍇 Fake All Perm Fruits (Tüm Meyveleri Aç)", function(v) Settings.FakePerms = v end)
+addToggle("🍎 Logolu Fruit ESP (Meyve Bulucu)", function(v) Settings.FruitESP = v end)
+addToggle("🍇 Fake All Perm Fruits (Dükkanda Perm Aç)", function(v) Settings.FakePerms = v end)
 
--- KANAT VE AURA MODELİ İLE GERÇEK CLIENT-SIDE V4
+-- GELİŞMİŞ VISUAL V4 TRANSFORM DÖNÜŞÜMÜ
 addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v) 
     Settings.VisualV4 = v
     local char = LocalPlayer.Character
     if not char then return end
 
     if v then
-        -- Aura Effect
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "V4Aura"
-        highlight.FillColor = Color3.fromRGB(255, 0, 70)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.4
-        highlight.Parent = char
+        -- Kırmızı Parıldayan Aura
+        local hl = char:FindFirstChild("V4Highlight") or Instance.new("Highlight")
+        hl.Name = "V4Highlight"
+        hl.FillColor = Color3.fromRGB(255, 30, 60)
+        hl.OutlineColor = Color3.fromRGB(255, 215, 0)
+        hl.FillTransparency = 0.3
+        hl.OutlineTransparency = 0
+        hl.Parent = char
 
-        -- Kanat/Model Arama & Giydirme
-        local wings = ReplicatedStorage:FindFirstChild("AwakeningWings", true) or Workspace:FindFirstChild("AwakeningWings", true)
-        if wings then
-            local cloneWings = wings:Clone()
-            cloneWings.Name = "ClientV4Wings"
-            cloneWings.Parent = char
-            if cloneWings:IsA("BasePart") or cloneWings:IsA("Model") then
-                pcall(function()
-                    cloneWings.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
-                end)
-            end
-        end
+        -- Karakter Boyutunu V4 Gibi Hafif Büyütme (Client-Side)
+        pcall(function()
+            char.Humanoid.BodyHeightScale.Value = 1.25
+            char.Humanoid.BodyWidthScale.Value = 1.25
+        end)
 
-        game.StarterGui:SetCore("SendNotification", {Title = "Visual V4", Text = "Client-Side V4 Dönüşümü Giydirildi!", Duration = 3})
+        game.StarterGui:SetCore("SendNotification", {Title = "Visual V4", Text = "V4 Dönüşüm Efekti Aktif!", Duration = 3})
     else
-        if char:FindFirstChild("V4Aura") then char.V4Aura:Destroy() end
-        if char:FindFirstChild("ClientV4Wings") then char.ClientV4Wings:Destroy() end
+        if char:FindFirstChild("V4Highlight") then char.V4Highlight:Destroy() end
+        pcall(function()
+            char.Humanoid.BodyHeightScale.Value = 1
+            char.Humanoid.BodyWidthScale.Value = 1
+        end)
     end
 end)
 
--- 3D MODEL KLONLAMA İLE FAKE DARK BLADE & TRIPLE DARK BLADE
+-- 3D MODEL VE IKONLU GELİŞMİŞ FAKE SWORDS
+local function createFakeTool(name, color)
+    local tool = Instance.new("Tool")
+    tool.Name = name .. " (Visual)"
+    tool.RequiresHandle = true
+
+    local handle = Instance.new("Part")
+    handle.Name = "Handle"
+    handle.Size = Vector3.new(0.5, 5, 0.8)
+    handle.Color = color
+    handle.Material = Enum.Material.Neon
+    handle.Parent = tool
+
+    local mesh = Instance.new("SpecialMesh")
+    mesh.MeshType = Enum.MeshType.Brick
+    mesh.Parent = handle
+
+    return tool
+end
+
 addToggle("⚔️ Fake Dark Blade & Triple DB", function(v) 
     Settings.VisualSwords = v 
     if v then
-        pcall(function()
-            local backpack = LocalPlayer:FindFirstChild("Backpack")
-            if not backpack then return end
+        local backpack = LocalPlayer:FindFirstChild("Backpack")
+        if backpack then
+            local db = createFakeTool("Dark Blade", Color3.fromRGB(0, 255, 120))
+            db.Parent = backpack
 
-            -- Dark Blade Arama
-            local realDB = ReplicatedStorage:FindFirstChild("Dark Blade", true) or Workspace:FindFirstChild("Dark Blade", true)
-            local dbTool = realDB and realDB:Clone() or Instance.new("Tool")
-            dbTool.Name = "Dark Blade (Visual)"
-            if not dbTool:FindFirstChild("Handle") then
-                local h = Instance.new("Part")
-                h.Name = "Handle"
-                h.Size = Vector3.new(1, 4, 1)
-                h.Color = Color3.fromRGB(0, 255, 100)
-                h.Parent = dbTool
-            end
-            dbTool.Parent = backpack
-
-            -- Triple Dark Blade Arama
-            local realTDB = ReplicatedStorage:FindFirstChild("Triple Dark Blade", true) or Workspace:FindFirstChild("Triple Dark Blade", true)
-            local tdbTool = realTDB and realTDB:Clone() or Instance.new("Tool")
-            tdbTool.Name = "Triple Dark Blade (Visual)"
-            if not tdbTool:FindFirstChild("Handle") then
-                local h = Instance.new("Part")
-                h.Name = "Handle"
-                h.Size = Vector3.new(1, 5, 1)
-                h.Color = Color3.fromRGB(255, 0, 50)
-                h.Parent = tdbTool
-            end
-            tdbTool.Parent = backpack
-        end)
-        game.StarterGui:SetCore("SendNotification", {Title = "Fake Swords", Text = "3D Kılıç Modelleri Envantere Eklendi!", Duration = 3})
+            local tdb = createFakeTool("Triple Dark Blade", Color3.fromRGB(255, 0, 80))
+            tdb.Parent = backpack
+        end
+        game.StarterGui:SetCore("SendNotification", {Title = "Fake Swords", Text = "Dark Blade ve TDB Eline Alınabilir Şekilde Eklendi!", Duration = 3})
     end
 end)
 
@@ -321,29 +316,78 @@ addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
 addToggle("⚡ Fast Auto Hunt (Hızlı Uçuş)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- HOOK & RENDER LOOPS
+-- LOGOLU FRUIT ESP ENGINE (🍎 DEV LOGO + İSİM + METRE)
 -- =============================================================
+local FruitBillboards = {}
+
+local function createFruitESP(obj)
+    if FruitBillboards[obj] then return end
+
+    local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part") or obj:FindFirstChildOfClass("MeshPart")
+    if not handle then return end
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "FruitESPLogo"
+    bb.Adornee = handle
+    bb.Size = UDim2.new(0, 180, 0, 70)
+    bb.AlwaysOnTop = true
+
+    -- Meyve Logosu (Dev 🍎 İkonu)
+    local logoLabel = Instance.new("TextLabel")
+    logoLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    logoLabel.Position = UDim2.new(0, 0, 0, 0)
+    logoLabel.BackgroundTransparency = 1
+    logoLabel.Text = "🍎"
+    logoLabel.TextSize = 28
+    logoLabel.Parent = bb
+
+    -- Meyve Adı ve Mesafesi
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    textLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = obj.Name
+    textLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextSize = 13
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Parent = bb
+
+    bb.Parent = CoreGui
+    FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
+end
+
 table.insert(Connections, RunService.RenderStepped:Connect(function()
-    if Settings.FakePerms then
-        pcall(function()
-            local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-            if playerGui then
-                for _, v in pairs(playerGui:GetDescendants()) do
-                    if v.Name == "Locked" or v.Name == "Lock" then
-                        v.Visible = false
-                    elseif v.Name == "BuyPerm" or v.Name == "Buy" or v.Name == "BuyButton" then
-                        if v:IsA("TextLabel") or v:IsA("TextButton") then
-                            v.Text = "OWNED (PERM)"
-                        end
-                    end
-                end
-            end
-        end)
+    if not Settings.FruitESP then
+        for obj, data in pairs(FruitBillboards) do
+            if data.Gui then data.Gui.Enabled = false end
+        end
+        return
+    end
+
+    local myChar = LocalPlayer.Character
+    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
+
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or obj.Name:find("Meyve") or obj.Name:find("Blox")) then
+            createFruitESP(obj)
+        end
+    end
+
+    for obj, data in pairs(FruitBillboards) do
+        if obj and obj.Parent and data.Handle and data.Handle.Parent then
+            data.Gui.Enabled = true
+            local dist = math.floor((data.Handle.Position - myPos).Magnitude)
+            data.Text.Text = obj.Name .. "\n[" .. dist .. "m]"
+        else
+            if data.Gui then data.Gui:Destroy() end
+            FruitBillboards[obj] = nil
+        end
     end
 end))
 
 -- =============================================================
--- DRAWING ESP SİSTEMİ
+-- DRAWING PLAYER ESP SİSTEMİ
 -- =============================================================
 local ESPCache = {}
 
@@ -354,20 +398,17 @@ local function createESP(targetPlayer)
     boxOutline.Thickness = 3
     boxOutline.Color = Color3.fromRGB(0, 0, 0)
     boxOutline.Filled = false
-    boxOutline.Visible = false
 
     local box = Drawing.new("Square")
     box.Thickness = 1
     box.Color = Color3.fromRGB(255, 40, 40)
     box.Filled = false
-    box.Visible = false
 
     local text = Drawing.new("Text")
     text.Size = 14
     text.Center = true
     text.Outline = true
     text.Color = Color3.fromRGB(255, 255, 255)
-    text.Visible = false
 
     ESPCache[targetPlayer] = {BoxOutline = boxOutline, Box = box, Text = text}
 end
@@ -428,48 +469,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
 end))
 
 -- =============================================================
--- FRUIT ESP
--- =============================================================
-local FruitDrawings = {}
-
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    if not Settings.FruitESP then
-        for _, text in pairs(FruitDrawings) do text.Visible = false end
-        return
-    end
-
-    local myChar = LocalPlayer.Character
-    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
-
-    for _, obj in pairs(Workspace:GetChildren()) do
-        if obj:IsA("Tool") or obj.Name:find("Fruit") or obj.Name:find("Meyve") then
-            local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part")
-            if handle then
-                if not FruitDrawings[obj] then
-                    local txt = Drawing.new("Text")
-                    txt.Size = 15
-                    txt.Center = true
-                    txt.Outline = true
-                    txt.Color = Color3.fromRGB(0, 255, 150)
-                    FruitDrawings[obj] = txt
-                end
-
-                local screenPos, onScreen = Camera:WorldToViewportPoint(handle.Position)
-                if onScreen then
-                    local dist = math.floor((handle.Position - myPos).Magnitude)
-                    FruitDrawings[obj].Text = "🍎 " .. obj.Name .. " [" .. dist .. "m]"
-                    FruitDrawings[obj].Position = Vector2.new(screenPos.X, screenPos.Y)
-                    FruitDrawings[obj].Visible = true
-                else
-                    FruitDrawings[obj].Visible = false
-                end
-            end
-        end
-    end
-end))
-
--- =============================================================
--- EN YAKIN OYUNCU TESPİTİ
+-- EN YAKIN OYUNCU TESPİTİ & FAST FLY / AIMBOT ENGINE
 -- =============================================================
 local function getClosestPlayer()
     local closest, minDistance = nil, math.huge
@@ -489,42 +489,6 @@ local function getClosestPlayer()
     return closest
 end
 
--- =============================================================
--- SKİLL VE SALDIRI MEKANİZMASI
--- =============================================================
-local function pressKey(key)
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
-    task.wait(0.08)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
-end
-
-table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.One then
-        Settings.SkillMode = "1"
-        game.StarterGui:SetCore("SendNotification", {Title = "Skill Modu", Text = "Mod 1 (Z, X, C) Aktif", Duration = 2})
-    elseif input.KeyCode == Enum.KeyCode.Two then
-        Settings.SkillMode = "2"
-        game.StarterGui:SetCore("SendNotification", {Title = "Skill Modu", Text = "Mod 2 (C, X, Z, F) Aktif", Duration = 2})
-    end
-end))
-
-local function castSkills()
-    if Settings.SkillMode == "1" then
-        pressKey("Z") task.wait(0.15)
-        pressKey("X") task.wait(0.15)
-        pressKey("C") task.wait(0.15)
-    elseif Settings.SkillMode == "2" then
-        pressKey("C") task.wait(0.15)
-        pressKey("X") task.wait(0.15)
-        pressKey("Z") task.wait(0.15)
-        pressKey("F") task.wait(0.15)
-    end
-end
-
--- =============================================================
--- FAST PIVOT/CFRAME UÇUŞ ENGINE
--- =============================================================
 table.insert(Connections, RunService.Heartbeat:Connect(function()
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -555,7 +519,6 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                     myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
                     VirtualUser:CaptureController()
                     VirtualUser:ClickButton1(Vector2.new(500, 500))
-                    castSkills()
                 end
             else
                 myChar.Humanoid.PlatformStand = false
@@ -583,11 +546,8 @@ YesBtn.MouseButton1Click:Connect(function()
         if LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.PlatformStand = false
         end
-        if LocalPlayer.Character:FindFirstChild("V4Aura") then
-            LocalPlayer.Character.V4Aura:Destroy()
-        end
-        if LocalPlayer.Character:FindFirstChild("ClientV4Wings") then
-            LocalPlayer.Character.ClientV4Wings:Destroy()
+        if LocalPlayer.Character:FindFirstChild("V4Highlight") then
+            LocalPlayer.Character.V4Highlight:Destroy()
         end
     end
 
@@ -600,8 +560,8 @@ YesBtn.MouseButton1Click:Connect(function()
         esp.Box:Remove()
         esp.Text:Remove()
     end
-    for _, txt in pairs(FruitDrawings) do
-        txt:Remove()
+    for _, data in pairs(FruitBillboards) do
+        if data.Gui then data.Gui:Destroy() end
     end
 
     ScreenGui:Destroy()
@@ -616,6 +576,6 @@ end)
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V1.0",
-    Text = "Gelişmiş V4 Model ve Kılıç Giydirme Güncellendi!",
+    Text = "🍎 Logolu Fruit ESP ve Tüm Visual Sistemler Hazır!",
     Duration = 4
 })
