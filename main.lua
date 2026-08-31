@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🌿 MORGAN HUB V5.0 (ADMIN COMMANDS, OP FUN & INFINITE SKILLS FIXED) 🌿
+-- 🔴 MORGAN HUB V7.0 (REDZ HUB STYLE - EN / TR / IT - AUTO RAID & QUEST) 🔴
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -10,8 +10,6 @@ local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local TextChatService = game:GetService("TextChatService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -26,85 +24,98 @@ table.insert(Connections, LocalPlayer.Idled:Connect(function()
 end))
 
 -- Clear Previous GUI
-if CoreGui:FindFirstChild("MorganHubV5") then CoreGui.MorganHubV5:Destroy() end
+if CoreGui:FindFirstChild("MorganHubV7") then CoreGui.MorganHubV7:Destroy() end
+
+-- LANGUAGE DICTIONARY
+local Translations = {
+    EN = {
+        Title = "🔴 MORGAN HUB - REDZ STYLE",
+        MainTab = "Main",
+        FarmTab = "Auto Farm",
+        RaidTab = "Auto Raid",
+        ESPTab = "ESP & Visuals",
+        SettingsTab = "Settings",
+        AutoFarm = "Auto Farm Level & Quest",
+        AutoQuest = "Auto Take Quest",
+        SelectWeapon = "Select Weapon",
+        AutoStore = "Auto Store Fruit",
+        AutoRaid = "Auto Finish Raid (Kill NPCs)",
+        FruitESP = "Fruit ESP",
+        PlayerESP = "Player ESP",
+        Language = "Language / Dil / Lingua"
+    },
+    TR = {
+        Title = "🔴 MORGAN HUB - REDZ BİÇİMİ",
+        MainTab = "Ana Sayfa",
+        FarmTab = "Otomatik Kasılma",
+        RaidTab = "Otomatik Raid",
+        ESPTab = "ESP ve Görseller",
+        SettingsTab = "Ayarlar",
+        AutoFarm = "Otomatik Seviye & Görev",
+        AutoQuest = "Otomatik Görev Al",
+        SelectWeapon = "Silah Seçimi",
+        AutoStore = "Meyveleri Depola",
+        AutoRaid = "Raidi Bitir (NPC Kes)",
+        FruitESP = "Meyve Gösterici",
+        PlayerESP = "Oyuncu Gösterici",
+        Language = "Language / Dil / Lingua"
+    },
+    IT = {
+        Title = "🔴 MORGAN HUB - STILE REDZ",
+        MainTab = "Principale",
+        FarmTab = "Auto Farm",
+        RaidTab = "Auto Raid",
+        ESPTab = "ESP e Visuali",
+        SettingsTab = "Impostazioni",
+        AutoFarm = "Auto Farm Livello & Quest",
+        AutoQuest = "Prendi Quest Auto",
+        SelectWeapon = "Seleziona Arma",
+        AutoStore = "Salva Frutti Auto",
+        AutoRaid = "Completa Raid (Uccidi NPC)",
+        FruitESP = "ESP Frutti",
+        PlayerESP = "ESP Giocatori",
+        Language = "Language / Dil / Lingua"
+    }
+}
 
 -- SETTINGS
 local Settings = {
+    CurrentLang = "EN",
     ESP = false,
     FruitESP = false,
     AutoFarm = false,
-    Aimbot = false,
-    AutoHunt = false,
+    AutoQuest = true,
+    AutoRaid = false,
+    SelectedWeapon = "Melee",
     AutoStore = true,
-    LuckMultiplier = false,
-    LuckPower = 100,
-    FlySpeed = 12,
-    FarmDistance = 8,
-    -- OP FUN & SKILL SETTINGS
-    OPFun = false,
-    NoCooldown = false,
-    NoItemRequired = false,
-    GodMode = false,
-    LoopKillTarget = nil
+    FarmDistance = 8
 }
 
--- FRUIT ICONS
-local FruitIcons = {
-    ["Kitsune"] = "rbxassetid://15312061073",
-    ["Dragon"] = "rbxassetid://13886869488",
-    ["Leopard"] = "rbxassetid://13886867744",
-    ["Dough"] = "rbxassetid://13886866168",
-    ["T-Rex"] = "rbxassetid://15682970597",
-    ["Mammoth"] = "rbxassetid://14930198642",
-    ["Spirit"] = "rbxassetid://13886869850",
-    ["Venom"] = "rbxassetid://13886870244",
-    ["Shadow"] = "rbxassetid://13886869634",
-    ["Blizzard"] = "rbxassetid://13886865660",
-    ["Gravity"] = "rbxassetid://13886867420",
-    ["Portal"] = "rbxassetid://13886869150",
-    ["Rumble"] = "rbxassetid://13886869348",
-    ["Buddha"] = "rbxassetid://13886865890",
-    ["Love"] = "rbxassetid://13886868018",
-    ["Spider"] = "rbxassetid://13886869976",
-    ["Sound"] = "rbxassetid://14930200871",
-    ["Magma"] = "rbxassetid://13886868420",
-    ["Ice"] = "rbxassetid://13886867566",
-    ["Light"] = "rbxassetid://13886867888",
-    ["Flame"] = "rbxassetid://13886866872",
-    ["Rocket"] = "rbxassetid://13886869246",
-    ["Spin"] = "rbxassetid://13886870104",
-    ["Blade"] = "rbxassetid://13886866580",
-    ["Spring"] = "rbxassetid://13886870176",
-    ["Bomb"] = "rbxassetid://13886865768",
-    ["Smoke"] = "rbxassetid://13886869752",
-    ["Spike"] = "rbxassetid://13886870034",
-    ["Falcon"] = "rbxassetid://13886866708",
-    ["Sand"] = "rbxassetid://13886869528",
-    ["Dark"] = "rbxassetid://13886866034",
-    ["Diamond"] = "rbxassetid://13886866360",
-    ["Ghost"] = "rbxassetid://15082498716",
-    ["Rubber"] = "rbxassetid://13886869300",
-    ["Barrier"] = "rbxassetid://13886865502"
+-- BLOX FRUITS LEVEL DATA
+local QuestData = {
+    {MinLevel = 1, MaxLevel = 14, QuestName = "BanditQuest1", QuestLevel = 1, MobName = "Bandit", CFrame = CFrame.new(1059, 16, 1548)},
+    {MinLevel = 15, MaxLevel = 29, QuestName = "JungleQuest", QuestLevel = 1, MobName = "Monkey", CFrame = CFrame.new(-1598, 36, 153)},
+    {MinLevel = 30, MaxLevel = 59, QuestName = "PirateQuest", QuestLevel = 1, MobName = "Pirate", CFrame = CFrame.new(-1140, 4, 3828)},
+    {MinLevel = 60, MaxLevel = 89, QuestName = "DesertQuest", QuestLevel = 1, MobName = "Desert Bandit", CFrame = CFrame.new(894, 6, 4385)},
+    {MinLevel = 90, MaxLevel = 119, QuestName = "SnowQuest", QuestLevel = 1, MobName = "Snow Bandit", CFrame = CFrame.new(1385, 87, -1298)},
+    {MinLevel = 120, MaxLevel = 149, QuestName = "MarineQuest2", QuestLevel = 1, MobName = "Chief Petty Officer", CFrame = CFrame.new(-5036, 28, 4324)},
+    {MinLevel = 150, MaxLevel = 189, QuestName = "SkyQuest", QuestLevel = 1, MobName = "Sky Bandit", CFrame = CFrame.new(-4839, 717, -2620)}
 }
-local DefaultIcon = "rbxassetid://13886865768"
 
--- =============================================================
--- GUI ARCHITECTURE
--- =============================================================
+-- REDZ HUB STYLE GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MorganHubV5"
+ScreenGui.Name = "MorganHubV7"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- LOGO BUTTON
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
-ToggleLogo.Size = UDim2.new(0, 48, 0, 48)
-ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
-ToggleLogo.BackgroundColor3 = Color3.fromRGB(15, 22, 18)
+ToggleLogo.Size = UDim2.new(0, 45, 0, 45)
+ToggleLogo.Position = UDim2.new(0, 15, 0.2, 0)
+ToggleLogo.BackgroundColor3 = Color3.fromRGB(180, 20, 20)
 ToggleLogo.BorderSizePixel = 0
-ToggleLogo.Text = "🌿"
-ToggleLogo.TextSize = 26
+ToggleLogo.Text = "🔴"
+ToggleLogo.TextSize = 22
 ToggleLogo.Active = true
 ToggleLogo.Draggable = true
 ToggleLogo.Parent = ScreenGui
@@ -113,463 +124,376 @@ local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = ToggleLogo
 
-local LogoStroke = Instance.new("UIStroke")
-LogoStroke.Color = Color3.fromRGB(0, 255, 120)
-LogoStroke.Thickness = 2
-LogoStroke.Parent = ToggleLogo
-
--- MAIN WINDOW
+-- MAIN CONTAINER
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 460, 0, 470)
-MainFrame.Position = UDim2.new(0.5, -230, 0.5, -235)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
+MainFrame.Size = UDim2.new(0, 520, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -160)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 8)
 MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(0, 255, 120)
-MainStroke.Transparency = 0.6
-MainStroke.Parent = MainFrame
 
 ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -40, 0, 40)
-Title.Position = UDim2.new(0, 15, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "🌿 MORGAN HUB V5.0 (OP FUN EDITION)"
-Title.TextColor3 = Color3.fromRGB(0, 255, 140)
-Title.TextSize = 15
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = MainFrame
+-- TOP TITLE BAR
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 35)
+TitleBar.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
 
--- LUCK FRAME
-local LuckFrame = Instance.new("Frame")
-LuckFrame.Name = "LuckFrame"
-LuckFrame.Size = UDim2.new(0, 260, 0, 140)
-LuckFrame.Position = UDim2.new(0.8, -260, 0.15, 0)
-LuckFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 18)
-LuckFrame.BorderSizePixel = 0
-LuckFrame.Active = true
-LuckFrame.Draggable = true
-LuckFrame.Visible = false
-LuckFrame.Parent = ScreenGui
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = TitleBar
 
-local LuckCorner = Instance.new("UICorner")
-LuckCorner.CornerRadius = UDim.new(0, 8)
-LuckCorner.Parent = LuckFrame
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -20, 1, 0)
+TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = Translations[Settings.CurrentLang].Title
+TitleLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 13
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
 
-local LuckStroke = Instance.new("UIStroke")
-LuckStroke.Color = Color3.fromRGB(255, 215, 0)
-LuckStroke.Thickness = 2
-LuckStroke.Parent = LuckFrame
+-- SIDEBAR TABS (REDZ HUB STYLE)
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 130, 1, -35)
+Sidebar.Position = UDim2.new(0, 0, 0, 35)
+Sidebar.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
 
-local LuckTitle = Instance.new("TextLabel")
-LuckTitle.Size = UDim2.new(1, 0, 0, 30)
-LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
-LuckTitle.BackgroundTransparency = 1
-LuckTitle.Text = "🍀 LUCK RATE BOOSTER"
-LuckTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-LuckTitle.Font = Enum.Font.GothamBold
-LuckTitle.TextSize = 13
-LuckTitle.Parent = LuckFrame
+local SideLayout = Instance.new("UIListLayout")
+SideLayout.Padding = UDim.new(0, 4)
+SideLayout.Parent = Sidebar
 
-local LuckStatus = Instance.new("TextLabel")
-LuckStatus.Size = UDim2.new(1, 0, 0, 25)
-LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
-LuckStatus.BackgroundTransparency = 1
-LuckStatus.Text = "MULTIPLIER: 100x"
-LuckStatus.TextColor3 = Color3.fromRGB(0, 255, 120)
-LuckStatus.Font = Enum.Font.GothamBold
-LuckStatus.TextSize = 12
-LuckStatus.Parent = LuckFrame
+-- CONTENT CONTAINERS
+local Pages = Instance.new("Frame")
+Pages.Size = UDim2.new(1, -135, 1, -40)
+Pages.Position = UDim2.new(0, 132, 0, 38)
+Pages.BackgroundTransparency = 1
+Pages.Parent = MainFrame
 
-local ChanceDisplay = Instance.new("TextLabel")
-ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
-ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
-ChanceDisplay.BackgroundColor3 = Color3.fromRGB(22, 35, 26)
-ChanceDisplay.BorderSizePixel = 0
-ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
-ChanceDisplay.TextColor3 = Color3.fromRGB(255, 140, 0)
-ChanceDisplay.Font = Enum.Font.GothamMedium
-ChanceDisplay.TextSize = 11
-ChanceDisplay.Parent = LuckFrame
+local PageFrames = {}
 
-local ChanceCorner = Instance.new("UICorner")
-ChanceCorner.CornerRadius = UDim.new(0, 6)
-ChanceCorner.Parent = ChanceDisplay
+local function createPage(name)
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.ScrollBarThickness = 2
+    page.Visible = false
+    page.Parent = Pages
 
--- CONFIRM DESTROY FRAME
-local ConfirmFrame = Instance.new("Frame")
-ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
-ConfirmFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 16)
-ConfirmFrame.BackgroundTransparency = 0.1
-ConfirmFrame.Visible = false
-ConfirmFrame.ZIndex = 10
-ConfirmFrame.Parent = MainFrame
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 6)
+    layout.Parent = page
 
-local ConfirmCorner = Instance.new("UICorner")
-ConfirmCorner.CornerRadius = UDim.new(0, 10)
-ConfirmCorner.Parent = ConfirmFrame
+    PageFrames[name] = page
+    return page
+end
 
-local ConfirmText = Instance.new("TextLabel")
-ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
-ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
-ConfirmText.BackgroundTransparency = 1
-ConfirmText.Text = "Are you sure you want to destroy GUI?"
-ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
-ConfirmText.Font = Enum.Font.GothamBold
-ConfirmText.TextSize = 15
-ConfirmText.ZIndex = 11
-ConfirmText.Parent = ConfirmFrame
+local FarmPage = createPage("Farm")
+local RaidPage = createPage("Raid")
+local ESPPage = createPage("ESP")
+local SettingsPage = createPage("Settings")
 
-local YesBtn = Instance.new("TextButton")
-YesBtn.Size = UDim2.new(0, 100, 0, 35)
-YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
-YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-YesBtn.Text = "YES"
-YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-YesBtn.Font = Enum.Font.GothamBold
-YesBtn.ZIndex = 11
-YesBtn.Parent = ConfirmFrame
+FarmPage.Visible = true
 
-local YesCorner = Instance.new("UICorner")
-YesCorner.CornerRadius = UDim.new(0, 6)
-YesCorner.Parent = YesBtn
+-- TAB BUTTON CREATOR
+local TabButtons = {}
+local function createTab(name, langKey, pageTarget)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -8, 0, 32)
+    btn.Position = UDim2.new(0, 4, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    btn.BorderSizePixel = 0
+    btn.Text = Translations[Settings.CurrentLang][langKey]
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 12
+    btn.Parent = Sidebar
 
-local NoBtn = Instance.new("TextButton")
-NoBtn.Size = UDim2.new(0, 100, 0, 35)
-NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
-NoBtn.BackgroundColor3 = Color3.fromRGB(50, 60, 75)
-NoBtn.Text = "NO"
-NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoBtn.Font = Enum.Font.GothamBold
-NoBtn.ZIndex = 11
-NoBtn.Parent = ConfirmFrame
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
 
-local NoCorner = Instance.new("UICorner")
-NoCorner.CornerRadius = UDim.new(0, 6)
-NoCorner.Parent = NoBtn
+    btn.MouseButton1Click:Connect(function()
+        for _, p in pairs(PageFrames) do p.Visible = false end
+        for _, b in pairs(TabButtons) do b.BackgroundColor3 = Color3.fromRGB(25, 25, 30) end
+        pageTarget.Visible = true
+        btn.BackgroundColor3 = Color3.fromRGB(180, 20, 20)
+    end)
 
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 26, 0, 26)
-CloseBtn.Position = UDim2.new(1, -32, 0, 7)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = MainFrame
+    TabButtons[langKey] = btn
+end
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseBtn
+createTab("Farm", "FarmTab", FarmPage)
+createTab("Raid", "RaidTab", RaidPage)
+createTab("ESP", "ESPTab", ESPPage)
+createTab("Settings", "SettingsTab", SettingsPage)
 
-CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
-NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
-
-local Container = Instance.new("ScrollingFrame")
-Container.Size = UDim2.new(1, -20, 1, -50)
-Container.Position = UDim2.new(0, 10, 0, 45)
-Container.BackgroundTransparency = 1
-Container.ScrollBarThickness = 3
-Container.Parent = MainFrame
-
-local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0, 8)
-Layout.Parent = Container
-
-local function addToggle(text, defaultState, callback)
+-- DYNAMIC UI BUILDERS
+local function addToggle(parent, langKey, defaultState, callback)
     local card = Instance.new("Frame")
-    card.Size = UDim2.new(0.98, 0, 0, 42)
-    card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
+    card.Size = UDim2.new(0.96, 0, 0, 36)
+    card.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
     card.BorderSizePixel = 0
-    card.Parent = Container
+    card.Parent = parent
 
     local cardCorner = Instance.new("UICorner")
     cardCorner.CornerRadius = UDim.new(0, 6)
     cardCorner.Parent = card
 
     local label = Instance.new("TextLabel")
+    label.Name = "Text"
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0.04, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(210, 225, 240)
+    label.Text = Translations[Settings.CurrentLang][langKey]
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
     label.Font = Enum.Font.GothamMedium
-    label.TextSize = 13
+    label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = card
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 44, 0, 22)
-    btn.Position = UDim2.new(0.86, 0, 0.24, 0)
-    btn.BackgroundColor3 = defaultState and Color3.fromRGB(0, 190, 100) or Color3.fromRGB(35, 45, 58)
+    btn.Size = UDim2.new(0, 36, 0, 18)
+    btn.Position = UDim2.new(0.85, 0, 0.25, 0)
+    btn.BackgroundColor3 = defaultState and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 50)
     btn.BorderSizePixel = 0
     btn.Text = ""
     btn.Parent = card
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 11)
+    btnCorner.CornerRadius = UDim.new(0, 9)
     btnCorner.Parent = btn
-
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 16, 0, 16)
-    circle.Position = defaultState and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
-    circle.BackgroundColor3 = Color3.fromRGB(180, 190, 200)
-    circle.BorderSizePixel = 0
-    circle.Parent = btn
-
-    local circleCorner = Instance.new("UICorner")
-    circleCorner.CornerRadius = UDim.new(0, 8)
-    circleCorner.Parent = circle
 
     local state = defaultState
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.BackgroundColor3 = state and Color3.fromRGB(0, 190, 100) or Color3.fromRGB(35, 45, 58)
-        circle.Position = state and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
+        btn.BackgroundColor3 = state and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(40, 40, 50)
         pcall(callback, state)
     end)
 end
 
-local function addSlider(text, min, max, default, callback)
-    local card = Instance.new("Frame")
-    card.Size = UDim2.new(0.98, 0, 0, 50)
-    card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
-    card.BorderSizePixel = 0
-    card.Parent = Container
+-- POPULATE FARM PAGE
+addToggle(FarmPage, "AutoFarm", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle(FarmPage, "AutoQuest", Settings.AutoQuest, function(v) Settings.AutoQuest = v end)
+addToggle(FarmPage, "AutoStore", Settings.AutoStore, function(v) Settings.AutoStore = v end)
 
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 6)
-    cardCorner.Parent = card
+-- WEAPON SELECTOR
+local weaponCard = Instance.new("Frame")
+weaponCard.Size = UDim2.new(0.96, 0, 0, 36)
+weaponCard.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+weaponCard.BorderSizePixel = 0
+weaponCard.Parent = FarmPage
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 0.5, 0)
-    label.Position = UDim2.new(0.04, 0, 0.08, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(210, 225, 240)
-    label.Font = Enum.Font.GothamMedium
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = card
+local wLabel = Instance.new("TextLabel")
+wLabel.Name = "WLabel"
+wLabel.Size = UDim2.new(0.5, 0, 1, 0)
+wLabel.Position = UDim2.new(0.04, 0, 0, 0)
+wLabel.BackgroundTransparency = 1
+wLabel.Text = Translations[Settings.CurrentLang].SelectWeapon
+wLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+wLabel.Font = Enum.Font.GothamMedium
+wLabel.TextSize = 12
+wLabel.TextXAlignment = Enum.TextXAlignment.Left
+wLabel.Parent = weaponCard
 
-    local valueLabel = Instance.new("TextLabel")
-    valueLabel.Size = UDim2.new(0.2, 0, 0.5, 0)
-    valueLabel.Position = UDim2.new(0.76, 0, 0.08, 0)
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.Text = tostring(default)
-    valueLabel.TextColor3 = Color3.fromRGB(0, 255, 140)
-    valueLabel.Font = Enum.Font.GothamBold
-    valueLabel.TextSize = 13
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valueLabel.Parent = card
+local wBtn = Instance.new("TextButton")
+wBtn.Size = UDim2.new(0, 80, 0, 22)
+wBtn.Position = UDim2.new(0.72, 0, 0.18, 0)
+wBtn.BackgroundColor3 = Color3.fromRGB(180, 20, 20)
+wBtn.Text = "Melee"
+wBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+wBtn.Font = Enum.Font.GothamBold
+wBtn.TextSize = 11
+wBtn.Parent = weaponCard
 
-    local sliderBg = Instance.new("TextButton")
-    sliderBg.Size = UDim2.new(0.92, 0, 0, 8)
-    sliderBg.Position = UDim2.new(0.04, 0, 0.65, 0)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(35, 45, 58)
-    sliderBg.BorderSizePixel = 0
-    sliderBg.Text = ""
-    sliderBg.Parent = card
+local wCorner = Instance.new("UICorner")
+wCorner.CornerRadius = UDim.new(0, 4)
+wCorner.Parent = wBtn
 
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 4)
-    sliderCorner.Parent = sliderBg
+local weapons = {"Melee", "Sword", "Gun", "Fruit"}
+local wIdx = 1
+wBtn.MouseButton1Click:Connect(function()
+    wIdx = wIdx + 1
+    if wIdx > #weapons then wIdx = 1 end
+    Settings.SelectedWeapon = weapons[wIdx]
+    wBtn.Text = Settings.SelectedWeapon
+end)
 
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 255, 140)
-    fill.BorderSizePixel = 0
-    fill.Parent = sliderBg
+-- POPULATE RAID PAGE
+addToggle(RaidPage, "AutoRaid", Settings.AutoRaid, function(v) Settings.AutoRaid = v end)
 
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 4)
-    fillCorner.Parent = fill
+-- POPULATE ESP PAGE
+addToggle(ESPPage, "FruitESP", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle(ESPPage, "PlayerESP", Settings.ESP, function(v) Settings.ESP = v end)
 
-    local dragging = false
-    local function update(input)
-        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
-        local val = math.floor(min + ((max - min) * pos))
-        fill.Size = UDim2.new(pos, 0, 1, 0)
-        valueLabel.Text = tostring(val)
-        pcall(callback, val)
+-- POPULATE SETTINGS PAGE (LANGUAGE SWITCHER)
+local langCard = Instance.new("Frame")
+langCard.Size = UDim2.new(0.96, 0, 0, 36)
+langCard.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+langCard.BorderSizePixel = 0
+langCard.Parent = SettingsPage
+
+local langLabel = Instance.new("TextLabel")
+langLabel.Name = "LLabel"
+langLabel.Size = UDim2.new(0.5, 0, 1, 0)
+langLabel.Position = UDim2.new(0.04, 0, 0, 0)
+langLabel.BackgroundTransparency = 1
+langLabel.Text = Translations[Settings.CurrentLang].Language
+langLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+langLabel.Font = Enum.Font.GothamMedium
+langLabel.TextSize = 11
+langLabel.TextXAlignment = Enum.TextXAlignment.Left
+langLabel.Parent = langCard
+
+local langBtn = Instance.new("TextButton")
+langBtn.Size = UDim2.new(0, 80, 0, 22)
+langBtn.Position = UDim2.new(0.72, 0, 0.18, 0)
+langBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 220)
+langBtn.Text = "EN / English"
+langBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+langBtn.Font = Enum.Font.GothamBold
+langBtn.TextSize = 10
+langBtn.Parent = langCard
+
+local langList = {"EN", "TR", "IT"}
+local langNames = {EN = "English", TR = "Türkçe", IT = "Italiano"}
+local lIdx = 1
+
+local function updateLanguage(lang)
+    Settings.CurrentLang = lang
+    TitleLabel.Text = Translations[lang].Title
+    wLabel.Text = Translations[lang].SelectWeapon
+    langLabel.Text = Translations[lang].Language
+
+    for key, btn in pairs(TabButtons) do
+        btn.Text = Translations[lang][key]
     end
-
-    sliderBg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            update(input)
-        end
-    end)
-
-    sliderBg.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
-    end)
 end
 
--- MENU ITEMS
-addToggle("⚡ OP Fun Mode / Fast Admin", Settings.OPFun, function(v) Settings.OPFun = v end)
-addToggle("🔥 No Skill Cooldown (Sınırsız Skill)", Settings.NoCooldown, function(v) Settings.NoCooldown = v end)
-addToggle("🗡️ No Item Needed (İtem Tutmadan Skill)", Settings.NoItemRequired, function(v) Settings.NoItemRequired = v end)
-addToggle("🛡️ God Mode / Semi-God", Settings.GodMode, function(v) Settings.GodMode = v end)
-
-addToggle("🍀 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
-    Settings.LuckMultiplier = v
-    LuckFrame.Visible = v
-end)
-addSlider("🍀 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
-    Settings.LuckPower = v
-    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
-    local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
-    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
+langBtn.MouseButton1Click:Connect(function()
+    lIdx = lIdx + 1
+    if lIdx > #langList then lIdx = 1 end
+    local selectedLang = langList[lIdx]
+    langBtn.Text = selectedLang .. " / " .. langNames[selectedLang]
+    updateLanguage(selectedLang)
 end)
 
-addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
-addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
-addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
-
-addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
-addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
-
 -- =============================================================
--- OP FUN & INFINITE SKILL ENGINE (NO ITEM / NO COOLDOWN FIX)
+-- AUTO FINISH RAID SYSTEM
 -- =============================================================
--- Skill atarken elinde item bulunma şartı ve bekleme süresini kaldırma mekanizması
-local function fireSkillBypass(skillKey)
-    local char = LocalPlayer.Character
-    if not char then return end
+table.insert(Connections, RunService.Heartbeat:Connect(function()
+    if not Settings.AutoRaid then return end
 
-    -- Elinde eşya yoksa bile Backpack üzerindeki araçların skillini ateşler
-    local tool = char:FindFirstChildOfClass("Tool")
-    if not tool and Settings.NoItemRequired then
-        tool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-    end
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local root = myChar.HumanoidRootPart
 
-    if tool then
-        pcall(function()
-            -- Remote Event Çağrısı (Otomatik yetenek tetikleme)
-            local remote = tool:FindFirstChild("Remote") or tool:FindFirstChildOfClass("RemoteEvent") or ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("CommF_")
-            if remote then
-                if remote:IsA("RemoteEvent") then
-                    remote:FireServer(skillKey, Camera.CFrame.LookVector)
-                elseif remote:IsA("RemoteFunction") then
-                    remote:InvokeServer(skillKey, Camera.CFrame.LookVector)
-                end
+        -- Check Raid Map Locations / Enemies
+        local raidEnemies = Workspace:FindFirstChild("Raids") or Workspace:FindFirstChild("Enemies") or Workspace
+        local targetEnemy = nil
+
+        for _, enemy in pairs(raidEnemies:GetChildren()) do
+            if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                targetEnemy = enemy
+                break
             end
-        end)
-    end
-end
-
--- Tuş Dinleyici (Z, X, C, V, F Yetenekleri İtem Olmadan ve Bekleme Süresi Olmadan Kullanılır)
-table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if Settings.NoItemRequired or Settings.NoCooldown then
-        local key = input.KeyCode.Name
-        if key == "Z" or key == "X" or key == "C" or key == "V" or key == "F" then
-            fireSkillBypass(key)
         end
-    end
-end))
 
--- God Mode Loop
-table.insert(Connections, RunService.Stepped:Connect(function()
-    if Settings.GodMode and LocalPlayer.Character then
-        local hum = LocalPlayer.Character:FindFirstChild("Humanoid")
-        if hum then
-            hum.Health = hum.MaxHealth
+        if targetEnemy then
+            myChar.Humanoid.PlatformStand = true
+            root.CFrame = targetEnemy.HumanoidRootPart.CFrame * CFrame.new(0, Settings.FarmDistance, 0)
+
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new(500, 500))
         end
-    end
+    end)
 end))
 
 -- =============================================================
--- CHAT ADMIN COMMANDS ENGINE (/opfun & ADMIN COMMANDS)
+-- AUTO FARM & QUEST ENGINE
 -- =============================================================
-local function executeAdminCommand(msg)
-    local args = string.split(msg, " ")
-    local cmd = string.lower(args[1])
-
-    if cmd == "/opfun" then
-        Settings.OPFun = not Settings.OPFun
-        Settings.NoCooldown = Settings.OPFun
-        Settings.NoItemRequired = Settings.OPFun
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "🌿 MORGAN HUB ADMIN",
-            Text = "OP Fun Modu: " .. (Settings.OPFun and "AÇIK" or "KAPALI"),
-            Duration = 3
-        })
-    elseif cmd == "/killall" then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") then
-                p.Character.Humanoid.Health = 0
-            end
-        end
-    elseif cmd == "/god" then
-        Settings.GodMode = not Settings.GodMode
-    elseif cmd == "/bringall" then
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local myPos = LocalPlayer.Character.HumanoidRootPart.CFrame
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    p.Character.HumanoidRootPart.CFrame = myPos * CFrame.new(0, 0, -3)
-                end
-            end
-        end
-    elseif cmd == "/speed" and args[2] then
-        local spd = tonumber(args[2]) or 16
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = spd
-        end
-    end
+local function getMyLevel()
+    pcall(function() return LocalPlayer.Data.Level.Value end)
+    return 1
 end
 
--- Chat Hook (Yeni ve Eski Chat Sistemini Destekler)
-table.insert(Connections, LocalPlayer.Chatted:Connect(executeAdminCommand))
+local function getCurrentQuest()
+    local level = getMyLevel()
+    for _, q in ipairs(QuestData) do
+        if level >= q.MinLevel and level <= q.MaxLevel then return q end
+    end
+    return QuestData[1]
+end
 
--- =============================================================
--- AUTO STORE FRUIT ENGINE
--- =============================================================
+table.insert(Connections, RunService.Heartbeat:Connect(function()
+    if not Settings.AutoFarm or Settings.AutoRaid then return end
+
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local root = myChar.HumanoidRootPart
+
+        local currentQuest = getCurrentQuest()
+
+        -- Auto Quest
+        local hasQuest = false
+        if LocalPlayer.PlayerGui:FindFirstChild("Main") and LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
+            hasQuest = LocalPlayer.PlayerGui.Main.Quest.Visible
+        end
+
+        if Settings.AutoQuest and not hasQuest then
+            if (root.Position - currentQuest.CFrame.Position).Magnitude > 50 then
+                root.CFrame = currentQuest.CFrame
+                task.wait(0.5)
+            end
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", currentQuest.QuestName, currentQuest.QuestLevel)
+            task.wait(0.5)
+            return
+        end
+
+        -- Find Enemy
+        local enemies = Workspace:FindFirstChild("Enemies") or Workspace
+        local targetMob = nil
+        for _, enemy in pairs(enemies:GetChildren()) do
+            if enemy:IsA("Model") and enemy.Name == currentQuest.MobName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                targetMob = enemy
+                break
+            end
+        end
+
+        if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
+            myChar.Humanoid.PlatformStand = true
+            root.CFrame = CFrame.lookAt(targetMob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0), targetMob.HumanoidRootPart.Position)
+
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new(500, 500))
+        end
+    end)
+end))
+
+-- AUTO STORE FRUIT
 local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
-    if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
+    if tool.Name:find("Fruit") or tool.Name:find("Meyve") then
         pcall(function()
-            local args = {
-                [1] = "StoreFruit",
-                [2] = tool.Name,
-                [3] = tool
-            }
-            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", tool.Name, tool)
         end)
     end
-end
-
-table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
-    char.ChildAdded:Connect(storeFruit)
-end))
-if LocalPlayer.Character then
-    LocalPlayer.Character.ChildAdded:Connect(storeFruit)
 end
 
 table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
@@ -577,309 +501,9 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
     storeFruit(tool)
 end))
 
--- =============================================================
--- AUTO FARM ENGINE
--- =============================================================
-local function getClosestEnemy()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
-
-    local enemies = Workspace:FindFirstChild("Enemies") or Workspace
-    for _, enemy in pairs(enemies:GetChildren()) do
-        if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(enemy) then
-                local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
-                if dist < minDistance then
-                    minDistance = dist
-                    closest = enemy
-                end
-            end
-        end
-    end
-    return closest
-end
-
-table.insert(Connections, RunService.Heartbeat:Connect(function()
-    if not Settings.AutoFarm then return end
-
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
-        local enemy = getClosestEnemy()
-        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            myChar.Humanoid.PlatformStand = true
-
-            local tool = myChar:FindFirstChildOfClass("Tool")
-            if not tool then
-                local backpack = LocalPlayer:FindFirstChild("Backpack")
-                if backpack then
-                    local weapon = backpack:FindFirstChildOfClass("Tool")
-                    if weapon then myChar.Humanoid:EquipTool(weapon) end
-                end
-            end
-
-            local enemyPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-            root.CFrame = CFrame.lookAt(enemyPos, enemy.HumanoidRootPart.Position)
-
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(500, 500))
-        else
-            myChar.Humanoid.PlatformStand = false
-        end
-    end)
-end))
-
--- =============================================================
--- IMAGE FRUIT ESP ENGINE
--- =============================================================
-local FruitBillboards = {}
-
-local function getFruitImage(fruitName)
-    for name, iconId in pairs(FruitIcons) do
-        if fruitName:lower():find(name:lower()) then
-            return iconId
-        end
-    end
-    return DefaultIcon
-end
-
-local function createFruitESP(obj)
-    if FruitBillboards[obj] then return end
-
-    local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part") or obj:FindFirstChildOfClass("MeshPart")
-    if not handle then return end
-
-    local bb = Instance.new("BillboardGui")
-    bb.Name = "FruitESPLogo"
-    bb.Adornee = handle
-    bb.Size = UDim2.new(0, 65, 0, 80)
-    bb.AlwaysOnTop = true
-
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.new(0, 48, 0, 48)
-    img.Position = UDim2.new(0.5, -24, 0, 0)
-    img.BackgroundTransparency = 1
-    img.Image = getFruitImage(obj.Name)
-    img.Parent = bb
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 0.35, 0)
-    textLabel.Position = UDim2.new(0, 0, 0.65, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = obj.Name
-    textLabel.TextColor3 = Color3.fromRGB(0, 255, 140)
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextSize = 11
-    textLabel.TextStrokeTransparency = 0
-    textLabel.Parent = bb
-
-    bb.Parent = CoreGui
-    FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
-end
-
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    if not Settings.FruitESP then
-        for obj, data in pairs(FruitBillboards) do
-            if data.Gui then data.Gui.Enabled = false end
-        end
-        return
-    end
-
-    local myChar = LocalPlayer.Character
-    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
-
-    for _, obj in pairs(Workspace:GetChildren()) do
-        if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or obj.Name:find("Meyve") or obj.Name:find("Blox")) then
-            createFruitESP(obj)
-        end
-    end
-
-    for obj, data in pairs(FruitBillboards) do
-        if obj and obj.Parent and data.Handle and data.Handle.Parent then
-            data.Gui.Enabled = true
-            local dist = math.floor((data.Handle.Position - myPos).Magnitude)
-            data.Text.Text = obj.Name .. "\n[" .. dist .. "m]"
-        else
-            if data.Gui then data.Gui:Destroy() end
-            FruitBillboards[obj] = nil
-        end
-    end
-end))
-
--- =============================================================
--- DRAWING PLAYER ESP ENGINE
--- =============================================================
-local ESPCache = {}
-
-local function createESP(targetPlayer)
-    if targetPlayer == LocalPlayer then return end
-
-    local boxOutline = Drawing.new("Square")
-    boxOutline.Thickness = 3
-    boxOutline.Color = Color3.fromRGB(0, 0, 0)
-
-    local box = Drawing.new("Square")
-    box.Thickness = 1
-    box.Color = Color3.fromRGB(255, 40, 40)
-
-    local text = Drawing.new("Text")
-    text.Size = 14
-    text.Center = true
-    text.Outline = true
-    text.Color = Color3.fromRGB(255, 255, 255)
-
-    ESPCache[targetPlayer] = {BoxOutline = boxOutline, Box = box, Text = text}
-end
-
-local function removeESP(targetPlayer)
-    if ESPCache[targetPlayer] then
-        ESPCache[targetPlayer].BoxOutline:Remove()
-        ESPCache[targetPlayer].Box:Remove()
-        ESPCache[targetPlayer].Text:Remove()
-        ESPCache[targetPlayer] = nil
-    end
-end
-
-for _, p in pairs(Players:GetPlayers()) do createESP(p) end
-table.insert(Connections, Players.PlayerAdded:Connect(createESP))
-table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
-
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    for targetPlayer, esp in pairs(ESPCache) do
-        local char = targetPlayer.Character
-        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
-            local root = char.HumanoidRootPart
-            local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
-
-            if onScreen then
-                local head = char:FindFirstChild("Head")
-                local headPos = head and head.Position or (root.Position + Vector3.new(0, 2, 0))
-                local legPos = root.Position - Vector3.new(0, 3, 0)
-
-                local topScreen = Camera:WorldToViewportPoint(headPos + Vector3.new(0, 1, 0))
-                local bottomScreen = Camera:WorldToViewportPoint(legPos)
-
-                local height = math.abs(topScreen.Y - bottomScreen.Y)
-                local width = height / 1.6
-
-                esp.BoxOutline.Size = Vector2.new(width, height)
-                esp.BoxOutline.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
-                esp.BoxOutline.Visible = true
-
-                esp.Box.Size = Vector2.new(width, height)
-                esp.Box.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
-                esp.Box.Visible = true
-
-                esp.Text.Text = targetPlayer.Name .. " [" .. math.floor(char.Humanoid.Health) .. " HP]"
-                esp.Text.Position = Vector2.new(pos.X, pos.Y - (height / 2) - 16)
-                esp.Text.Visible = true
-            else
-                esp.BoxOutline.Visible = false
-                esp.Box.Visible = false
-                esp.Text.Visible = false
-            end
-        else
-            esp.BoxOutline.Visible = false
-            esp.Box.Visible = false
-            esp.Text.Visible = false
-        end
-    end
-end))
-
--- =============================================================
--- AIMBOT & AUTO BOUNTY HUNT ENGINE
--- =============================================================
-local function getClosestPlayer()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
-
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-            if dist < minDistance then
-                minDistance = dist
-                closest = p
-            end
-        end
-    end
-    return closest
-end
-
-table.insert(Connections, RunService.Heartbeat:Connect(function()
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
-        local target = getClosestPlayer()
-
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local targetRoot = target.Character.HumanoidRootPart
-
-            if Settings.Aimbot then
-                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
-            end
-
-            if Settings.AutoHunt then
-                myChar.Humanoid.PlatformStand = true
-                local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
-                local distance = (targetPos - root.Position).Magnitude
-
-                if distance > 6 then
-                    local newCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
-                    myChar:PivotTo(newCFrame)
-                else
-                    myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton1(Vector2.new(500, 500))
-                end
-            elseif not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        else
-            if Settings.AutoHunt and not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        end
-    end)
-end))
-
--- DESTROY FUNCTION
-YesBtn.MouseButton1Click:Connect(function()
-    Settings.AutoFarm = false
-    Settings.AutoHunt = false
-    Settings.ESP = false
-    Settings.FruitESP = false
-    Settings.AutoStore = false
-    Settings.LuckMultiplier = false
-    Settings.OPFun = false
-
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.PlatformStand = false
-    end
-
-    for _, conn in pairs(Connections) do conn:Disconnect() end
-    for _, esp in pairs(ESPCache) do
-        esp.BoxOutline:Remove()
-        esp.Box:Remove()
-        esp.Text:Remove()
-    end
-    for _, data in pairs(FruitBillboards) do
-        if data.Gui then data.Gui:Destroy() end
-    end
-
-    ScreenGui:Destroy()
-end)
-
 -- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
-    Title = "🌿 MORGAN HUB V5.0",
-    Text = "OP Fun, Admin Commands & Infinite Skills Loaded!",
-    Duration = 5
+    Title = "🔴 MORGAN HUB V7.0",
+    Text = "Redz Hub Style & Auto Raid Multi-Lang Loaded!",
+    Duration = 4
 })
