@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (PRO DEFINITIVE - CFRAME FLY FIX) 🌿
+-- 🌿 MORGAN HUB V1.0 (FAST FLY + FRUIT ESP & TRACKER) 🌿
 -- =============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -21,16 +21,17 @@ LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end)
 
--- Eski GUI Temizliği
+-- Temizlik
 if CoreGui:FindFirstChild("MorganHubV1") then CoreGui.MorganHubV1:Destroy() end
 
 -- AYARLAR
 local Settings = {
     ESP = false,
+    FruitESP = false,
     Aimbot = false,
     AutoHunt = false,
     SkillMode = "1",
-    FlySpeed = 2.5 -- CFrame Kayma Hızı
+    FlySpeed = 7.5 -- HIZLI UÇUŞ (Adamlara mermi gibi gider)
 }
 
 -- =============================================================
@@ -66,8 +67,8 @@ LogoStroke.Parent = ToggleLogo
 -- ANA MENÜ PENCERESİ
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 440, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -160)
+MainFrame.Size = UDim2.new(0, 440, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -180)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -178,12 +179,13 @@ local function addToggle(text, callback)
     end)
 end
 
-addToggle("👁️ Sonsuz ESP (Kutu + İsim)", function(v) Settings.ESP = v end)
+addToggle("👁️ Player ESP (Oyuncu Kutuları)", function(v) Settings.ESP = v end)
+addToggle("🍎 Fruit Spawner ESP (Meyve Gösterici)", function(v) Settings.FruitESP = v end)
 addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
-addToggle("🕊️ CFrame Auto Hunt (Uçarak Takip)", function(v) Settings.AutoHunt = v end)
+addToggle("⚡ Fast Auto Hunt (Hızlı Uçarak Avla)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- DRAWING ESP SİSTEMİ
+-- DRAWING ESP SİSTEMİ (PLAYER)
 -- =============================================================
 local ESPCache = {}
 
@@ -268,7 +270,48 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =============================================================
--- EN YAKIN OYUNCU BULUCU
+-- FRUIT ESP & SPAWNER TRACKER
+-- =============================================================
+local FruitDrawings = {}
+
+RunService.RenderStepped:Connect(function()
+    if not Settings.FruitESP then
+        for _, text in pairs(FruitDrawings) do text.Visible = false end
+        return
+    end
+
+    local myChar = LocalPlayer.Character
+    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
+
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if obj:IsA("Tool") or obj.Name:find("Fruit") or obj.Name:find("Meyve") then
+            local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part")
+            if handle then
+                if not FruitDrawings[obj] then
+                    local txt = Drawing.new("Text")
+                    txt.Size = 15
+                    txt.Center = true
+                    txt.Outline = true
+                    txt.Color = Color3.fromRGB(0, 255, 150)
+                    FruitDrawings[obj] = txt
+                end
+
+                local screenPos, onScreen = Camera:WorldToViewportPoint(handle.Position)
+                if onScreen then
+                    local dist = math.floor((handle.Position - myPos).Magnitude)
+                    FruitDrawings[obj].Text = "🍎 " .. obj.Name .. " [" .. dist .. "m]"
+                    FruitDrawings[obj].Position = Vector2.new(screenPos.X, screenPos.Y)
+                    FruitDrawings[obj].Visible = true
+                else
+                    FruitDrawings[obj].Visible = false
+                end
+            end
+        end
+    end
+end)
+
+-- =============================================================
+-- EN YAKIN OYUNCU TESPİTİ
 -- =============================================================
 local function getClosestPlayer()
     local closest, minDistance = nil, math.huge
@@ -312,19 +355,19 @@ end)
 
 local function castSkills()
     if Settings.SkillMode == "1" then
-        pressKey("Z") task.wait(0.2)
-        pressKey("X") task.wait(0.2)
-        pressKey("C") task.wait(0.2)
+        pressKey("Z") task.wait(0.18)
+        pressKey("X") task.wait(0.18)
+        pressKey("C") task.wait(0.18)
     elseif Settings.SkillMode == "2" then
-        pressKey("C") task.wait(0.2)
-        pressKey("X") task.wait(0.2)
-        pressKey("Z") task.wait(0.2)
-        pressKey("F") task.wait(0.2)
+        pressKey("C") task.wait(0.18)
+        pressKey("X") task.wait(0.18)
+        pressKey("Z") task.wait(0.18)
+        pressKey("F") task.wait(0.18)
     end
 end
 
 -- =============================================================
--- CFRAME BAZLI TAKİP VE DÖNGÜ (ANTİ-CHEAT BOSH)
+-- FAST CFRAME FLY & AUTO HUNT
 -- =============================================================
 RunService.Heartbeat:Connect(function()
     pcall(function()
@@ -342,15 +385,15 @@ RunService.Heartbeat:Connect(function()
                 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
             end
 
-            -- AUTO HUNT (CFrame Fly - Anti-Cheat Engeline Takılmaz)
+            -- FAST AUTO HUNT
             if Settings.AutoHunt then
-                myChar.Humanoid.PlatformStand = true -- Havada takılmama için fiziği devreden çıkarır
+                myChar.Humanoid.PlatformStand = true
                 
                 local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
                 local distance = (targetPos - root.Position).Magnitude
 
                 if distance > 6 then
-                    -- Adama doğru pürüzsüz CFrame kayması
+                    -- HIZLI VE DÜZ C-FRAME UÇUŞU
                     root.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
                 else
                     root.CFrame = CFrame.lookAt(root.Position, targetPos)
@@ -372,6 +415,6 @@ end)
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V1.0",
-    Text = "Uçuş mekanizması CFrame ile yenilendi! Artık takılmadan adama gidecek.",
+    Text = "Hızlı Uçuş & Fruit Spawner ESP başarıyla eklendi!",
     Duration = 5
 })
