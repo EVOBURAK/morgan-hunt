@@ -1,6 +1,6 @@
--- =============================================================
--- 🌿 MORGAN HUB V1.0 (REAL IMAGE FRUIT ESP + WORKING VISUALS) 🌿
--- =============================================================
+-- =================================================================================
+-- 🌿 MORGAN HUB V5.0 (ADVANCED LUCK MULTIPLIER & VISUAL BOOSTER) 🌿
+-- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -22,22 +23,24 @@ table.insert(Connections, LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end))
 
--- Eski GUI Temizliği
-if CoreGui:FindFirstChild("MorganHubV1") then CoreGui.MorganHubV1:Destroy() end
+-- Clear Previous GUI
+if CoreGui:FindFirstChild("MorganHubV5") then CoreGui.MorganHubV5:Destroy() end
 
--- AYARLAR
+-- SETTINGS
 local Settings = {
     ESP = false,
     FruitESP = false,
+    AutoFarm = false,
     Aimbot = false,
     AutoHunt = false,
-    FakePerms = false,
-    VisualV4 = false,
-    VisualSwords = false,
-    FlySpeed = 9.5
+    AutoStore = true,
+    LuckMultiplier = false,
+    LuckPower = 100,
+    FlySpeed = 12,
+    FarmDistance = 8
 }
 
--- MEYVE İKONLARI (ROBLOX RESİM ID'LERİ)
+-- FRUIT ICONS
 local FruitIcons = {
     ["Kitsune"] = "rbxassetid://15312061073",
     ["Dragon"] = "rbxassetid://13886869488",
@@ -75,14 +78,13 @@ local FruitIcons = {
     ["Rubber"] = "rbxassetid://13886869300",
     ["Barrier"] = "rbxassetid://13886865502"
 }
-
-local DefaultIcon = "rbxassetid://13886865768" -- Tanınmayan meyveler için varsayılan simge
+local DefaultIcon = "rbxassetid://13886865768"
 
 -- =============================================================
--- GUI MİMARİSİ
+-- GUI ARCHITECTURE
 -- =============================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MorganHubV1"
+ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
@@ -108,11 +110,11 @@ LogoStroke.Color = Color3.fromRGB(0, 255, 120)
 LogoStroke.Thickness = 2
 LogoStroke.Parent = ToggleLogo
 
--- ANA MENÜ PENCERESİ
+-- MAIN WINDOW
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 440, 0, 430)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -215)
+MainFrame.Size = UDim2.new(0, 460, 0, 470)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -235)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -136,14 +138,71 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -40, 0, 40)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🌿 MORGAN HUB V1.0"
+Title.Text = "🌿 MORGAN HUB V5.0"
 Title.TextColor3 = Color3.fromRGB(0, 255, 140)
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- DESTROY ONAY PENCERESİ
+-- INTERACTIVE ADVANCED LUCK BOOSTER GUI
+local LuckFrame = Instance.new("Frame")
+LuckFrame.Name = "LuckFrame"
+LuckFrame.Size = UDim2.new(0, 260, 0, 140)
+LuckFrame.Position = UDim2.new(0.8, -260, 0.15, 0)
+LuckFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 18)
+LuckFrame.BorderSizePixel = 0
+LuckFrame.Active = true
+LuckFrame.Draggable = true
+LuckFrame.Visible = false
+LuckFrame.Parent = ScreenGui
+
+local LuckCorner = Instance.new("UICorner")
+LuckCorner.CornerRadius = UDim.new(0, 8)
+LuckCorner.Parent = LuckFrame
+
+local LuckStroke = Instance.new("UIStroke")
+LuckStroke.Color = Color3.fromRGB(255, 215, 0)
+LuckStroke.Thickness = 2
+LuckStroke.Parent = LuckFrame
+
+local LuckTitle = Instance.new("TextLabel")
+LuckTitle.Size = UDim2.new(1, 0, 0, 30)
+LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
+LuckTitle.BackgroundTransparency = 1
+LuckTitle.Text = "🍀 LUCK RATE BOOSTER"
+LuckTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+LuckTitle.Font = Enum.Font.GothamBold
+LuckTitle.TextSize = 13
+LuckTitle.Parent = LuckFrame
+
+local LuckStatus = Instance.new("TextLabel")
+LuckStatus.Size = UDim2.new(1, 0, 0, 25)
+LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
+LuckStatus.BackgroundTransparency = 1
+LuckStatus.Text = "MULTIPLIER: 100x"
+LuckStatus.TextColor3 = Color3.fromRGB(0, 255, 120)
+LuckStatus.Font = Enum.Font.GothamBold
+LuckStatus.TextSize = 12
+LuckStatus.Parent = LuckFrame
+
+-- Dynamic Chance Calculator (Gacha Simulation Display)
+local ChanceDisplay = Instance.new("TextLabel")
+ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
+ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
+ChanceDisplay.BackgroundColor3 = Color3.fromRGB(22, 35, 26)
+ChanceDisplay.BorderSizePixel = 0
+ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
+ChanceDisplay.TextColor3 = Color3.fromRGB(255, 140, 0)
+ChanceDisplay.Font = Enum.Font.GothamMedium
+ChanceDisplay.TextSize = 11
+ChanceDisplay.Parent = LuckFrame
+
+local ChanceCorner = Instance.new("UICorner")
+ChanceCorner.CornerRadius = UDim.new(0, 6)
+ChanceCorner.Parent = ChanceDisplay
+
+-- CONFIRM DESTROY FRAME
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 16)
@@ -223,7 +282,7 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
 Layout.Parent = Container
 
-local function addToggle(text, callback)
+local function addToggle(text, defaultState, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 42)
     card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
@@ -248,7 +307,7 @@ local function addToggle(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 44, 0, 22)
     btn.Position = UDim2.new(0.86, 0, 0.24, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 45, 58)
+    btn.BackgroundColor3 = defaultState and Color3.fromRGB(0, 190, 100) or Color3.fromRGB(35, 45, 58)
     btn.BorderSizePixel = 0
     btn.Text = ""
     btn.Parent = card
@@ -259,7 +318,7 @@ local function addToggle(text, callback)
 
     local circle = Instance.new("Frame")
     circle.Size = UDim2.new(0, 16, 0, 16)
-    circle.Position = UDim2.new(0.08, 0, 0.13, 0)
+    circle.Position = defaultState and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
     circle.BackgroundColor3 = Color3.fromRGB(180, 190, 200)
     circle.BorderSizePixel = 0
     circle.Parent = btn
@@ -268,7 +327,7 @@ local function addToggle(text, callback)
     circleCorner.CornerRadius = UDim.new(0, 8)
     circleCorner.Parent = circle
 
-    local state = false
+    local state = defaultState
     btn.MouseButton1Click:Connect(function()
         state = not state
         btn.BackgroundColor3 = state and Color3.fromRGB(0, 190, 100) or Color3.fromRGB(35, 45, 58)
@@ -277,70 +336,200 @@ local function addToggle(text, callback)
     end)
 end
 
--- MENÜ ELEMANLARI
-addToggle("👁️ Player ESP (Oyuncu Kutuları)", function(v) Settings.ESP = v end)
-addToggle("🖼️ Resimli Fruit ESP (Gerçek İkonlar)", function(v) Settings.FruitESP = v end)
+local function addSlider(text, min, max, default, callback)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0.98, 0, 0, 50)
+    card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
+    card.BorderSizePixel = 0
+    card.Parent = Container
 
--- GELİŞMİŞ VISUAL V4 TRANSFORM DÖNÜŞÜMÜ
-addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v) 
-    Settings.VisualV4 = v
-    local char = LocalPlayer.Character
-    if not char then return end
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 6)
+    cardCorner.Parent = card
 
-    if v then
-        local hl = char:FindFirstChild("V4Highlight") or Instance.new("Highlight")
-        hl.Name = "V4Highlight"
-        hl.FillColor = Color3.fromRGB(255, 30, 60)
-        hl.OutlineColor = Color3.fromRGB(255, 215, 0)
-        hl.FillTransparency = 0.3
-        hl.OutlineTransparency = 0
-        hl.Parent = char
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 0.5, 0)
+    label.Position = UDim2.new(0.04, 0, 0.08, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(210, 225, 240)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = card
 
-        pcall(function()
-            char.Humanoid.BodyHeightScale.Value = 1.25
-            char.Humanoid.BodyWidthScale.Value = 1.25
-        end)
-    else
-        if char:FindFirstChild("V4Highlight") then char.V4Highlight:Destroy() end
-        pcall(function()
-            char.Humanoid.BodyHeightScale.Value = 1
-            char.Humanoid.BodyWidthScale.Value = 1
-        end)
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.2, 0, 0.5, 0)
+    valueLabel.Position = UDim2.new(0.76, 0, 0.08, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(default)
+    valueLabel.TextColor3 = Color3.fromRGB(0, 255, 140)
+    valueLabel.Font = Enum.Font.GothamBold
+    valueLabel.TextSize = 13
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = card
+
+    local sliderBg = Instance.new("TextButton")
+    sliderBg.Size = UDim2.new(0.92, 0, 0, 8)
+    sliderBg.Position = UDim2.new(0.04, 0, 0.65, 0)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(35, 45, 58)
+    sliderBg.BorderSizePixel = 0
+    sliderBg.Text = ""
+    sliderBg.Parent = card
+
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(0, 4)
+    sliderCorner.Parent = sliderBg
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 255, 140)
+    fill.BorderSizePixel = 0
+    fill.Parent = sliderBg
+
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 4)
+    fillCorner.Parent = fill
+
+    local dragging = false
+    local function update(input)
+        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        local val = math.floor(min + ((max - min) * pos))
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        valueLabel.Text = tostring(val)
+        pcall(callback, val)
     end
-end)
 
--- VISUAL SWORDS
-local function createFakeTool(name, color)
-    local tool = Instance.new("Tool")
-    tool.Name = name .. " (Visual)"
-    tool.RequiresHandle = true
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input)
+        end
+    end)
 
-    local handle = Instance.new("Part")
-    handle.Name = "Handle"
-    handle.Size = Vector3.new(0.5, 5, 0.8)
-    handle.Color = color
-    handle.Material = Enum.Material.Neon
-    handle.Parent = tool
+    sliderBg.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
 
-    return tool
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input)
+        end
+    end)
 end
 
-addToggle("⚔️ Fake Dark Blade & Triple DB", function(v) 
-    Settings.VisualSwords = v 
-    if v then
-        local backpack = LocalPlayer:FindFirstChild("Backpack")
-        if backpack then
-            createFakeTool("Dark Blade", Color3.fromRGB(0, 255, 120)).Parent = backpack
-            createFakeTool("Triple Dark Blade", Color3.fromRGB(255, 0, 80)).Parent = backpack
-        end
-    end
+-- MENU ITEMS
+addToggle("🍀 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
+    Settings.LuckMultiplier = v
+    LuckFrame.Visible = v
+end)
+addSlider("🍀 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
+    Settings.LuckPower = v
+    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
+    local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
+    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
 end)
 
-addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
-addToggle("⚡ Fast Auto Hunt (Hızlı Uçuş)", function(v) Settings.AutoHunt = v end)
+addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
+addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+
+-- SETTINGS SECTION
+addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
 -- =============================================================
--- GERÇEK RESİMLİ FRUIT ESP SİSTEMİ (IMAGE LOGO + DISTANCE)
+-- AUTO STORE FRUIT ENGINE
+-- =============================================================
+local function storeFruit(tool)
+    if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
+    if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
+        pcall(function()
+            local args = {
+                [1] = "StoreFruit",
+                [2] = tool.Name,
+                [3] = tool
+            }
+            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
+        end)
+    end
+end
+
+table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
+    char.ChildAdded:Connect(storeFruit)
+end))
+if LocalPlayer.Character then
+    LocalPlayer.Character.ChildAdded:Connect(storeFruit)
+end
+
+table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
+    task.wait(0.5)
+    storeFruit(tool)
+end))
+
+-- =============================================================
+-- AUTO FARM ENGINE
+-- =============================================================
+local function getClosestEnemy()
+    local closest, minDistance = nil, math.huge
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = myChar.HumanoidRootPart.Position
+
+    local enemies = Workspace:FindFirstChild("Enemies") or Workspace
+    for _, enemy in pairs(enemies:GetChildren()) do
+        if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            if not Players:GetPlayerFromCharacter(enemy) then
+                local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
+                if dist < minDistance then
+                    minDistance = dist
+                    closest = enemy
+                end
+            end
+        end
+    end
+    return closest
+end
+
+table.insert(Connections, RunService.Heartbeat:Connect(function()
+    if not Settings.AutoFarm then return end
+
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
+        local root = myChar.HumanoidRootPart
+
+        local enemy = getClosestEnemy()
+        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
+            myChar.Humanoid.PlatformStand = true
+
+            local tool = myChar:FindFirstChildOfClass("Tool")
+            if not tool then
+                local backpack = LocalPlayer:FindFirstChild("Backpack")
+                if backpack then
+                    local weapon = backpack:FindFirstChildOfClass("Tool")
+                    if weapon then myChar.Humanoid:EquipTool(weapon) end
+                end
+            end
+
+            local enemyPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+            root.CFrame = CFrame.lookAt(enemyPos, enemy.HumanoidRootPart.Position)
+
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new(500, 500))
+        else
+            myChar.Humanoid.PlatformStand = false
+        end
+    end)
+end))
+
+-- =============================================================
+-- IMAGE FRUIT ESP ENGINE
 -- =============================================================
 local FruitBillboards = {}
 
@@ -365,7 +554,6 @@ local function createFruitESP(obj)
     bb.Size = UDim2.new(0, 65, 0, 80)
     bb.AlwaysOnTop = true
 
-    -- Meyvenin Kendi Orijinal Logosu (Resim)
     local img = Instance.new("ImageLabel")
     img.Size = UDim2.new(0, 48, 0, 48)
     img.Position = UDim2.new(0.5, -24, 0, 0)
@@ -373,7 +561,6 @@ local function createFruitESP(obj)
     img.Image = getFruitImage(obj.Name)
     img.Parent = bb
 
-    -- Meyve Adı ve Metre Yazısı
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 0.35, 0)
     textLabel.Position = UDim2.new(0, 0, 0.65, 0)
@@ -419,7 +606,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
 end))
 
 -- =============================================================
--- DRAWING PLAYER ESP SİSTEMİ
+-- DRAWING PLAYER ESP ENGINE
 -- =============================================================
 local ESPCache = {}
 
@@ -499,7 +686,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
 end))
 
 -- =============================================================
--- EN YAKIN OYUNCU TESPİTİ & FAST FLY / AIMBOT ENGINE
+-- AIMBOT & AUTO BOUNTY HUNT ENGINE
 -- =============================================================
 local function getClosestPlayer()
     local closest, minDistance = nil, math.huge
@@ -547,11 +734,11 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                     VirtualUser:CaptureController()
                     VirtualUser:ClickButton1(Vector2.new(500, 500))
                 end
-            else
+            elseif not Settings.AutoFarm then
                 myChar.Humanoid.PlatformStand = false
             end
         else
-            if Settings.AutoHunt then
+            if Settings.AutoHunt and not Settings.AutoFarm then
                 myChar.Humanoid.PlatformStand = false
             end
         end
@@ -560,20 +747,15 @@ end))
 
 -- DESTROY FUNCTION
 YesBtn.MouseButton1Click:Connect(function()
+    Settings.AutoFarm = false
     Settings.AutoHunt = false
     Settings.ESP = false
     Settings.FruitESP = false
-    Settings.FakePerms = false
-    Settings.VisualV4 = false
-    Settings.VisualSwords = false
+    Settings.AutoStore = false
+    Settings.LuckMultiplier = false
 
-    if LocalPlayer.Character then
-        if LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.PlatformStand = false
-        end
-        if LocalPlayer.Character:FindFirstChild("V4Highlight") then
-            LocalPlayer.Character.V4Highlight:Destroy()
-        end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.PlatformStand = false
     end
 
     for _, conn in pairs(Connections) do conn:Disconnect() end
@@ -588,3 +770,10 @@ YesBtn.MouseButton1Click:Connect(function()
 
     ScreenGui:Destroy()
 end)
+
+-- NOTIFICATION
+game.StarterGui:SetCore("SendNotification", {
+    Title = "🌿 MORGAN HUB V5.0",
+    Text = "Luck Booster & Live Slider UI Loaded!",
+    Duration = 4
+})
