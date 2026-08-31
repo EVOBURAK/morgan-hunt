@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (FAST FLY + FRUIT ESP & TRACKER) 🌿
+-- 🌿 MORGAN HUB V1.0 (VISUAL V4 + FAKE DB/TDB + FLY + ESP) 🌿
 -- =============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -14,14 +14,16 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+local Connections = {}
+
 -- Anti-AFK
-LocalPlayer.Idled:Connect(function()
+table.insert(Connections, LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Down(Vector2.new(0, 0), Camera.CFrame)
     task.wait(1)
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
-end)
+end))
 
--- Temizlik
+-- Eski GUI Temizliği
 if CoreGui:FindFirstChild("MorganHubV1") then CoreGui.MorganHubV1:Destroy() end
 
 -- AYARLAR
@@ -30,8 +32,11 @@ local Settings = {
     FruitESP = false,
     Aimbot = false,
     AutoHunt = false,
+    FakePerms = false,
+    VisualV4 = false,
+    VisualSwords = false,
     SkillMode = "1",
-    FlySpeed = 7.5 -- HIZLI UÇUŞ (Adamlara mermi gibi gider)
+    FlySpeed = 9.5
 }
 
 -- =============================================================
@@ -67,8 +72,8 @@ LogoStroke.Parent = ToggleLogo
 -- ANA MENÜ PENCERESİ
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 440, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 440, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -210)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -99,6 +104,58 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
+-- ONAY KUTUSU (ARE YOU SURE DESTROY)
+local ConfirmFrame = Instance.new("Frame")
+ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
+ConfirmFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 16)
+ConfirmFrame.BackgroundTransparency = 0.1
+ConfirmFrame.Visible = false
+ConfirmFrame.ZIndex = 10
+ConfirmFrame.Parent = MainFrame
+
+local ConfirmCorner = Instance.new("UICorner")
+ConfirmCorner.CornerRadius = UDim.new(0, 10)
+ConfirmCorner.Parent = ConfirmFrame
+
+local ConfirmText = Instance.new("TextLabel")
+ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
+ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
+ConfirmText.BackgroundTransparency = 1
+ConfirmText.Text = "Are you sure you want to destroy GUI?"
+ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
+ConfirmText.Font = Enum.Font.GothamBold
+ConfirmText.TextSize = 15
+ConfirmText.ZIndex = 11
+ConfirmText.Parent = ConfirmFrame
+
+local YesBtn = Instance.new("TextButton")
+YesBtn.Size = UDim2.new(0, 100, 0, 35)
+YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
+YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+YesBtn.Text = "YES"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.ZIndex = 11
+YesBtn.Parent = ConfirmFrame
+
+local YesCorner = Instance.new("UICorner")
+YesCorner.CornerRadius = UDim.new(0, 6)
+YesCorner.Parent = YesBtn
+
+local NoBtn = Instance.new("TextButton")
+NoBtn.Size = UDim2.new(0, 100, 0, 35)
+NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
+NoBtn.BackgroundColor3 = Color3.fromRGB(50, 60, 75)
+NoBtn.Text = "NO"
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.ZIndex = 11
+NoBtn.Parent = ConfirmFrame
+
+local NoCorner = Instance.new("UICorner")
+NoCorner.CornerRadius = UDim.new(0, 6)
+NoCorner.Parent = NoBtn
+
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
 CloseBtn.Position = UDim2.new(1, -32, 0, 7)
@@ -112,7 +169,9 @@ CloseBtn.Parent = MainFrame
 local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseBtn
-CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+
+CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
+NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
 
 local Container = Instance.new("ScrollingFrame")
 Container.Size = UDim2.new(1, -20, 1, -50)
@@ -180,12 +239,80 @@ local function addToggle(text, callback)
 end
 
 addToggle("👁️ Player ESP (Oyuncu Kutuları)", function(v) Settings.ESP = v end)
-addToggle("🍎 Fruit Spawner ESP (Meyve Gösterici)", function(v) Settings.FruitESP = v end)
+addToggle("🍎 Fruit Spawner ESP (Meyve Bulucu)", function(v) Settings.FruitESP = v end)
+addToggle("🍇 Fake All Perm Fruits (Görsel Permler)", function(v) Settings.FakePerms = v end)
+addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v) 
+    Settings.VisualV4 = v
+    if v then
+        game.StarterGui:SetCore("SendNotification", {Title = "Visual V4", Text = "Görsel V4 Dönüşümü Aktif!", Duration = 3})
+    end
+end)
+addToggle("⚔️ Fake Dark Blade & Triple DB", function(v) 
+    Settings.VisualSwords = v 
+    if v then
+        pcall(function()
+            local backpack = LocalPlayer:FindFirstChild("Backpack")
+            if backpack then
+                local db = Instance.new("Tool")
+                db.Name = "Dark Blade (Visual)"
+                db.Parent = backpack
+
+                local tdb = Instance.new("Tool")
+                tdb.Name = "Triple Dark Blade (Visual)"
+                tdb.Parent = backpack
+            end
+        end)
+        game.StarterGui:SetCore("SendNotification", {Title = "Fake Swords", Text = "Dark Blade & Triple DB Envantere Eklendi!", Duration = 3})
+    end
+end)
 addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
-addToggle("⚡ Fast Auto Hunt (Hızlı Uçarak Avla)", function(v) Settings.AutoHunt = v end)
+addToggle("⚡ Fast Auto Hunt (Hızlı Uçuş)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- DRAWING ESP SİSTEMİ (PLAYER)
+-- VISUAL V4 & FAKE SWORDS / PERMS ENGINE
+-- =============================================================
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    pcall(function()
+        -- Fake Perms UI
+        if Settings.FakePerms then
+            local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+            if playerGui then
+                for _, v in pairs(playerGui:GetDescendants()) do
+                    if v.Name == "Locked" or v.Name == "Lock" then
+                        v.Visible = false
+                    elseif v.Name == "BuyPerm" or v.Name == "Buy" then
+                        if v:IsA("TextLabel") or v:IsA("TextButton") then
+                            v.Text = "OWNED (PERM)"
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Visual V4 Effect
+        if Settings.VisualV4 then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                if not char:FindFirstChild("V4AuraEffect") then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "V4AuraEffect"
+                    highlight.FillColor = Color3.fromRGB(255, 0, 70)
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    highlight.FillTransparency = 0.5
+                    highlight.Parent = char
+                end
+            end
+        else
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("V4AuraEffect") then
+                char.V4AuraEffect:Destroy()
+            end
+        end
+    end)
+end))
+
+-- =============================================================
+-- DRAWING ESP SİSTEMİ
 -- =============================================================
 local ESPCache = {}
 
@@ -224,10 +351,10 @@ local function removeESP(targetPlayer)
 end
 
 for _, p in pairs(Players:GetPlayers()) do createESP(p) end
-Players.PlayerAdded:Connect(createESP)
-Players.PlayerRemoving:Connect(removeESP)
+table.insert(Connections, Players.PlayerAdded:Connect(createESP))
+table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
-RunService.RenderStepped:Connect(function()
+table.insert(Connections, RunService.RenderStepped:Connect(function()
     for targetPlayer, esp in pairs(ESPCache) do
         local char = targetPlayer.Character
         if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
@@ -267,14 +394,14 @@ RunService.RenderStepped:Connect(function()
             esp.Text.Visible = false
         end
     end
-end)
+end))
 
 -- =============================================================
--- FRUIT ESP & SPAWNER TRACKER
+-- FRUIT ESP
 -- =============================================================
 local FruitDrawings = {}
 
-RunService.RenderStepped:Connect(function()
+table.insert(Connections, RunService.RenderStepped:Connect(function()
     if not Settings.FruitESP then
         for _, text in pairs(FruitDrawings) do text.Visible = false end
         return
@@ -308,7 +435,7 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
-end)
+end))
 
 -- =============================================================
 -- EN YAKIN OYUNCU TESPİTİ
@@ -342,7 +469,7 @@ local function pressKey(key)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
 end
 
-UserInputService.InputBegan:Connect(function(input, gpe)
+table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode == Enum.KeyCode.One then
         Settings.SkillMode = "1"
@@ -351,25 +478,25 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         Settings.SkillMode = "2"
         game.StarterGui:SetCore("SendNotification", {Title = "Skill Modu", Text = "Mod 2 (C, X, Z, F) Aktif", Duration = 2})
     end
-end)
+end))
 
 local function castSkills()
     if Settings.SkillMode == "1" then
-        pressKey("Z") task.wait(0.18)
-        pressKey("X") task.wait(0.18)
-        pressKey("C") task.wait(0.18)
+        pressKey("Z") task.wait(0.15)
+        pressKey("X") task.wait(0.15)
+        pressKey("C") task.wait(0.15)
     elseif Settings.SkillMode == "2" then
-        pressKey("C") task.wait(0.18)
-        pressKey("X") task.wait(0.18)
-        pressKey("Z") task.wait(0.18)
-        pressKey("F") task.wait(0.18)
+        pressKey("C") task.wait(0.15)
+        pressKey("X") task.wait(0.15)
+        pressKey("Z") task.wait(0.15)
+        pressKey("F") task.wait(0.15)
     end
 end
 
 -- =============================================================
--- FAST CFRAME FLY & AUTO HUNT
+-- FAST PIVOT/CFRAME UÇUŞ ENGINE
 -- =============================================================
-RunService.Heartbeat:Connect(function()
+table.insert(Connections, RunService.Heartbeat:Connect(function()
     pcall(function()
         local myChar = LocalPlayer.Character
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
@@ -385,18 +512,18 @@ RunService.Heartbeat:Connect(function()
                 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
             end
 
-            -- FAST AUTO HUNT
+            -- FAST FLY
             if Settings.AutoHunt then
                 myChar.Humanoid.PlatformStand = true
-                
+
                 local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
                 local distance = (targetPos - root.Position).Magnitude
 
                 if distance > 6 then
-                    -- HIZLI VE DÜZ C-FRAME UÇUŞU
-                    root.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
+                    local newCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
+                    myChar:PivotTo(newCFrame)
                 else
-                    root.CFrame = CFrame.lookAt(root.Position, targetPos)
+                    myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
                     VirtualUser:CaptureController()
                     VirtualUser:ClickButton1(Vector2.new(500, 500))
                     castSkills()
@@ -410,11 +537,53 @@ RunService.Heartbeat:Connect(function()
             end
         end
     end)
+end))
+
+-- =============================================================
+-- DESTROY FUNCTION (YES BUTONUNA BASINCA)
+-- =============================================================
+YesBtn.MouseButton1Click:Connect(function()
+    Settings.AutoHunt = false
+    Settings.ESP = false
+    Settings.FruitESP = false
+    Settings.FakePerms = false
+    Settings.VisualV4 = false
+    Settings.VisualSwords = false
+
+    if LocalPlayer.Character then
+        if LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.PlatformStand = false
+        end
+        if LocalPlayer.Character:FindFirstChild("V4AuraEffect") then
+            LocalPlayer.Character.V4AuraEffect:Destroy()
+        end
+    end
+
+    for _, conn in pairs(Connections) do
+        conn:Disconnect()
+    end
+
+    for _, esp in pairs(ESPCache) do
+        esp.BoxOutline:Remove()
+        esp.Box:Remove()
+        esp.Text:Remove()
+    end
+    for _, txt in pairs(FruitDrawings) do
+        txt:Remove()
+    end
+
+    ScreenGui:Destroy()
+
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "🌿 MORGAN HUB",
+        Text = "Script tamamen kapatıldı ve temizlendi!",
+        Duration = 3
+    })
 end)
 
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V1.0",
-    Text = "Hızlı Uçuş & Fruit Spawner ESP başarıyla eklendi!",
-    Duration = 5
+    Text = "Visual V4 & Fake DB / Triple DB menüye eklendi!",
+    Duration = 4
 })
