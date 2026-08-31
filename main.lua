@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (PRO DEFINITIVE EDITION - FIXED) 🌿
+-- 🌿 MORGAN HUB V1.0 (PRO DEFINITIVE - CFRAME FLY FIX) 🌿
 -- =============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -21,9 +21,8 @@ LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end)
 
--- Eski GUI ve ESP Temizliği
+-- Eski GUI Temizliği
 if CoreGui:FindFirstChild("MorganHubV1") then CoreGui.MorganHubV1:Destroy() end
-if CoreGui:FindFirstChild("MorganESP") then CoreGui.MorganESP:Destroy() end
 
 -- AYARLAR
 local Settings = {
@@ -31,7 +30,7 @@ local Settings = {
     Aimbot = false,
     AutoHunt = false,
     SkillMode = "1",
-    FlySpeed = 65
+    FlySpeed = 2.5 -- CFrame Kayma Hızı
 }
 
 -- =============================================================
@@ -181,10 +180,10 @@ end
 
 addToggle("👁️ Sonsuz ESP (Kutu + İsim)", function(v) Settings.ESP = v end)
 addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
-addToggle("🕊️ Yavaş Uçarak Takip Et (Hunt)", function(v) Settings.AutoHunt = v end)
+addToggle("🕊️ CFrame Auto Hunt (Uçarak Takip)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- SONSUZ MESAFELİ KUSURSUZ ESP (DRAWING ENGINE)
+-- DRAWING ESP SİSTEMİ
 -- =============================================================
 local ESPCache = {}
 
@@ -269,7 +268,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =============================================================
--- EN YAKIN OYUNCU TESPİTİ
+-- EN YAKIN OYUNCU BULUCU
 -- =============================================================
 local function getClosestPlayer()
     local closest, minDistance = nil, math.huge
@@ -290,7 +289,7 @@ local function getClosestPlayer()
 end
 
 -- =============================================================
--- SKİLL VE KOMBO SİSTEMİ (1 VE 2 TUŞLARI)
+-- SKİLL VE SALDIRI MEKANİZMASI
 -- =============================================================
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
@@ -313,98 +312,66 @@ end)
 
 local function castSkills()
     if Settings.SkillMode == "1" then
-        pressKey("Z") task.wait(0.25)
-        pressKey("X") task.wait(0.25)
-        pressKey("C") task.wait(0.25)
+        pressKey("Z") task.wait(0.2)
+        pressKey("X") task.wait(0.2)
+        pressKey("C") task.wait(0.2)
     elseif Settings.SkillMode == "2" then
-        pressKey("C") task.wait(0.25)
-        pressKey("X") task.wait(0.25)
-        pressKey("Z") task.wait(0.25)
-        pressKey("F") task.wait(0.25)
+        pressKey("C") task.wait(0.2)
+        pressKey("X") task.wait(0.2)
+        pressKey("Z") task.wait(0.2)
+        pressKey("F") task.wait(0.2)
     end
 end
 
 -- =============================================================
--- UÇUŞ FİZİĞİ (SMOOTH FLY ENGINE)
+-- CFRAME BAZLI TAKİP VE DÖNGÜ (ANTİ-CHEAT BOSH)
 -- =============================================================
-local flyVelocity = nil
-local flyGyro = nil
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
+        local root = myChar.HumanoidRootPart
 
-local function updateFlyPhysics(enable)
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local root = char.HumanoidRootPart
+        local target = getClosestPlayer()
 
-    if enable then
-        if not flyVelocity then
-            flyVelocity = Instance.new("BodyVelocity")
-            flyVelocity.MaxForce = Vector3.new(1,1,1) * 10000000
-            flyVelocity.Velocity = Vector3.zero
-            flyVelocity.Parent = root
-        end
-        if not flyGyro then
-            flyGyro = Instance.new("BodyGyro")
-            flyGyro.MaxTorque = Vector3.new(1,1,1) * 10000000
-            flyGyro.CFrame = root.CFrame
-            flyGyro.Parent = root
-        end
-    else
-        if flyVelocity then flyVelocity:Destroy() flyVelocity = nil end
-        if flyGyro then flyGyro:Destroy() flyGyro = nil end
-    end
-end
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local targetRoot = target.Character.HumanoidRootPart
 
--- =============================================================
--- ANA TAKİP DÖNGÜSÜ
--- =============================================================
-task.spawn(function()
-    while task.wait(0.03) do
-        pcall(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local root = char.HumanoidRootPart
+            -- AIMBOT
+            if Settings.Aimbot then
+                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
+            end
 
-            local target = getClosestPlayer()
+            -- AUTO HUNT (CFrame Fly - Anti-Cheat Engeline Takılmaz)
+            if Settings.AutoHunt then
+                myChar.Humanoid.PlatformStand = true -- Havada takılmama için fiziği devreden çıkarır
+                
+                local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
+                local distance = (targetPos - root.Position).Magnitude
 
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                local targetRoot = target.Character.HumanoidRootPart
-
-                -- AIMBOT: Kamerayı adama kilitle
-                if Settings.Aimbot then
-                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
-                end
-
-                -- AUTO HUNT: Uçarak git ve vur
-                if Settings.AutoHunt then
-                    updateFlyPhysics(true)
-                    local targetPos = targetRoot.Position + Vector3.new(0, 3, 0)
-                    local dir = (targetPos - root.Position)
-                    local dist = dir.Magnitude
-
-                    if dist > 7 then
-                        flyVelocity.Velocity = dir.Unit * Settings.FlySpeed
-                        flyGyro.CFrame = CFrame.lookAt(root.Position, targetPos)
-                    else
-                        flyVelocity.Velocity = Vector3.zero
-                        flyGyro.CFrame = CFrame.lookAt(root.Position, targetPos)
-
-                        VirtualUser:CaptureController()
-                        VirtualUser:ClickButton1(Vector2.new(500, 500))
-                        castSkills()
-                    end
+                if distance > 6 then
+                    -- Adama doğru pürüzsüz CFrame kayması
+                    root.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
                 else
-                    updateFlyPhysics(false)
+                    root.CFrame = CFrame.lookAt(root.Position, targetPos)
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton1(Vector2.new(500, 500))
+                    castSkills()
                 end
             else
-                updateFlyPhysics(false)
+                myChar.Humanoid.PlatformStand = false
             end
-        end)
-    end
+        else
+            if Settings.AutoHunt then
+                myChar.Humanoid.PlatformStand = false
+            end
+        end
+    end)
 end)
 
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V1.0",
-    Text = "Kod sıfırdan tamamen optimize edildi ve sorunsuz hale getirildi!",
+    Text = "Uçuş mekanizması CFrame ile yenilendi! Artık takılmadan adama gidecek.",
     Duration = 5
 })
