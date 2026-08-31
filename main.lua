@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (ULTRA LOGO FRUIT ESP + WORKING V4 & SWORDS) 🌿
+-- 🌿 MORGAN HUB V1.0 (REAL IMAGE FRUIT ESP + WORKING VISUALS) 🌿
 -- =============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -7,11 +7,8 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -37,9 +34,49 @@ local Settings = {
     FakePerms = false,
     VisualV4 = false,
     VisualSwords = false,
-    SkillMode = "1",
     FlySpeed = 9.5
 }
+
+-- MEYVE İKONLARI (ROBLOX RESİM ID'LERİ)
+local FruitIcons = {
+    ["Kitsune"] = "rbxassetid://15312061073",
+    ["Dragon"] = "rbxassetid://13886869488",
+    ["Leopard"] = "rbxassetid://13886867744",
+    ["Dough"] = "rbxassetid://13886866168",
+    ["T-Rex"] = "rbxassetid://15682970597",
+    ["Mammoth"] = "rbxassetid://14930198642",
+    ["Spirit"] = "rbxassetid://13886869850",
+    ["Venom"] = "rbxassetid://13886870244",
+    ["Shadow"] = "rbxassetid://13886869634",
+    ["Blizzard"] = "rbxassetid://13886865660",
+    ["Gravity"] = "rbxassetid://13886867420",
+    ["Portal"] = "rbxassetid://13886869150",
+    ["Rumble"] = "rbxassetid://13886869348",
+    ["Buddha"] = "rbxassetid://13886865890",
+    ["Love"] = "rbxassetid://13886868018",
+    ["Spider"] = "rbxassetid://13886869976",
+    ["Sound"] = "rbxassetid://14930200871",
+    ["Magma"] = "rbxassetid://13886868420",
+    ["Ice"] = "rbxassetid://13886867566",
+    ["Light"] = "rbxassetid://13886867888",
+    ["Flame"] = "rbxassetid://13886866872",
+    ["Rocket"] = "rbxassetid://13886869246",
+    ["Spin"] = "rbxassetid://13886870104",
+    ["Blade"] = "rbxassetid://13886866580",
+    ["Spring"] = "rbxassetid://13886870176",
+    ["Bomb"] = "rbxassetid://13886865768",
+    ["Smoke"] = "rbxassetid://13886869752",
+    ["Spike"] = "rbxassetid://13886870034",
+    ["Falcon"] = "rbxassetid://13886866708",
+    ["Sand"] = "rbxassetid://13886869528",
+    ["Dark"] = "rbxassetid://13886866034",
+    ["Diamond"] = "rbxassetid://13886866360",
+    ["Ghost"] = "rbxassetid://15082498716",
+    ["Rubber"] = "rbxassetid://13886869300",
+    ["Barrier"] = "rbxassetid://13886865502"
+}
+
+local DefaultIcon = "rbxassetid://13886865768" -- Tanınmayan meyveler için varsayılan simge
 
 -- =============================================================
 -- GUI MİMARİSİ
@@ -242,8 +279,7 @@ end
 
 -- MENÜ ELEMANLARI
 addToggle("👁️ Player ESP (Oyuncu Kutuları)", function(v) Settings.ESP = v end)
-addToggle("🍎 Logolu Fruit ESP (Meyve Bulucu)", function(v) Settings.FruitESP = v end)
-addToggle("🍇 Fake All Perm Fruits (Dükkanda Perm Aç)", function(v) Settings.FakePerms = v end)
+addToggle("🖼️ Resimli Fruit ESP (Gerçek İkonlar)", function(v) Settings.FruitESP = v end)
 
 -- GELİŞMİŞ VISUAL V4 TRANSFORM DÖNÜŞÜMÜ
 addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v) 
@@ -252,7 +288,6 @@ addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v)
     if not char then return end
 
     if v then
-        -- Kırmızı Parıldayan Aura
         local hl = char:FindFirstChild("V4Highlight") or Instance.new("Highlight")
         hl.Name = "V4Highlight"
         hl.FillColor = Color3.fromRGB(255, 30, 60)
@@ -261,13 +296,10 @@ addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v)
         hl.OutlineTransparency = 0
         hl.Parent = char
 
-        -- Karakter Boyutunu V4 Gibi Hafif Büyütme (Client-Side)
         pcall(function()
             char.Humanoid.BodyHeightScale.Value = 1.25
             char.Humanoid.BodyWidthScale.Value = 1.25
         end)
-
-        game.StarterGui:SetCore("SendNotification", {Title = "Visual V4", Text = "V4 Dönüşüm Efekti Aktif!", Duration = 3})
     else
         if char:FindFirstChild("V4Highlight") then char.V4Highlight:Destroy() end
         pcall(function()
@@ -277,7 +309,7 @@ addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v)
     end
 end)
 
--- 3D MODEL VE IKONLU GELİŞMİŞ FAKE SWORDS
+-- VISUAL SWORDS
 local function createFakeTool(name, color)
     local tool = Instance.new("Tool")
     tool.Name = name .. " (Visual)"
@@ -290,10 +322,6 @@ local function createFakeTool(name, color)
     handle.Material = Enum.Material.Neon
     handle.Parent = tool
 
-    local mesh = Instance.new("SpecialMesh")
-    mesh.MeshType = Enum.MeshType.Brick
-    mesh.Parent = handle
-
     return tool
 end
 
@@ -302,13 +330,9 @@ addToggle("⚔️ Fake Dark Blade & Triple DB", function(v)
     if v then
         local backpack = LocalPlayer:FindFirstChild("Backpack")
         if backpack then
-            local db = createFakeTool("Dark Blade", Color3.fromRGB(0, 255, 120))
-            db.Parent = backpack
-
-            local tdb = createFakeTool("Triple Dark Blade", Color3.fromRGB(255, 0, 80))
-            tdb.Parent = backpack
+            createFakeTool("Dark Blade", Color3.fromRGB(0, 255, 120)).Parent = backpack
+            createFakeTool("Triple Dark Blade", Color3.fromRGB(255, 0, 80)).Parent = backpack
         end
-        game.StarterGui:SetCore("SendNotification", {Title = "Fake Swords", Text = "Dark Blade ve TDB Eline Alınabilir Şekilde Eklendi!", Duration = 3})
     end
 end)
 
@@ -316,9 +340,18 @@ addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
 addToggle("⚡ Fast Auto Hunt (Hızlı Uçuş)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- LOGOLU FRUIT ESP ENGINE (🍎 DEV LOGO + İSİM + METRE)
+-- GERÇEK RESİMLİ FRUIT ESP SİSTEMİ (IMAGE LOGO + DISTANCE)
 -- =============================================================
 local FruitBillboards = {}
+
+local function getFruitImage(fruitName)
+    for name, iconId in pairs(FruitIcons) do
+        if fruitName:lower():find(name:lower()) then
+            return iconId
+        end
+    end
+    return DefaultIcon
+end
 
 local function createFruitESP(obj)
     if FruitBillboards[obj] then return end
@@ -329,27 +362,26 @@ local function createFruitESP(obj)
     local bb = Instance.new("BillboardGui")
     bb.Name = "FruitESPLogo"
     bb.Adornee = handle
-    bb.Size = UDim2.new(0, 180, 0, 70)
+    bb.Size = UDim2.new(0, 65, 0, 80)
     bb.AlwaysOnTop = true
 
-    -- Meyve Logosu (Dev 🍎 İkonu)
-    local logoLabel = Instance.new("TextLabel")
-    logoLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    logoLabel.Position = UDim2.new(0, 0, 0, 0)
-    logoLabel.BackgroundTransparency = 1
-    logoLabel.Text = "🍎"
-    logoLabel.TextSize = 28
-    logoLabel.Parent = bb
+    -- Meyvenin Kendi Orijinal Logosu (Resim)
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(0, 48, 0, 48)
+    img.Position = UDim2.new(0.5, -24, 0, 0)
+    img.BackgroundTransparency = 1
+    img.Image = getFruitImage(obj.Name)
+    img.Parent = bb
 
-    -- Meyve Adı ve Mesafesi
+    -- Meyve Adı ve Metre Yazısı
     local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    textLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    textLabel.Size = UDim2.new(1, 0, 0.35, 0)
+    textLabel.Position = UDim2.new(0, 0, 0.65, 0)
     textLabel.BackgroundTransparency = 1
     textLabel.Text = obj.Name
-    textLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+    textLabel.TextColor3 = Color3.fromRGB(0, 255, 140)
     textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextSize = 13
+    textLabel.TextSize = 11
     textLabel.TextStrokeTransparency = 0
     textLabel.Parent = bb
 
@@ -397,12 +429,10 @@ local function createESP(targetPlayer)
     local boxOutline = Drawing.new("Square")
     boxOutline.Thickness = 3
     boxOutline.Color = Color3.fromRGB(0, 0, 0)
-    boxOutline.Filled = false
 
     local box = Drawing.new("Square")
     box.Thickness = 1
     box.Color = Color3.fromRGB(255, 40, 40)
-    box.Filled = false
 
     local text = Drawing.new("Text")
     text.Size = 14
@@ -500,15 +530,12 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             local targetRoot = target.Character.HumanoidRootPart
 
-            -- AIMBOT
             if Settings.Aimbot then
                 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
             end
 
-            -- FAST FLY
             if Settings.AutoHunt then
                 myChar.Humanoid.PlatformStand = true
-
                 local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
                 local distance = (targetPos - root.Position).Magnitude
 
@@ -531,9 +558,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end)
 end))
 
--- =============================================================
--- DESTROY FUNCTION (YES BUTONUNA BASINCA)
--- =============================================================
+-- DESTROY FUNCTION
 YesBtn.MouseButton1Click:Connect(function()
     Settings.AutoHunt = false
     Settings.ESP = false
@@ -551,10 +576,7 @@ YesBtn.MouseButton1Click:Connect(function()
         end
     end
 
-    for _, conn in pairs(Connections) do
-        conn:Disconnect()
-    end
-
+    for _, conn in pairs(Connections) do conn:Disconnect() end
     for _, esp in pairs(ESPCache) do
         esp.BoxOutline:Remove()
         esp.Box:Remove()
@@ -565,17 +587,4 @@ YesBtn.MouseButton1Click:Connect(function()
     end
 
     ScreenGui:Destroy()
-
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "🌿 MORGAN HUB",
-        Text = "Script tamamen kapatıldı ve temizlendi!",
-        Duration = 3
-    })
 end)
-
--- BİLDİRİM
-game.StarterGui:SetCore("SendNotification", {
-    Title = "🌿 MORGAN HUB V1.0",
-    Text = "🍎 Logolu Fruit ESP ve Tüm Visual Sistemler Hazır!",
-    Duration = 4
-})
