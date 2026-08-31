@@ -1,5 +1,5 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (VISUAL V4 + FAKE DB/TDB + FLY + ESP) 🌿
+-- 🌿 MORGAN HUB V1.0 (REAL CLIENT-SIDE V4, TDB & PERMS) 🌿
 -- =============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -10,6 +10,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -47,7 +48,7 @@ ScreenGui.Name = "MorganHubV1"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- LOGO BUTTON (AÇ / KAPAT)
+-- LOGO BUTTON
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 45, 0, 45)
@@ -104,7 +105,7 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- ONAY KUTUSU (ARE YOU SURE DESTROY)
+-- DESTROY ONAY PENCERESİ
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 16)
@@ -238,77 +239,107 @@ local function addToggle(text, callback)
     end)
 end
 
+-- MENÜ BUTONLARI
 addToggle("👁️ Player ESP (Oyuncu Kutuları)", function(v) Settings.ESP = v end)
 addToggle("🍎 Fruit Spawner ESP (Meyve Bulucu)", function(v) Settings.FruitESP = v end)
-addToggle("🍇 Fake All Perm Fruits (Görsel Permler)", function(v) Settings.FakePerms = v end)
+addToggle("🍇 Fake All Perm Fruits (Tüm Meyveleri Aç)", function(v) Settings.FakePerms = v end)
+
+-- KANAT VE AURA MODELİ İLE GERÇEK CLIENT-SIDE V4
 addToggle("⚡ Visual V4 Transformation (Görsel V4)", function(v) 
     Settings.VisualV4 = v
+    local char = LocalPlayer.Character
+    if not char then return end
+
     if v then
-        game.StarterGui:SetCore("SendNotification", {Title = "Visual V4", Text = "Görsel V4 Dönüşümü Aktif!", Duration = 3})
+        -- Aura Effect
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "V4Aura"
+        highlight.FillColor = Color3.fromRGB(255, 0, 70)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.4
+        highlight.Parent = char
+
+        -- Kanat/Model Arama & Giydirme
+        local wings = ReplicatedStorage:FindFirstChild("AwakeningWings", true) or Workspace:FindFirstChild("AwakeningWings", true)
+        if wings then
+            local cloneWings = wings:Clone()
+            cloneWings.Name = "ClientV4Wings"
+            cloneWings.Parent = char
+            if cloneWings:IsA("BasePart") or cloneWings:IsA("Model") then
+                pcall(function()
+                    cloneWings.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
+                end)
+            end
+        end
+
+        game.StarterGui:SetCore("SendNotification", {Title = "Visual V4", Text = "Client-Side V4 Dönüşümü Giydirildi!", Duration = 3})
+    else
+        if char:FindFirstChild("V4Aura") then char.V4Aura:Destroy() end
+        if char:FindFirstChild("ClientV4Wings") then char.ClientV4Wings:Destroy() end
     end
 end)
+
+-- 3D MODEL KLONLAMA İLE FAKE DARK BLADE & TRIPLE DARK BLADE
 addToggle("⚔️ Fake Dark Blade & Triple DB", function(v) 
     Settings.VisualSwords = v 
     if v then
         pcall(function()
             local backpack = LocalPlayer:FindFirstChild("Backpack")
-            if backpack then
-                local db = Instance.new("Tool")
-                db.Name = "Dark Blade (Visual)"
-                db.Parent = backpack
+            if not backpack then return end
 
-                local tdb = Instance.new("Tool")
-                tdb.Name = "Triple Dark Blade (Visual)"
-                tdb.Parent = backpack
+            -- Dark Blade Arama
+            local realDB = ReplicatedStorage:FindFirstChild("Dark Blade", true) or Workspace:FindFirstChild("Dark Blade", true)
+            local dbTool = realDB and realDB:Clone() or Instance.new("Tool")
+            dbTool.Name = "Dark Blade (Visual)"
+            if not dbTool:FindFirstChild("Handle") then
+                local h = Instance.new("Part")
+                h.Name = "Handle"
+                h.Size = Vector3.new(1, 4, 1)
+                h.Color = Color3.fromRGB(0, 255, 100)
+                h.Parent = dbTool
             end
+            dbTool.Parent = backpack
+
+            -- Triple Dark Blade Arama
+            local realTDB = ReplicatedStorage:FindFirstChild("Triple Dark Blade", true) or Workspace:FindFirstChild("Triple Dark Blade", true)
+            local tdbTool = realTDB and realTDB:Clone() or Instance.new("Tool")
+            tdbTool.Name = "Triple Dark Blade (Visual)"
+            if not tdbTool:FindFirstChild("Handle") then
+                local h = Instance.new("Part")
+                h.Name = "Handle"
+                h.Size = Vector3.new(1, 5, 1)
+                h.Color = Color3.fromRGB(255, 0, 50)
+                h.Parent = tdbTool
+            end
+            tdbTool.Parent = backpack
         end)
-        game.StarterGui:SetCore("SendNotification", {Title = "Fake Swords", Text = "Dark Blade & Triple DB Envantere Eklendi!", Duration = 3})
+        game.StarterGui:SetCore("SendNotification", {Title = "Fake Swords", Text = "3D Kılıç Modelleri Envantere Eklendi!", Duration = 3})
     end
 end)
+
 addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
 addToggle("⚡ Fast Auto Hunt (Hızlı Uçuş)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- VISUAL V4 & FAKE SWORDS / PERMS ENGINE
+-- HOOK & RENDER LOOPS
 -- =============================================================
 table.insert(Connections, RunService.RenderStepped:Connect(function()
-    pcall(function()
-        -- Fake Perms UI
-        if Settings.FakePerms then
+    if Settings.FakePerms then
+        pcall(function()
             local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
             if playerGui then
                 for _, v in pairs(playerGui:GetDescendants()) do
                     if v.Name == "Locked" or v.Name == "Lock" then
                         v.Visible = false
-                    elseif v.Name == "BuyPerm" or v.Name == "Buy" then
+                    elseif v.Name == "BuyPerm" or v.Name == "Buy" or v.Name == "BuyButton" then
                         if v:IsA("TextLabel") or v:IsA("TextButton") then
                             v.Text = "OWNED (PERM)"
                         end
                     end
                 end
             end
-        end
-
-        -- Visual V4 Effect
-        if Settings.VisualV4 then
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                if not char:FindFirstChild("V4AuraEffect") then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Name = "V4AuraEffect"
-                    highlight.FillColor = Color3.fromRGB(255, 0, 70)
-                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    highlight.FillTransparency = 0.5
-                    highlight.Parent = char
-                end
-            end
-        else
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("V4AuraEffect") then
-                char.V4AuraEffect:Destroy()
-            end
-        end
-    end)
+        end)
+    end
 end))
 
 -- =============================================================
@@ -461,8 +492,6 @@ end
 -- =============================================================
 -- SKİLL VE SALDIRI MEKANİZMASI
 -- =============================================================
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
 local function pressKey(key)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
     task.wait(0.08)
@@ -554,8 +583,11 @@ YesBtn.MouseButton1Click:Connect(function()
         if LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.PlatformStand = false
         end
-        if LocalPlayer.Character:FindFirstChild("V4AuraEffect") then
-            LocalPlayer.Character.V4AuraEffect:Destroy()
+        if LocalPlayer.Character:FindFirstChild("V4Aura") then
+            LocalPlayer.Character.V4Aura:Destroy()
+        end
+        if LocalPlayer.Character:FindFirstChild("ClientV4Wings") then
+            LocalPlayer.Character.ClientV4Wings:Destroy()
         end
     end
 
@@ -584,6 +616,6 @@ end)
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V1.0",
-    Text = "Visual V4 & Fake DB / Triple DB menüye eklendi!",
+    Text = "Gelişmiş V4 Model ve Kılıç Giydirme Güncellendi!",
     Duration = 4
 })
