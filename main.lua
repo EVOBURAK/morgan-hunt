@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🌿 MORGAN HUB V5.0 (ADVANCED LUCK MULTIPLIER & VISUAL BOOSTER - ESP FIXED) 🌿
+-- 🌿 MORGAN HUB V5.0 (MULTILINGUAL & WEAPON SELECTOR ENABLED) 🌿
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -28,9 +28,11 @@ if CoreGui:FindFirstChild("MorganHubV5") then CoreGui.MorganHubV5:Destroy() end
 
 -- SETTINGS
 local Settings = {
+    Language = "EN", -- "EN", "IT", "TR"
     ESP = false,
     FruitESP = false,
     AutoFarm = false,
+    SelectedWeapon = "Melee", -- "Melee", "Sword", "Gun", "BloxFruit"
     Aimbot = false,
     AutoHunt = false,
     AutoStore = true,
@@ -38,6 +40,67 @@ local Settings = {
     LuckPower = 100,
     FlySpeed = 12,
     FarmDistance = 8
+}
+
+-- TRANSLATIONS TABLE
+local Translations = {
+    EN = {
+        Title = "🌿 MORGAN HUB V5.0",
+        LuckGUI = "🍀 Luck Rate Booster GUI",
+        LuckPower = "🍀 Luck Multiplier Power",
+        AutoFarm = "🌾 Auto Farm Level (Mobs)",
+        WeaponType = "⚔️ Auto Farm Weapon",
+        AutoStore = "📦 Auto Store Fruit (Inventory)",
+        FruitESP = "🖼️ Fruit ESP (With Image Icons)",
+        PlayerESP = "👁️ Player ESP (Boxes & HP)",
+        Aimbot = "🎯 Aimbot (Nearest Player)",
+        AutoHunt = "⚡ Auto Bounty Hunt (Fast Fly)",
+        FlySpeed = "⚙️ Fly / Hunt Speed",
+        FarmDist = "⚙️ Auto Farm Height",
+        LangToggle = "🌐 Language / Lingua / Dil",
+        ConfirmDestroy = "Are you sure you want to destroy GUI?",
+        Yes = "YES",
+        No = "NO",
+        Loaded = "Hub Loaded Successfully!"
+    },
+    IT = {
+        Title = "🌿 MORGAN HUB V5.0",
+        LuckGUI = "🍀 Potenziatore di Fortuna GUI",
+        LuckPower = "🍀 Potenza Moltiplicatore Fortuna",
+        AutoFarm = "🌾 Farm Automatico Livello",
+        WeaponType = "⚔️ Arma per Auto Farm",
+        AutoStore = "📦 Salva Frutto Automatico",
+        FruitESP = "🖼️ ESP Frutti (Con Icone)",
+        PlayerESP = "👁️ ESP Giocatori (Box & HP)",
+        Aimbot = "🎯 Mira Automatica (Aimbot)",
+        AutoHunt = "⚡ Caccia alle Taglie Auto",
+        FlySpeed = "⚙️ Velocità Volo / Caccia",
+        FarmDist = "⚙️ Altezza Farm Automatico",
+        LangToggle = "🌐 Lingua / Language / Dil",
+        ConfirmDestroy = "Sei sicuro di voler distruggere la GUI?",
+        Yes = "SÌ",
+        No = "NO",
+        Loaded = "Hub Caricato con Successo!"
+    },
+    TR = {
+        Title = "🌿 MORGAN HUB V5.0",
+        LuckGUI = "🍀 Şans Arttırıcı GUI",
+        LuckPower = "🍀 Şans Çarpan Gücü",
+        AutoFarm = "🌾 Otomatik Seviye Kasma",
+        WeaponType = "⚔️ Auto Farm Silahı",
+        AutoStore = "📦 Meyveyi Envantere Depola",
+        FruitESP = "🖼️ Meyve ESP (Resimli)",
+        PlayerESP = "👁️ Oyuncu ESP (Kutu & Can)",
+        Aimbot = "🎯 Aimbot (En Yakın Oyuncu)",
+        AutoHunt = "⚡ Otomatik Bounty Avı (Uçarak)",
+        FlySpeed = "⚙️ Uçuş / Av Hızı",
+        FarmDist = "⚙️ Auto Farm Yüksekliği",
+        LangToggle = "🌐 Dil Seçimi / Language",
+        ConfirmDestroy = "GUI'yi kapatmak istediğinize emin misiniz?",
+        Yes = "EVET",
+        No = "HAYIR",
+        Loaded = "Hub Başarıyla Yüklendi!"
+    }
 }
 
 -- FRUIT ICONS
@@ -80,6 +143,9 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
+-- UI ELEMENTS DICTIONARY FOR LANGUAGE SWITCHING
+local UILables = {}
+
 -- =============================================================
 -- GUI ARCHITECTURE
 -- =============================================================
@@ -113,8 +179,8 @@ LogoStroke.Parent = ToggleLogo
 -- MAIN WINDOW
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 460, 0, 470)
-MainFrame.Position = UDim2.new(0.5, -230, 0.5, -235)
+MainFrame.Size = UDim2.new(0, 460, 0, 500)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -250)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -138,14 +204,14 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -40, 0, 40)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🌿 MORGAN HUB V5.0"
+Title.Text = Translations[Settings.Language].Title
 Title.TextColor3 = Color3.fromRGB(0, 255, 140)
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- INTERACTIVE ADVANCED LUCK BOOSTER GUI
+-- LUCK BOOSTER GUI
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -218,22 +284,24 @@ local ConfirmText = Instance.new("TextLabel")
 ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
 ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
 ConfirmText.BackgroundTransparency = 1
-ConfirmText.Text = "Are you sure you want to destroy GUI?"
+ConfirmText.Text = Translations[Settings.Language].ConfirmDestroy
 ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ConfirmText.Font = Enum.Font.GothamBold
 ConfirmText.TextSize = 15
 ConfirmText.ZIndex = 11
 ConfirmText.Parent = ConfirmFrame
+UILables["ConfirmDestroy"] = ConfirmText
 
 local YesBtn = Instance.new("TextButton")
 YesBtn.Size = UDim2.new(0, 100, 0, 35)
 YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
 YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-YesBtn.Text = "YES"
+YesBtn.Text = Translations[Settings.Language].Yes
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.ZIndex = 11
 YesBtn.Parent = ConfirmFrame
+UILables["Yes"] = YesBtn
 
 local YesCorner = Instance.new("UICorner")
 YesCorner.CornerRadius = UDim.new(0, 6)
@@ -243,11 +311,12 @@ local NoBtn = Instance.new("TextButton")
 NoBtn.Size = UDim2.new(0, 100, 0, 35)
 NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
 NoBtn.BackgroundColor3 = Color3.fromRGB(50, 60, 75)
-NoBtn.Text = "NO"
+NoBtn.Text = Translations[Settings.Language].No
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.ZIndex = 11
 NoBtn.Parent = ConfirmFrame
+UILables["No"] = NoBtn
 
 local NoCorner = Instance.new("UICorner")
 NoCorner.CornerRadius = UDim.new(0, 6)
@@ -281,7 +350,8 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
 Layout.Parent = Container
 
-local function addToggle(text, defaultState, callback)
+-- BUILDER FUNCTIONS
+local function addToggle(key, defaultState, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 42)
     card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
@@ -296,12 +366,13 @@ local function addToggle(text, defaultState, callback)
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0.04, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = text
+    label.Text = Translations[Settings.Language][key] or key
     label.TextColor3 = Color3.fromRGB(210, 225, 240)
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = card
+    UILables[key] = label
 
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 44, 0, 22)
@@ -335,7 +406,59 @@ local function addToggle(text, defaultState, callback)
     end)
 end
 
-local function addSlider(text, min, max, default, callback)
+local function addDropdown(key, options, defaultOpt, callback)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0.98, 0, 0, 42)
+    card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
+    card.BorderSizePixel = 0
+    card.Parent = Container
+
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 6)
+    cardCorner.Parent = card
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, 0, 1, 0)
+    label.Position = UDim2.new(0.04, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = Translations[Settings.Language][key] or key
+    label.TextColor3 = Color3.fromRGB(210, 225, 240)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = card
+    UILables[key] = label
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 130, 0, 26)
+    btn.Position = UDim2.new(0.68, 0, 0.18, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 45, 58)
+    btn.BorderSizePixel = 0
+    btn.Text = defaultOpt
+    btn.TextColor3 = Color3.fromRGB(0, 255, 140)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.Parent = card
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+
+    local currIndex = 1
+    for i, v in ipairs(options) do
+        if v == defaultOpt then currIndex = i break end
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        currIndex = currIndex + 1
+        if currIndex > #options then currIndex = 1 end
+        local selected = options[currIndex]
+        btn.Text = selected
+        pcall(callback, selected)
+    end)
+end
+
+local function addSlider(key, min, max, default, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 50)
     card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
@@ -350,12 +473,13 @@ local function addSlider(text, min, max, default, callback)
     label.Size = UDim2.new(0.7, 0, 0.5, 0)
     label.Position = UDim2.new(0.04, 0, 0.08, 0)
     label.BackgroundTransparency = 1
-    label.Text = text
+    label.Text = Translations[Settings.Language][key] or key
     label.TextColor3 = Color3.fromRGB(210, 225, 240)
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = card
+    UILables[key] = label
 
     local valueLabel = Instance.new("TextLabel")
     valueLabel.Size = UDim2.new(0.2, 0, 0.5, 0)
@@ -419,28 +543,48 @@ local function addSlider(text, min, max, default, callback)
     end)
 end
 
--- MENU ITEMS
-addToggle("🍀 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
+-- LANGUAGE SWITCHING ENGINE
+local function setLanguage(langCode)
+    Settings.Language = langCode
+    Title.Text = Translations[langCode].Title
+    for key, label in pairs(UILables) do
+        if Translations[langCode][key] then
+            label.Text = Translations[langCode][key]
+        end
+    end
+end
+
+-- MENU ITEMS SETUP
+addDropdown("LangToggle", {"IT 🇮🇹", "EN 🇬🇧", "TR 🇹🇷"}, "EN 🇬🇧", function(v)
+    if v:find("IT") then setLanguage("IT")
+    elseif v:find("TR") then setLanguage("TR")
+    else setLanguage("EN") end
+end)
+
+addToggle("LuckGUI", Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
 end)
-addSlider("🍀 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
+addSlider("LuckPower", 1, 1000, Settings.LuckPower, function(v)
     Settings.LuckPower = v
     LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
     local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
     ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
 end)
 
-addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
-addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
-addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+addToggle("AutoFarm", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addDropdown("WeaponType", {"Melee", "Sword", "Gun", "BloxFruit"}, Settings.SelectedWeapon, function(v)
+    Settings.SelectedWeapon = v
+end)
 
--- SETTINGS SECTION
-addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
-addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+addToggle("AutoStore", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("FruitESP", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("PlayerESP", Settings.ESP, function(v) Settings.ESP = v end)
+addToggle("Aimbot", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("AutoHunt", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+
+addSlider("FlySpeed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider("FarmDist", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
 -- =============================================================
 -- AUTO STORE FRUIT ENGINE
@@ -472,8 +616,42 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
 end))
 
 -- =============================================================
--- AUTO FARM ENGINE
+-- WEAPON EQUIPPER & AUTO FARM ENGINE
 -- =============================================================
+local function equipSelectedWeapon()
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("Humanoid") then return end
+
+    local currentTool = myChar:FindFirstChildOfClass("Tool")
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not backpack then return end
+
+    local targetWeapon = nil
+    for _, tool in pairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            local toolType = tool:FindFirstChild("ToolTip") and tool.ToolTip or ""
+            local name = tool.Name:lower()
+
+            if Settings.SelectedWeapon == "Melee" and (toolType == "Melee" or name:find("combat") or name:find("step") or name:find("karate") or name:find("dragon") or name:find("claw")) then
+                targetWeapon = tool break
+            elseif Settings.SelectedWeapon == "Sword" and (toolType == "Sword" or name:find("blade") or name:find("katana") or name:find("saber") or name:find("yuru") or name:find("anchor")) then
+                targetWeapon = tool break
+            elseif Settings.SelectedWeapon == "Gun" and (toolType == "Gun" or name:find("slingshot") or name:find("flintlock") or name:find("rifle") or name:find("cannon")) then
+                targetWeapon = tool break
+            elseif Settings.SelectedWeapon == "BloxFruit" and (toolType == "Blox Fruit" or name:find("fruit") or name:find("meyve")) then
+                targetWeapon = tool break
+            end
+        end
+    end
+
+    if targetWeapon then
+        myChar.Humanoid:EquipTool(targetWeapon)
+    elseif not currentTool then
+        local fallback = backpack:FindFirstChildOfClass("Tool")
+        if fallback then myChar.Humanoid:EquipTool(fallback) end
+    end
+end
+
 local function getClosestEnemy()
     local closest, minDistance = nil, math.huge
     local myChar = LocalPlayer.Character
@@ -507,14 +685,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if enemy and enemy:FindFirstChild("HumanoidRootPart") then
             myChar.Humanoid.PlatformStand = true
 
-            local tool = myChar:FindFirstChildOfClass("Tool")
-            if not tool then
-                local backpack = LocalPlayer:FindFirstChild("Backpack")
-                if backpack then
-                    local weapon = backpack:FindFirstChildOfClass("Tool")
-                    if weapon then myChar.Humanoid:EquipTool(weapon) end
-                end
-            end
+            equipSelectedWeapon()
 
             local enemyPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
             root.CFrame = CFrame.lookAt(enemyPos, enemy.HumanoidRootPart.Position)
@@ -528,7 +699,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
 end))
 
 -- =============================================================
--- FIXED IMAGE FRUIT ESP ENGINE
+-- IMAGE FRUIT ESP ENGINE
 -- =============================================================
 local FruitBillboards = {}
 
@@ -597,7 +768,6 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     local myChar = LocalPlayer.Character
     local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
 
-    -- Search Workspace and subfolders recursively for fruits
     for _, obj in pairs(Workspace:GetDescendants()) do
         if isFruitObject(obj) then
             createFruitESP(obj)
@@ -789,6 +959,6 @@ end)
 -- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V5.0",
-    Text = "ESP Fixed & Live UI Loaded!",
+    Text = Translations[Settings.Language].Loaded,
     Duration = 4
 })
