@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🌿 MORGAN HUB V5.0 (MULTILINGUAL & WEAPON SELECTOR ENABLED) 🌿
+-- 🌿 MORGAN HUB V5.0 (OPTIMIZED & PERFORMANCE BOOSTED) 🌿
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -143,7 +143,6 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
--- UI ELEMENTS DICTIONARY FOR LANGUAGE SWITCHING
 local UILables = {}
 
 -- =============================================================
@@ -154,7 +153,6 @@ ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- LOGO BUTTON
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 48, 0, 48)
@@ -176,7 +174,6 @@ LogoStroke.Color = Color3.fromRGB(0, 255, 120)
 LogoStroke.Thickness = 2
 LogoStroke.Parent = ToggleLogo
 
--- MAIN WINDOW
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 460, 0, 500)
@@ -211,7 +208,6 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- LUCK BOOSTER GUI
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -267,7 +263,6 @@ local ChanceCorner = Instance.new("UICorner")
 ChanceCorner.CornerRadius = UDim.new(0, 6)
 ChanceCorner.Parent = ChanceDisplay
 
--- CONFIRM DESTROY FRAME
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 16)
@@ -338,6 +333,10 @@ CloseCorner.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
 NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
+YesBtn.MouseButton1Click:Connect(function()
+    for _, conn in ipairs(Connections) do pcall(function() conn:Disconnect() end) end
+    ScreenGui:Destroy()
+end)
 
 local Container = Instance.new("ScrollingFrame")
 Container.Size = UDim2.new(1, -20, 1, -50)
@@ -350,7 +349,6 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
 Layout.Parent = Container
 
--- BUILDER FUNCTIONS
 local function addToggle(key, defaultState, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 42)
@@ -543,7 +541,6 @@ local function addSlider(key, min, max, default, callback)
     end)
 end
 
--- LANGUAGE SWITCHING ENGINE
 local function setLanguage(langCode)
     Settings.Language = langCode
     Title.Text = Translations[langCode].Title
@@ -554,7 +551,6 @@ local function setLanguage(langCode)
     end
 end
 
--- MENU ITEMS SETUP
 addDropdown("LangToggle", {"IT 🇮🇹", "EN 🇬🇧", "TR 🇹🇷"}, "EN 🇬🇧", function(v)
     if v:find("IT") then setLanguage("IT")
     elseif v:find("TR") then setLanguage("TR")
@@ -699,7 +695,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
 end))
 
 -- =============================================================
--- IMAGE FRUIT ESP ENGINE
+-- OPTIMIZED IMAGE FRUIT ESP ENGINE (EVENT BASED)
 -- =============================================================
 local FruitBillboards = {}
 
@@ -757,37 +753,46 @@ local function createFruitESP(obj)
     FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
 end
 
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    if not Settings.FruitESP then
-        for obj, data in pairs(FruitBillboards) do
-            if data.Gui then data.Gui.Enabled = false end
-        end
-        return
+-- Event-driven meyve dinleme (Haritayı baştan sona taramaz)
+local function checkChild(child)
+    if isFruitObject(child) then
+        createFruitESP(child)
     end
+end
 
-    local myChar = LocalPlayer.Character
-    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
+table.insert(Connections, Workspace.ChildAdded:Connect(checkChild))
+for _, child in ipairs(Workspace:GetChildren()) do
+    checkChild(child)
+end
 
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if isFruitObject(obj) then
-            createFruitESP(obj)
-        end
-    end
+-- Mesafe Güncelleme (0.1 saniyede 1 kez çalışır)
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if Settings.FruitESP then
+            local myChar = LocalPlayer.Character
+            local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
 
-    for obj, data in pairs(FruitBillboards) do
-        if obj and obj.Parent and data.Handle and data.Handle.Parent then
-            data.Gui.Enabled = true
-            local dist = math.floor((data.Handle.Position - myPos).Magnitude)
-            data.Text.Text = obj.Name .. "\n[" .. dist .. "m]"
+            for obj, data in pairs(FruitBillboards) do
+                if obj and obj.Parent and data.Handle and data.Handle.Parent then
+                    data.Gui.Enabled = true
+                    local dist = math.floor((data.Handle.Position - myPos).Magnitude)
+                    data.Text.Text = obj.Name .. "\n[" .. dist .. "m]"
+                else
+                    if data.Gui then data.Gui:Destroy() end
+                    FruitBillboards[obj] = nil
+                end
+            end
         else
-            if data.Gui then data.Gui:Destroy() end
-            FruitBillboards[obj] = nil
+            for _, data in pairs(FruitBillboards) do
+                if data.Gui then data.Gui.Enabled = false end
+            end
         end
     end
-end))
+end)
 
 -- =============================================================
--- DRAWING PLAYER ESP ENGINE
+-- OPTIMIZED DRAWING PLAYER ESP ENGINE
 -- =============================================================
 local ESPCache = {}
 
@@ -827,9 +832,18 @@ table.insert(Connections, Players.PlayerAdded:Connect(createESP))
 table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
 table.insert(Connections, RunService.RenderStepped:Connect(function()
+    if not Settings.ESP then
+        for _, esp in pairs(ESPCache) do
+            esp.BoxOutline.Visible = false
+            esp.Box.Visible = false
+            esp.Text.Visible = false
+        end
+        return
+    end
+
     for targetPlayer, esp in pairs(ESPCache) do
         local char = targetPlayer.Character
-        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+        if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
             local root = char.HumanoidRootPart
             local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
 
@@ -882,83 +896,35 @@ local function getClosestPlayer()
             local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
             if dist < minDistance then
                 minDistance = dist
-                closest = p
+                closest = p.Character
             end
         end
     end
     return closest
 end
 
-table.insert(Connections, RunService.Heartbeat:Connect(function()
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    if Settings.Aimbot then
         local target = getClosestPlayer()
-
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local targetRoot = target.Character.HumanoidRootPart
-
-            if Settings.Aimbot then
-                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
-            end
-
-            if Settings.AutoHunt then
-                myChar.Humanoid.PlatformStand = true
-                local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
-                local distance = (targetPos - root.Position).Magnitude
-
-                if distance > 6 then
-                    local newCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
-                    myChar:PivotTo(newCFrame)
-                else
-                    myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton1(Vector2.new(500, 500))
-                end
-            elseif not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        else
-            if Settings.AutoHunt and not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
+        if target and target:FindFirstChild("HumanoidRootPart") then
+            Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, target.HumanoidRootPart.Position)
         end
-    end)
+    end
 end))
 
--- DESTROY FUNCTION
-YesBtn.MouseButton1Click:Connect(function()
-    Settings.AutoFarm = false
-    Settings.AutoHunt = false
-    Settings.ESP = false
-    Settings.FruitESP = false
-    Settings.AutoStore = false
-    Settings.LuckMultiplier = false
-
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.PlatformStand = false
-    end
-
-    for _, conn in pairs(Connections) do conn:Disconnect() end
-    for _, esp in pairs(ESPCache) do
+table.insert(Connections, RunService.Heartbeat:Connect(function()
+    if Settings.AutoHunt then
         pcall(function()
-            esp.BoxOutline:Remove()
-            esp.Box:Remove()
-            esp.Text:Remove()
+            local myChar = LocalPlayer.Character
+            if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+
+            local target = getClosestPlayer()
+            if target and target:FindFirstChild("HumanoidRootPart") then
+                myChar.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                equipSelectedWeapon()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(500, 500))
+            end
         end)
     end
-    for _, data in pairs(FruitBillboards) do
-        if data.Gui then data.Gui:Destroy() end
-    end
-
-    ScreenGui:Destroy()
-end)
-
--- NOTIFICATION
-game.StarterGui:SetCore("SendNotification", {
-    Title = "🌿 MORGAN HUB V5.0",
-    Text = Translations[Settings.Language].Loaded,
-    Duration = 4
-})
+end))
