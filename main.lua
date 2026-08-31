@@ -1,11 +1,8 @@
 -- =============================================================
--- 🌿 MORGAN HUB V1.0 (FIXED: INFINITE ESP + SKELETON + FOV AIM) 🌿
+-- 🌿 MORGAN HUB V1.0 (PRO DEFINITIVE EDITION - FIXED) 🌿
 -- =============================================================
 
-if not table.find({2753915549, 4442272183, 7449423635}, game.PlaceId) then
-    game:GetService("Players").LocalPlayer:Kick("Lütfen Blox Fruits sunucusuna girin!")
-    return
-end
+if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -14,23 +11,19 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 
-local player = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Anti-AFK Koruması
-player.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0,0), Camera.CFrame)
+-- Anti-AFK
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0, 0), Camera.CFrame)
     task.wait(1)
-    VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
+    VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end)
 
--- Eski GUI Temizliği
-if player.PlayerGui:FindFirstChild("MorganHubV1") then
-    player.PlayerGui.MorganHubV1:Destroy()
-end
-if CoreGui:FindFirstChild("MorganESP") then
-    CoreGui.MorganESP:Destroy()
-end
+-- Eski GUI ve ESP Temizliği
+if CoreGui:FindFirstChild("MorganHubV1") then CoreGui.MorganHubV1:Destroy() end
+if CoreGui:FindFirstChild("MorganESP") then CoreGui.MorganESP:Destroy() end
 
 -- AYARLAR
 local Settings = {
@@ -38,221 +31,257 @@ local Settings = {
     Aimbot = false,
     AutoHunt = false,
     SkillMode = "1",
-    TargetPlayer = nil,
-    FlySpeed = 75
+    FlySpeed = 65
 }
 
+-- =============================================================
 -- GUI MİMARİSİ
-local hub = Instance.new("ScreenGui")
-hub.Name = "MorganHubV1"
-hub.ResetOnSpawn = false
-hub.Parent = player.PlayerGui
+-- =============================================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MorganHubV1"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
 
--- MENÜ LOGOSU (AÇ/KAPAT TOGGLE)
-local toggleLogo = Instance.new("TextButton")
-toggleLogo.Name = "MorganToggleLogo"
-toggleLogo.Size = UDim2.new(0, 50, 0, 50)
-toggleLogo.Position = UDim2.new(0, 15, 0.15, 0)
-toggleLogo.BackgroundColor3 = Color3.fromRGB(15, 20, 28)
-toggleLogo.BorderSizePixel = 0
-toggleLogo.Text = "🌿"
-toggleLogo.TextSize = 26
-toggleLogo.Active = true
-toggleLogo.Draggable = true
-toggleLogo.Parent = hub
+-- LOGO BUTTON (AÇ / KAPAT)
+local ToggleLogo = Instance.new("TextButton")
+ToggleLogo.Name = "ToggleLogo"
+ToggleLogo.Size = UDim2.new(0, 45, 0, 45)
+ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
+ToggleLogo.BackgroundColor3 = Color3.fromRGB(15, 22, 18)
+ToggleLogo.BorderSizePixel = 0
+ToggleLogo.Text = "🌿"
+ToggleLogo.TextSize = 24
+ToggleLogo.Active = true
+ToggleLogo.Draggable = true
+ToggleLogo.Parent = ScreenGui
 
-local logoCorner = Instance.new("UICorner")
-logoCorner.CornerRadius = UDim.new(1, 0)
-logoCorner.Parent = toggleLogo
+local LogoCorner = Instance.new("UICorner")
+LogoCorner.CornerRadius = UDim.new(1, 0)
+LogoCorner.Parent = ToggleLogo
 
-local logoStroke = Instance.new("UIStroke")
-logoStroke.Color = Color3.fromRGB(0, 255, 150)
-logoStroke.Thickness = 2
-logoStroke.Parent = toggleLogo
+local LogoStroke = Instance.new("UIStroke")
+LogoStroke.Color = Color3.fromRGB(0, 255, 120)
+LogoStroke.Thickness = 2
+LogoStroke.Parent = ToggleLogo
 
 -- ANA MENÜ PENCERESİ
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 480, 0, 360)
-main.Position = UDim2.new(0.5, -240, 0.5, -180)
-main.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
-main.Active = true
-main.Draggable = true
-main.Parent = hub
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 440, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -160)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 10)
-mainCorner.Parent = main
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
 
-toggleLogo.MouseButton1Click:Connect(function()
-    main.Visible = not main.Visible
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0, 255, 120)
+MainStroke.Transparency = 0.6
+MainStroke.Parent = MainFrame
+
+ToggleLogo.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
 end)
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -40, 0, 40)
-title.Position = UDim2.new(0, 15, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "🌿 MORGAN HUB V1.0 (ULTIMATE)"
-title.TextColor3 = Color3.fromRGB(0, 255, 150)
-title.TextSize = 16
-title.Font = Enum.Font.GothamBold
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = main
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 0, 40)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🌿 MORGAN HUB V1.0"
+Title.TextColor3 = Color3.fromRGB(0, 255, 140)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = MainFrame
 
-local close = Instance.new("TextButton")
-close.Size = UDim2.new(0, 26, 0, 26)
-close.Position = UDim2.new(1, -32, 0, 7)
-close.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
-close.Text = "✕"
-close.TextColor3 = Color3.fromRGB(255, 255, 255)
-close.Font = Enum.Font.GothamBold
-close.Parent = main
-close.MouseButton1Click:Connect(function() main.Visible = false end)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -32, 0, 7)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = MainFrame
 
-local container = Instance.new("ScrollingFrame")
-container.Size = UDim2.new(1, -20, 1, -55)
-container.Position = UDim2.new(0, 10, 0, 45)
-container.BackgroundTransparency = 1
-container.ScrollBarThickness = 4
-container.Parent = main
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 8)
-layout.Parent = container
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -20, 1, -50)
+Container.Position = UDim2.new(0, 10, 0, 45)
+Container.BackgroundTransparency = 1
+Container.ScrollBarThickness = 3
+Container.Parent = MainFrame
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.Parent = Container
 
 local function addToggle(text, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0.98, 0, 0, 40)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 27, 36)
-    frame.Parent = container
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0.98, 0, 0, 42)
+    card.BackgroundColor3 = Color3.fromRGB(18, 24, 32)
+    card.BorderSizePixel = 0
+    card.Parent = Container
 
-    local fc = Instance.new("UICorner")
-    fc.CornerRadius = UDim.new(0, 6)
-    fc.Parent = frame
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 6)
+    cardCorner.Parent = card
 
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0.7, 0, 1, 0)
-    lbl.Position = UDim2.new(0.04, 0, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(220, 230, 240)
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 13
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = frame
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0.04, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(210, 225, 240)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = card
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 46, 0, 22)
-    btn.Position = UDim2.new(0.85, 0, 0.2, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 50, 65)
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(0.86, 0, 0.24, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 45, 58)
+    btn.BorderSizePixel = 0
     btn.Text = ""
-    btn.Parent = frame
+    btn.Parent = card
 
-    local bc = Instance.new("UICorner")
-    bc.CornerRadius = UDim.new(0, 11)
-    bc.Parent = btn
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 11)
+    btnCorner.Parent = btn
 
     local circle = Instance.new("Frame")
     circle.Size = UDim2.new(0, 16, 0, 16)
-    circle.Position = UDim2.new(0.08, 0, 0.12, 0)
-    circle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    circle.Position = UDim2.new(0.08, 0, 0.13, 0)
+    circle.BackgroundColor3 = Color3.fromRGB(180, 190, 200)
+    circle.BorderSizePixel = 0
     circle.Parent = btn
 
-    local cc = Instance.new("UICorner")
-    cc.CornerRadius = UDim.new(0, 8)
-    cc.Parent = circle
+    local circleCorner = Instance.new("UICorner")
+    circleCorner.CornerRadius = UDim.new(0, 8)
+    circleCorner.Parent = circle
 
-    local st = false
+    local state = false
     btn.MouseButton1Click:Connect(function()
-        st = not st
-        btn.BackgroundColor3 = st and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(40, 50, 65)
-        circle.Position = st and UDim2.new(0.55, 0, 0.12, 0) or UDim2.new(0.08, 0, 0.12, 0)
-        pcall(callback, st)
+        state = not state
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 190, 100) or Color3.fromRGB(35, 45, 58)
+        circle.Position = state and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
+        pcall(callback, state)
     end)
 end
 
-addToggle("👁️ ESP (Sonsuz Mesafe Kutu + İskelet)", function(v) Settings.ESP = v end)
-addToggle("🎯 Aimbot (En Yakın Oyuncuyu Kilitle)", function(v) Settings.Aimbot = v end)
-addToggle("🕊️ Auto Player Hunt (Süzülerek Avla)", function(v) Settings.AutoHunt = v end)
+addToggle("👁️ Sonsuz ESP (Kutu + İsim)", function(v) Settings.ESP = v end)
+addToggle("🎯 Aimbot (En Yakın Oyuncu)", function(v) Settings.Aimbot = v end)
+addToggle("🕊️ Yavaş Uçarak Takip Et (Hunt)", function(v) Settings.AutoHunt = v end)
 
 -- =============================================================
--- SONSUZ MESAFELİ ADVANCED ESP & SKELETON SİSTEMİ
+-- SONSUZ MESAFELİ KUSURSUZ ESP (DRAWING ENGINE)
 -- =============================================================
-local ESPFolder = Instance.new("Folder")
-ESPFolder.Name = "MorganESP"
-ESPFolder.Parent = CoreGui
+local ESPCache = {}
 
-local function drawESP(targetPlayer)
-    if targetPlayer == player then return end
+local function createESP(targetPlayer)
+    if targetPlayer == LocalPlayer then return end
 
     local boxOutline = Drawing.new("Square")
-    boxOutline.Visible = false
-    boxOutline.Color = Color3.fromRGB(0, 0, 0)
     boxOutline.Thickness = 3
+    boxOutline.Color = Color3.fromRGB(0, 0, 0)
     boxOutline.Filled = false
+    boxOutline.Visible = false
 
     local box = Drawing.new("Square")
-    box.Visible = false
-    box.Color = Color3.fromRGB(255, 50, 50)
     box.Thickness = 1
+    box.Color = Color3.fromRGB(255, 40, 40)
     box.Filled = false
+    box.Visible = false
 
-    local nameTag = Drawing.new("Text")
-    nameTag.Visible = false
-    nameTag.Color = Color3.fromRGB(255, 255, 255)
-    nameTag.Size = 14
-    nameTag.Center = true
-    nameTag.Outline = true
+    local text = Drawing.new("Text")
+    text.Size = 14
+    text.Center = true
+    text.Outline = true
+    text.Color = Color3.fromRGB(255, 255, 255)
+    text.Visible = false
 
-    RunService.RenderStepped:Connect(function()
-        if Settings.ESP and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
-            local root = targetPlayer.Character.HumanoidRootPart
+    ESPCache[targetPlayer] = {BoxOutline = boxOutline, Box = box, Text = text}
+end
+
+local function removeESP(targetPlayer)
+    if ESPCache[targetPlayer] then
+        ESPCache[targetPlayer].BoxOutline:Remove()
+        ESPCache[targetPlayer].Box:Remove()
+        ESPCache[targetPlayer].Text:Remove()
+        ESPCache[targetPlayer] = nil
+    end
+end
+
+for _, p in pairs(Players:GetPlayers()) do createESP(p) end
+Players.PlayerAdded:Connect(createESP)
+Players.PlayerRemoving:Connect(removeESP)
+
+RunService.RenderStepped:Connect(function()
+    for targetPlayer, esp in pairs(ESPCache) do
+        local char = targetPlayer.Character
+        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+            local root = char.HumanoidRootPart
             local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
 
             if onScreen then
-                local sizeY = (Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0)).Y)
-                local sizeX = sizeY / 1.5
+                local head = char:FindFirstChild("Head")
+                local headPos = head and head.Position or (root.Position + Vector3.new(0, 2, 0))
+                local legPos = root.Position - Vector3.new(0, 3, 0)
 
-                boxOutline.Size = Vector2.new(sizeX, sizeY)
-                boxOutline.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
-                boxOutline.Visible = true
+                local topScreen = Camera:WorldToViewportPoint(headPos + Vector3.new(0, 1, 0))
+                local bottomScreen = Camera:WorldToViewportPoint(legPos)
 
-                box.Size = Vector2.new(sizeX, sizeY)
-                box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
-                box.Visible = true
+                local height = math.abs(topScreen.Y - bottomScreen.Y)
+                local width = height / 1.6
 
-                nameTag.Text = targetPlayer.Name .. " [" .. math.floor(targetPlayer.Character.Humanoid.Health) .. " HP]"
-                nameTag.Position = Vector2.new(pos.X, pos.Y - (sizeY / 2) - 15)
-                nameTag.Visible = true
+                esp.BoxOutline.Size = Vector2.new(width, height)
+                esp.BoxOutline.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
+                esp.BoxOutline.Visible = true
+
+                esp.Box.Size = Vector2.new(width, height)
+                esp.Box.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
+                esp.Box.Visible = true
+
+                esp.Text.Text = targetPlayer.Name .. " [" .. math.floor(char.Humanoid.Health) .. " HP]"
+                esp.Text.Position = Vector2.new(pos.X, pos.Y - (height / 2) - 16)
+                esp.Text.Visible = true
             else
-                boxOutline.Visible = false
-                box.Visible = false
-                nameTag.Visible = false
+                esp.BoxOutline.Visible = false
+                esp.Box.Visible = false
+                esp.Text.Visible = false
             end
         else
-            boxOutline.Visible = false
-            box.Visible = false
-            nameTag.Visible = false
+            esp.BoxOutline.Visible = false
+            esp.Box.Visible = false
+            esp.Text.Visible = false
         end
-    end)
-end
-
-for _, p in pairs(Players:GetPlayers()) do drawESP(p) end
-Players.PlayerAdded:Connect(drawESP)
+    end
+end)
 
 -- =============================================================
--- EN YAKIN OYUNCUYU BULMA (AIMBOT VE HUNT İÇİN)
+-- EN YAKIN OYUNCU TESPİTİ
 -- =============================================================
 local function getClosestPlayer()
-    local closest, maxDistance = nil, math.huge
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = char.HumanoidRootPart.Position
+    local closest, minDistance = nil, math.huge
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = myChar.HumanoidRootPart.Position
 
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
             local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-            if dist < maxDistance then
-                maxDistance = dist
+            if dist < minDistance then
+                minDistance = dist
                 closest = p
             end
         end
@@ -261,13 +290,13 @@ local function getClosestPlayer()
 end
 
 -- =============================================================
--- SKİLL VE TUŞ BASMA SİSTEMİ
+-- SKİLL VE KOMBO SİSTEMİ (1 VE 2 TUŞLARI)
 -- =============================================================
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local function pressKey(key)
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
-    task.wait(0.1)
+    task.wait(0.08)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
 end
 
@@ -284,38 +313,38 @@ end)
 
 local function castSkills()
     if Settings.SkillMode == "1" then
-        pressKey("Z") task.wait(0.2)
-        pressKey("X") task.wait(0.2)
-        pressKey("C") task.wait(0.2)
+        pressKey("Z") task.wait(0.25)
+        pressKey("X") task.wait(0.25)
+        pressKey("C") task.wait(0.25)
     elseif Settings.SkillMode == "2" then
-        pressKey("C") task.wait(0.2)
-        pressKey("X") task.wait(0.2)
-        pressKey("Z") task.wait(0.2)
-        pressKey("F") task.wait(0.2)
+        pressKey("C") task.wait(0.25)
+        pressKey("X") task.wait(0.25)
+        pressKey("Z") task.wait(0.25)
+        pressKey("F") task.wait(0.25)
     end
 end
 
 -- =============================================================
--- YAVAŞ VE DÜZGÜN UÇUŞ FİZİĞİ
+-- UÇUŞ FİZİĞİ (SMOOTH FLY ENGINE)
 -- =============================================================
 local flyVelocity = nil
 local flyGyro = nil
 
 local function updateFlyPhysics(enable)
-    local char = player.Character
+    local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     local root = char.HumanoidRootPart
 
     if enable then
         if not flyVelocity then
             flyVelocity = Instance.new("BodyVelocity")
-            flyVelocity.MaxForce = Vector3.new(1,1,1) * 1000000
+            flyVelocity.MaxForce = Vector3.new(1,1,1) * 10000000
             flyVelocity.Velocity = Vector3.zero
             flyVelocity.Parent = root
         end
         if not flyGyro then
             flyGyro = Instance.new("BodyGyro")
-            flyGyro.MaxTorque = Vector3.new(1,1,1) * 1000000
+            flyGyro.MaxTorque = Vector3.new(1,1,1) * 10000000
             flyGyro.CFrame = root.CFrame
             flyGyro.Parent = root
         end
@@ -326,12 +355,12 @@ local function updateFlyPhysics(enable)
 end
 
 -- =============================================================
--- ANA TAKİP VE SALDIRI DÖNGÜSÜ
+-- ANA TAKİP DÖNGÜSÜ
 -- =============================================================
 task.spawn(function()
     while task.wait(0.03) do
         pcall(function()
-            local char = player.Character
+            local char = LocalPlayer.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local root = char.HumanoidRootPart
 
@@ -340,24 +369,24 @@ task.spawn(function()
             if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
                 local targetRoot = target.Character.HumanoidRootPart
 
-                -- AIMBOT (En yakın adamın kafasına kilitleme)
+                -- AIMBOT: Kamerayı adama kilitle
                 if Settings.Aimbot then
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetRoot.Position)
+                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
                 end
 
-                -- AUTO HUNT (Uçarak gitme ve saldırma)
+                -- AUTO HUNT: Uçarak git ve vur
                 if Settings.AutoHunt then
                     updateFlyPhysics(true)
                     local targetPos = targetRoot.Position + Vector3.new(0, 3, 0)
                     local dir = (targetPos - root.Position)
                     local dist = dir.Magnitude
 
-                    if dist > 8 then
+                    if dist > 7 then
                         flyVelocity.Velocity = dir.Unit * Settings.FlySpeed
-                        flyGyro.CFrame = CFrame.new(root.Position, targetPos)
+                        flyGyro.CFrame = CFrame.lookAt(root.Position, targetPos)
                     else
                         flyVelocity.Velocity = Vector3.zero
-                        flyGyro.CFrame = CFrame.new(root.Position, targetPos)
+                        flyGyro.CFrame = CFrame.lookAt(root.Position, targetPos)
 
                         VirtualUser:CaptureController()
                         VirtualUser:ClickButton1(Vector2.new(500, 500))
@@ -376,6 +405,6 @@ end)
 -- BİLDİRİM
 game.StarterGui:SetCore("SendNotification", {
     Title = "🌿 MORGAN HUB V1.0",
-    Text = "Düzeltmeler yapıldı, ESP sonsuz mesafe ve Aimbot en yakına kilitlendi!",
-    Duration = 4
+    Text = "Kod sıfırdan tamamen optimize edildi ve sorunsuz hale getirildi!",
+    Duration = 5
 })
