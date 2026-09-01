@@ -229,22 +229,21 @@ task.spawn(function()
 end)
 
 -- -------------------------------------------------------------
--- LOGO BUTTON
+-- LOGO BUTTON (SQUARE & CUSTOM IMAGE ICON)
 -- -------------------------------------------------------------
-local ToggleLogo = Instance.new("TextButton")
+local ToggleLogo = Instance.new("ImageButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
 ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
 ToggleLogo.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
 ToggleLogo.BorderSizePixel = 0
-ToggleLogo.Text = "💎"
-ToggleLogo.TextSize = 26
+ToggleLogo.Image = "rbxassetid://108376012222640"
 ToggleLogo.Active = true
 ToggleLogo.Draggable = true
 ToggleLogo.Parent = ScreenGui
 
 local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(1, 0)
+LogoCorner.CornerRadius = UDim.new(0, 0) -- Tam kare
 LogoCorner.Parent = ToggleLogo
 
 local LogoStroke = Instance.new("UIStroke")
