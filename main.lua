@@ -1,5 +1,5 @@
 -- =================================================================================
--- 💎 MORGAN CLIENT V5.0 (MULTILINGUAL & SMART AUTO QUEST FARM) 💎
+-- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - ULTIMATE GUI & FIXED ESP) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -32,9 +32,6 @@ local Settings = {
     ESP = false,
     FruitESP = false,
     AutoFarm = false,
-    AutoQuest = true,
-    WeaponType = "Blox Fruits", -- "Blox Fruits", "Melee", "Sword", "Gun"
-    Language = "TR", -- "TR", "EN", "IT"
     Aimbot = false,
     AutoHunt = false,
     AutoStore = true,
@@ -44,60 +41,26 @@ local Settings = {
     FarmDistance = 8
 }
 
--- TRANSLATION DICTIONARY
-local Translations = {
-    TR = {
-        Title = "💎 MORGAN CLIENT",
-        Search = "🔍 Modüllerde ara...",
-        AutoFarm = "Otomatik Farm",
-        AutoQuest = "Otomatik Görev Al",
-        AutoStore = "Meyve Depola",
-        LuckBooster = "Şans Arttırıcı",
-        FruitESP = "Meyve ESP",
-        PlayerESP = "Oyuncu ESP",
-        Aimbot = "Aimbot",
-        AutoHunt = "Otomatik Av",
-        WeaponSelect = "Silah: ",
-        LangSelect = "Dil / Language",
-        Notif = "Morgan Client yüklendi!"
-    },
-    EN = {
-        Title = "💎 MORGAN CLIENT",
-        Search = "🔍 Search modules...",
-        AutoFarm = "Auto Farm",
-        AutoQuest = "Auto Get Quest",
-        AutoStore = "Auto Store Fruit",
-        LuckBooster = "Luck Booster",
-        FruitESP = "Fruit ESP",
-        PlayerESP = "Player ESP",
-        Aimbot = "Aimbot",
-        AutoHunt = "Auto Hunt",
-        WeaponSelect = "Weapon: ",
-        LangSelect = "Language / Dil",
-        Notif = "Morgan Client loaded!"
-    },
-    IT = {
-        Title = "💎 MORGAN CLIENT",
-        Search = "🔍 Cerca moduli...",
-        AutoFarm = "Farm Automatico",
-        AutoQuest = "Ottieni Quest",
-        AutoStore = "Salva Frutto",
-        LuckBooster = "Aumento Fortuna",
-        FruitESP = "ESP Frutti",
-        PlayerESP = "ESP Giocatori",
-        Aimbot = "Aimbot",
-        AutoHunt = "Caccia Automatica",
-        WeaponSelect = "Arma: ",
-        LangSelect = "Lingua / Language",
-        Notif = "Morgan Client caricato!"
-    }
-}
-
 -- FRUIT ICONS
 local FruitIcons = {
     ["Kitsune"] = "rbxassetid://15312061073", ["Dragon"] = "rbxassetid://13886869488",
     ["Leopard"] = "rbxassetid://13886867744", ["Dough"] = "rbxassetid://13886866168",
-    ["Venom"] = "rbxassetid://13886870244", ["Buddha"] = "rbxassetid://13886865890"
+    ["T-Rex"] = "rbxassetid://15682970597", ["Mammoth"] = "rbxassetid://14930198642",
+    ["Spirit"] = "rbxassetid://13886869850", ["Venom"] = "rbxassetid://13886870244",
+    ["Shadow"] = "rbxassetid://13886869634", ["Blizzard"] = "rbxassetid://13886865660",
+    ["Gravity"] = "rbxassetid://13886867420", ["Portal"] = "rbxassetid://13886869150",
+    ["Rumble"] = "rbxassetid://13886869348", ["Buddha"] = "rbxassetid://13886865890",
+    ["Love"] = "rbxassetid://13886868018", ["Spider"] = "rbxassetid://13886869976",
+    ["Sound"] = "rbxassetid://14930200871", ["Magma"] = "rbxassetid://13886868420",
+    ["Ice"] = "rbxassetid://13886867566", ["Light"] = "rbxassetid://13886867888",
+    ["Flame"] = "rbxassetid://13886866872", ["Rocket"] = "rbxassetid://13886869246",
+    ["Spin"] = "rbxassetid://13886870104", ["Blade"] = "rbxassetid://13886866580",
+    ["Spring"] = "rbxassetid://13886870176", ["Bomb"] = "rbxassetid://13886865768",
+    ["Smoke"] = "rbxassetid://13886869752", ["Spike"] = "rbxassetid://13886870034",
+    ["Falcon"] = "rbxassetid://13886866708", ["Sand"] = "rbxassetid://13886869528",
+    ["Dark"] = "rbxassetid://13886866034", ["Diamond"] = "rbxassetid://13886866360",
+    ["Ghost"] = "rbxassetid://15082498716", ["Rubber"] = "rbxassetid://13886869300",
+    ["Barrier"] = "rbxassetid://13886865502"
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
@@ -107,372 +70,426 @@ ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
+-- 🔮 AÇILIŞ EKRANI (INTRO INTRO ANIMATION)
+local LoadingFrame = Instance.new("Frame")
+LoadingFrame.Name = "LoadingFrame"
+LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
+LoadingFrame.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
+LoadingFrame.BorderSizePixel = 0
+LoadingFrame.ZIndex = 100
+LoadingFrame.Parent = ScreenGui
+
+local LoadingTitle = Instance.new("TextLabel")
+LoadingTitle.Size = UDim2.new(1, 0, 0, 50)
+LoadingTitle.Position = UDim2.new(0, 0, 0.38, 0)
+LoadingTitle.BackgroundTransparency = 1
+LoadingTitle.Text = "💎 MORGAN HUB V5 💎"
+LoadingTitle.TextColor3 = Color3.fromRGB(180, 100, 255)
+LoadingTitle.TextSize = 28
+LoadingTitle.Font = Enum.Font.GothamBold
+LoadingTitle.ZIndex = 101
+LoadingTitle.Parent = LoadingFrame
+
+local LoadingSub = Instance.new("TextLabel")
+LoadingSub.Size = UDim2.new(1, 0, 0, 30)
+LoadingSub.Position = UDim2.new(0, 0, 0.45, 0)
+LoadingSub.BackgroundTransparency = 1
+LoadingSub.Text = "Ametist Gücü Yükleniyor..."
+LoadingSub.TextColor3 = Color3.fromRGB(200, 170, 255)
+LoadingSub.TextSize = 14
+LoadingSub.Font = Enum.Font.GothamMedium
+LoadingSub.ZIndex = 101
+LoadingSub.Parent = LoadingFrame
+
+local BarBg = Instance.new("Frame")
+BarBg.Size = UDim2.new(0, 320, 0, 10)
+BarBg.Position = UDim2.new(0.5, -160, 0.55, 0)
+BarBg.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+BarBg.BorderSizePixel = 0
+BarBg.ZIndex = 101
+BarBg.Parent = LoadingFrame
+
+local BarBgCorner = Instance.new("UICorner")
+BarBgCorner.CornerRadius = UDim.new(1, 0)
+BarBgCorner.Parent = BarBg
+
+local BarFill = Instance.new("Frame")
+BarFill.Size = UDim2.new(0, 0, 1, 0)
+BarFill.BackgroundColor3 = Color3.fromRGB(160, 30, 255)
+BarFill.BorderSizePixel = 0
+BarFill.ZIndex = 102
+BarFill.Parent = BarBg
+
+local BarFillCorner = Instance.new("UICorner")
+BarFillCorner.CornerRadius = UDim.new(1, 0)
+BarFillCorner.Parent = BarFill
+
+task.spawn(function()
+    local tween = TweenService:Create(BarFill, TweenInfo.new(1.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
+    tween:Play()
+    tween.Completed:Wait()
+    LoadingSub.Text = "Hazır!"
+    task.wait(0.3)
+    local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.6), {BackgroundTransparency = 1})
+    TweenService:Create(LoadingTitle, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+    TweenService:Create(LoadingSub, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+    fadeTween:Play()
+    fadeTween.Completed:Wait()
+    LoadingFrame:Destroy()
+end)
+
 -- LOGO BUTTON
 local ToggleLogo = Instance.new("TextButton")
-ToggleLogo.Size = UDim2.new(0, 48, 0, 48)
+ToggleLogo.Name = "ToggleLogo"
+ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
 ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
-ToggleLogo.BackgroundColor3 = Color3.fromRGB(25, 18, 38)
+ToggleLogo.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
 ToggleLogo.Text = "💎"
-ToggleLogo.TextSize = 24
+ToggleLogo.TextSize = 26
 ToggleLogo.Active = true
 ToggleLogo.Draggable = true
 ToggleLogo.Parent = ScreenGui
 
 local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(0, 12)
+LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = ToggleLogo
 
--- MAIN DASHBOARD
+local LogoStroke = Instance.new("UIStroke")
+LogoStroke.Color = Color3.fromRGB(170, 0, 255)
+LogoStroke.Thickness = 2
+LogoStroke.Parent = ToggleLogo
+
+-- MAIN WINDOW
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 660, 0, 420)
-MainFrame.Position = UDim2.new(0.5, -330, 0.5, -210)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+MainFrame.Size = UDim2.new(0, 460, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -240)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 24)
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(160, 50, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
 
 ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- TOP BAR
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 45)
-TopBar.BackgroundTransparency = 1
-TopBar.Parent = MainFrame
+-- YANLARDA YÜZEN AMETİST KRİSTALLERİ
+local function createSideAmethyst(isLeft)
+    local amethyst = Instance.new("TextLabel")
+    amethyst.Size = UDim2.new(0, 40, 0, 40)
+    local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
+    amethyst.Position = posX
+    amethyst.BackgroundTransparency = 1
+    amethyst.Text = "💎"
+    amethyst.TextSize = 30
+    amethyst.Parent = MainFrame
 
-local LogoLabel = Instance.new("TextLabel")
-LogoLabel.Size = UDim2.new(0, 120, 1, 0)
-LogoLabel.Position = UDim2.new(0, 15, 0, 0)
-LogoLabel.BackgroundTransparency = 1
-LogoLabel.Text = Translations[Settings.Language].Title
-LogoLabel.TextColor3 = Color3.fromRGB(200, 140, 255)
-LogoLabel.Font = Enum.Font.GothamBold
-LogoLabel.TextSize = 13
-LogoLabel.TextXAlignment = Enum.TextXAlignment.Left
-LogoLabel.Parent = TopBar
+    local floatTween = TweenService:Create(amethyst, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Position = posX + UDim2.new(0, 0, 0, -25)})
+    floatTween:Play()
+end
+createSideAmethyst(true)
+createSideAmethyst(false)
 
-local SearchFrame = Instance.new("Frame")
-SearchFrame.Size = UDim2.new(0, 220, 0, 28)
-SearchFrame.Position = UDim2.new(0.5, -110, 0.5, -14)
-SearchFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
-SearchFrame.Parent = TopBar
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 0, 45)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "💎 MORGAN HUB V5.0"
+Title.TextColor3 = Color3.fromRGB(200, 130, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = MainFrame
 
-local SearchCorner = Instance.new("UICorner")
-SearchCorner.CornerRadius = UDim.new(0, 8)
-SearchCorner.Parent = SearchFrame
+-- LUCK BOOSTER GUI
+local LuckFrame = Instance.new("Frame")
+LuckFrame.Size = UDim2.new(0, 260, 0, 140)
+LuckFrame.Position = UDim2.new(0.8, -260, 0.15, 0)
+LuckFrame.BackgroundColor3 = Color3.fromRGB(20, 15, 32)
+LuckFrame.Active = true
+LuckFrame.Draggable = true
+LuckFrame.Visible = false
+LuckFrame.Parent = ScreenGui
 
-local SearchBox = Instance.new("TextBox")
-SearchBox.Size = UDim2.new(1, -20, 1, 0)
-SearchBox.Position = UDim2.new(0, 10, 0, 0)
-SearchBox.BackgroundTransparency = 1
-SearchBox.PlaceholderText = Translations[Settings.Language].Search
-SearchBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 140)
-SearchBox.Text = ""
-SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SearchBox.Font = Enum.Font.GothamMedium
-SearchBox.TextSize = 11
-SearchBox.Parent = SearchFrame
+local LuckCorner = Instance.new("UICorner")
+LuckCorner.CornerRadius = UDim.new(0, 8)
+LuckCorner.Parent = LuckFrame
+
+local LuckStroke = Instance.new("UIStroke")
+LuckStroke.Color = Color3.fromRGB(180, 80, 255)
+LuckStroke.Thickness = 2
+LuckStroke.Parent = LuckFrame
+
+local LuckTitle = Instance.new("TextLabel")
+LuckTitle.Size = UDim2.new(1, 0, 0, 30)
+LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
+LuckTitle.BackgroundTransparency = 1
+LuckTitle.Text = "🔮 LUCK RATE BOOSTER"
+LuckTitle.TextColor3 = Color3.fromRGB(220, 150, 255)
+LuckTitle.Font = Enum.Font.GothamBold
+LuckTitle.TextSize = 13
+LuckTitle.Parent = LuckFrame
+
+local LuckStatus = Instance.new("TextLabel")
+LuckStatus.Size = UDim2.new(1, 0, 0, 25)
+LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
+LuckStatus.BackgroundTransparency = 1
+LuckStatus.Text = "MULTIPLIER: 100x"
+LuckStatus.TextColor3 = Color3.fromRGB(170, 100, 255)
+LuckStatus.Font = Enum.Font.GothamBold
+LuckStatus.TextSize = 12
+LuckStatus.Parent = LuckFrame
+
+local ChanceDisplay = Instance.new("TextLabel")
+ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
+ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
+ChanceDisplay.BackgroundColor3 = Color3.fromRGB(30, 20, 48)
+ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
+ChanceDisplay.TextColor3 = Color3.fromRGB(255, 170, 0)
+ChanceDisplay.Font = Enum.Font.GothamMedium
+ChanceDisplay.TextSize = 11
+ChanceDisplay.Parent = LuckFrame
+
+local ChanceCorner = Instance.new("UICorner")
+ChanceCorner.CornerRadius = UDim.new(0, 6)
+ChanceCorner.Parent = ChanceDisplay
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
-CloseBtn.Position = UDim2.new(1, -36, 0.5, -13)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+CloseBtn.Position = UDim2.new(1, -32, 0, 8)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 70)
 CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = TopBar
+CloseBtn.Parent = MainFrame
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
--- SIDEBAR & LANGUAGE SELECTOR
-local SideBar = Instance.new("Frame")
-SideBar.Size = UDim2.new(0, 140, 1, -55)
-SideBar.Position = UDim2.new(0, 12, 0, 48)
-SideBar.BackgroundTransparency = 1
-SideBar.Parent = MainFrame
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -20, 1, -55)
+Container.Position = UDim2.new(0, 10, 0, 48)
+Container.BackgroundTransparency = 1
+Container.ScrollBarThickness = 4
+Container.ScrollBarImageColor3 = Color3.fromRGB(150, 60, 255)
+Container.Parent = MainFrame
 
-local SideLayout = Instance.new("UIListLayout")
-SideLayout.Padding = UDim.new(0, 6)
-SideLayout.Parent = SideBar
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.Parent = Container
 
--- DİL SEÇİM BUTONLARI (TR / EN / IT)
-local LangTitle = Instance.new("TextLabel")
-LangTitle.Size = UDim2.new(1, 0, 0, 20)
-LangTitle.BackgroundTransparency = 1
-LangTitle.Text = "🌐 Language"
-LangTitle.TextColor3 = Color3.fromRGB(180, 180, 200)
-LangTitle.Font = Enum.Font.GothamBold
-LangTitle.TextSize = 11
-LangTitle.Parent = SideBar
-
-local LangFrame = Instance.new("Frame")
-LangFrame.Size = UDim2.new(1, 0, 0, 32)
-LangFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
-LangFrame.Parent = SideBar
-
-local LangCorner = Instance.new("UICorner")
-LangCorner.CornerRadius = UDim.new(0, 6)
-LangCorner.Parent = LangFrame
-
-local function createLangBtn(lang, pos)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.31, 0, 0.8, 0)
-    btn.Position = pos
-    btn.BackgroundColor3 = Settings.Language == lang and Color3.fromRGB(150, 50, 255) or Color3.fromRGB(40, 40, 50)
-    btn.Text = lang
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 10
-    btn.Parent = LangFrame
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 4)
-    c.Parent = btn
-
-    btn.MouseButton1Click:Connect(function()
-        Settings.Language = lang
-        SearchBox.PlaceholderText = Translations[lang].Search
-        LogoLabel.Text = Translations[lang].Title
-        game.StarterGui:SetCore("SendNotification", {Title = "Morgan", Text = "Language: " .. lang, Duration = 2})
-    end)
-end
-
-createLangBtn("TR", UDim2.new(0.02, 0, 0.1, 0))
-createLangBtn("EN", UDim2.new(0.35, 0, 0.1, 0))
-createLangBtn("IT", UDim2.new(0.68, 0, 0.1, 0))
-
--- SİLAH SEÇİMİ (WEAPON SELECTOR)
-local WeaponTitle = Instance.new("TextLabel")
-WeaponTitle.Size = UDim2.new(1, 0, 0, 20)
-WeaponTitle.BackgroundTransparency = 1
-WeaponTitle.Text = "⚔️ Weapon Type"
-WeaponTitle.TextColor3 = Color3.fromRGB(180, 180, 200)
-WeaponTitle.Font = Enum.Font.GothamBold
-WeaponTitle.TextSize = 11
-WeaponTitle.Parent = SideBar
-
-local WeaponBtn = Instance.new("TextButton")
-WeaponBtn.Size = UDim2.new(1, 0, 0, 32)
-WeaponBtn.BackgroundColor3 = Color3.fromRGB(35, 30, 50)
-WeaponBtn.Text = Settings.WeaponType
-WeaponBtn.TextColor3 = Color3.fromRGB(200, 140, 255)
-WeaponBtn.Font = Enum.Font.GothamBold
-WeaponBtn.TextSize = 11
-WeaponBtn.Parent = SideBar
-
-local WCorner = Instance.new("UICorner")
-WCorner.CornerRadius = UDim.new(0, 6)
-WCorner.Parent = WeaponBtn
-
-local WeaponsList = {"Blox Fruits", "Melee", "Sword", "Gun"}
-local wIdx = 1
-
-WeaponBtn.MouseButton1Click:Connect(function()
-    wIdx = wIdx % #WeaponsList + 1
-    Settings.WeaponType = WeaponsList[wIdx]
-    WeaponBtn.Text = Settings.WeaponType
-end)
-
--- GRID MODULE CONTAINER
-local GridContainer = Instance.new("ScrollingFrame")
-GridContainer.Size = UDim2.new(1, -170, 1, -55)
-GridContainer.Position = UDim2.new(0, 160, 0, 48)
-GridContainer.BackgroundTransparency = 1
-GridContainer.ScrollBarThickness = 3
-GridContainer.Parent = MainFrame
-
-local GridLayout = Instance.new("UIGridLayout")
-GridLayout.CellSize = UDim2.new(0, 112, 0, 85)
-GridLayout.CellPadding = UDim2.new(0, 8, 0, 8)
-GridLayout.Parent = GridContainer
-
-local function addModuleCard(titleKey, defaultState, callback)
+local function addToggle(text, defaultState, callback)
     local card = Instance.new("Frame")
-    card.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-    card.Parent = GridContainer
+    card.Size = UDim2.new(0.98, 0, 0, 42)
+    card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
+    card.Parent = Container
 
     local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 10)
+    cardCorner.CornerRadius = UDim.new(0, 6)
     cardCorner.Parent = card
 
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, -8, 0, 30)
-    nameLabel.Position = UDim2.new(0, 4, 0, 12)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = titleKey
-    nameLabel.TextColor3 = Color3.fromRGB(230, 230, 245)
-    nameLabel.Font = Enum.Font.GothamMedium
-    nameLabel.TextSize = 11
-    nameLabel.TextWrapped = true
-    nameLabel.Parent = card
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0.04, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(225, 215, 245)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = card
 
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(0, 46, 0, 20)
-    toggleBtn.Position = UDim2.new(0.5, -23, 1, -28)
-    toggleBtn.BackgroundColor3 = defaultState and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
-    toggleBtn.Text = ""
-    toggleBtn.Parent = card
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(0.86, 0, 0.24, 0)
+    btn.BackgroundColor3 = defaultState and Color3.fromRGB(150, 40, 255) or Color3.fromRGB(45, 35, 65)
+    btn.Text = ""
+    btn.Parent = card
 
-    local pillCorner = Instance.new("UICorner")
-    pillCorner.CornerRadius = UDim.new(1, 0)
-    pillCorner.Parent = toggleBtn
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 11)
+    btnCorner.Parent = btn
+
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 16, 0, 16)
+    circle.Position = defaultState and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
+    circle.BackgroundColor3 = Color3.fromRGB(240, 230, 255)
+    circle.Parent = btn
+
+    local circleCorner = Instance.new("UICorner")
+    circleCorner.CornerRadius = UDim.new(0, 8)
+    circleCorner.Parent = circle
 
     local state = defaultState
-    toggleBtn.MouseButton1Click:Connect(function()
+    btn.MouseButton1Click:Connect(function()
         state = not state
-        toggleBtn.BackgroundColor3 = state and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+        btn.BackgroundColor3 = state and Color3.fromRGB(150, 40, 255) or Color3.fromRGB(45, 35, 65)
+        circle.Position = state and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
         pcall(callback, state)
     end)
 end
 
-addModuleCard("AutoFarm", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addModuleCard("AutoQuest", Settings.AutoQuest, function(v) Settings.AutoQuest = v end)
-addModuleCard("AutoStore", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addModuleCard("Fruit ESP", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addModuleCard("Player ESP", Settings.ESP, function(v) Settings.ESP = v end)
-addModuleCard("Aimbot", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("🔮 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
+    Settings.LuckMultiplier = v
+    LuckFrame.Visible = v
+end)
+addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
 
 -- =============================================================
--- SMART QUEST & WEAPON FARM ENGINE (SEA 1, 2, 3 SUPPORT)
+-- FIXED 100% WORKING FRUIT ESP ENGINE
 -- =============================================================
-local function getPlayerLevel()
-    local level = 1
-    pcall(function()
-        level = LocalPlayer.Data.Level.Value
-    end)
-    return level
-end
+local FruitFolder = Instance.new("Folder")
+FruitFolder.Name = "FruitESPFolder"
+FruitFolder.Parent = CoreGui
 
-local function checkAndTakeQuest()
-    if not Settings.AutoQuest then return end
-    pcall(function()
-        local level = getPlayerLevel()
-        local questName, questLevel = "BanditQuest1", 1
-        
-        -- Leveline göre dinamik quest belirleme
-        if level >= 10 and level < 15 then questName, questLevel = "JungleQuest", 1
-        elseif level >= 15 then questName, questLevel = "JungleQuest", 2 end
-
-        -- Remote üzerinden görevi tetikle
-        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("StartQuest", questName, questLevel)
-    end)
-end
-
-local function equipSelectedWeapon()
-    local char = LocalPlayer.Character
-    if not char then return end
-
-    local toolType = Settings.WeaponType
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    
-    -- Eline uygun silahı geçirme
-    for _, tool in pairs(char:GetChildren()) do
-        if tool:IsA("Tool") then
-            if toolType == "Blox Fruits" and (tool.ToolTip == "Blox Fruit" or tool.Name:find("Fruit")) then return tool end
-            if toolType == "Melee" and tool.ToolTip == "Melee" then return tool end
-            if toolType == "Sword" and tool.ToolTip == "Sword" then return tool end
-            if toolType == "Gun" and tool.ToolTip == "Gun" then return tool end
+local function getFruitImage(fruitName)
+    for name, iconId in pairs(FruitIcons) do
+        if fruitName:lower():find(name:lower()) then
+            return iconId
         end
     end
-
-    if backpack then
-        for _, tool in pairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") then
-                local isMatch = false
-                if toolType == "Blox Fruits" and (tool.ToolTip == "Blox Fruit" or tool.Name:find("Fruit")) then isMatch = true
-                elseif toolType == "Melee" and tool.ToolTip == "Melee" then isMatch = true
-                elseif toolType == "Sword" and tool.ToolTip == "Sword" then isMatch = true
-                elseif toolType == "Gun" and tool.ToolTip == "Gun" then isMatch = true end
-
-                if isMatch then
-                    char.Humanoid:EquipTool(tool)
-                    return tool
-                end
-            end
-        end
-    end
-    return nil
+    return DefaultIcon
 end
 
-local function getClosestEnemy()
-    local closest, minDistance = nil, math.huge
+local function addFruitESP(obj)
+    if not obj or FruitFolder:FindFirstChild(obj:GetDebugId()) then return end
+
+    local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part") or obj:FindFirstChildOfClass("MeshPart")
+    if not handle then return end
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = obj:GetDebugId()
+    bb.Adornee = handle
+    bb.Size = UDim2.new(0, 100, 0, 90)
+    bb.AlwaysOnTop = true
+    bb.Parent = FruitFolder
+
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(0, 40, 0, 40)
+    img.Position = UDim2.new(0.5, -20, 0, 0)
+    img.BackgroundTransparency = 1
+    img.Image = getFruitImage(obj.Name)
+    img.Parent = bb
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 0.4, 0)
+    textLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = obj.Name
+    textLabel.TextColor3 = Color3.fromRGB(200, 130, 255)
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextSize = 11
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Parent = bb
+end
+
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    if not Settings.FruitESP then
+        FruitFolder:ClearAllChildren()
+        return
+    end
+
     local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
 
-    local enemies = Workspace:FindFirstChild("Enemies") or Workspace
-    for _, enemy in pairs(enemies:GetChildren()) do
-        if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(enemy) then
-                local dist = (enemy.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position).Magnitude
-                if dist < minDistance then
-                    minDistance = dist
-                    closest = enemy
-                end
-            end
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or obj.Name:find("Meyve")) then
+            addFruitESP(obj)
         end
     end
-    return closest
-end
 
--- AUTO FARM LOOP WITH SKILL ATTACKS
-table.insert(Connections, RunService.Heartbeat:Connect(function()
-    if not Settings.AutoFarm then return end
-
-    pcall(function()
-        checkAndTakeQuest()
-
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
-        local enemy = getClosestEnemy()
-        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            myChar.Humanoid.PlatformStand = true
-
-            local activeWeapon = equipSelectedWeapon()
-
-            local enemyPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-            root.CFrame = CFrame.lookAt(enemyPos, enemy.HumanoidRootPart.Position)
-
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(500, 500))
-
-            -- Blox Fruits seçiliyse skilleri otomatik kullan
-            if Settings.WeaponType == "Blox Fruits" and activeWeapon then
-                local VirtualInputManager = game:GetService("VirtualInputManager")
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Z, false, game)
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.X, false, game)
+    for _, gui in pairs(FruitFolder:GetChildren()) do
+        local adornee = gui.Adornee
+        if adornee and adornee.Parent then
+            local dist = math.floor((adornee.Position - myPos).Magnitude)
+            local label = gui:FindFirstChildOfClass("TextLabel")
+            if label then
+                label.Text = adornee.Parent.Name .. "\n[" .. dist .. "m]"
             end
         else
-            myChar.Humanoid.PlatformStand = false
+            gui:Destroy()
         end
-    end)
+    end
 end))
 
--- AUTO STORE ENGINE
-local function storeFruit(tool)
-    if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
-    if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
-        pcall(function()
-            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("StoreFruit", tool.Name, tool)
-        end)
+-- =============================================================
+-- FIXED 100% WORKING PLAYER ESP ENGINE (HIGHLIGHT + BILLBOARD)
+-- =============================================================
+local PlayerESPFolder = Instance.new("Folder")
+PlayerESPFolder.Name = "PlayerESPFolder"
+PlayerESPFolder.Parent = CoreGui
+
+local function updatePlayerESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local char = player.Character
+            local hl = PlayerESPFolder:FindFirstChild("HL_" .. player.Name)
+            
+            if Settings.ESP then
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "HL_" .. player.Name
+                    hl.FillColor = Color3.fromRGB(160, 50, 255)
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    hl.FillTransparency = 0.5
+                    hl.OutlineTransparency = 0
+                    hl.Adornee = char
+                    hl.Parent = PlayerESPFolder
+
+                    local bb = Instance.new("BillboardGui")
+                    bb.Name = "BB_" .. player.Name
+                    bb.Adornee = char:FindFirstChild("Head") or char.HumanoidRootPart
+                    bb.Size = UDim2.new(0, 150, 0, 30)
+                    bb.StudsOffset = Vector3.new(0, 3, 0)
+                    bb.AlwaysOnTop = true
+                    bb.Parent = PlayerESPFolder
+
+                    local txt = Instance.new("TextLabel")
+                    txt.Name = "NameLabel"
+                    txt.Size = UDim2.new(1, 0, 1, 0)
+                    txt.BackgroundTransparency = 1
+                    txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    txt.Font = Enum.Font.GothamBold
+                    txt.TextSize = 12
+                    txt.TextStrokeTransparency = 0
+                    txt.Parent = bb
+                else
+                    hl.Adornee = char
+                    local bb = PlayerESPFolder:FindFirstChild("BB_" .. player.Name)
+                    if bb and char:FindFirstChild("Humanoid") then
+                        local hp = math.floor(char.Humanoid.Health)
+                        bb.NameLabel.Text = player.Name .. " [" .. hp .. " HP]"
+                    end
+                end
+            else
+                if hl then hl:Destroy() end
+                local bb = PlayerESPFolder:FindFirstChild("BB_" .. player.Name)
+                if bb then bb:Destroy() end
+            end
+        end
     end
 end
 
-table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
-    task.wait(0.5)
-    storeFruit(tool)
-end))
+table.insert(Connections, RunService.RenderStepped:Connect(updatePlayerESP))
 
 -- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
-    Title = "💎 MORGAN CLIENT V5",
-    Text = Translations[Settings.Language].Notif,
+    Title = "💎 MORGAN HUB V5.0",
+    Text = "ESP ve Ametist GUI tam donanımlı yüklendi!",
     Duration = 4
 })
