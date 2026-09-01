@@ -229,15 +229,15 @@ task.spawn(function()
 end)
 
 -- -------------------------------------------------------------
--- LOGO BUTTON (TAM KARE & GÜNCELLENMİŞ GÖRSEL)
+-- LOGO BUTTON (YENİ GÖRSEL ID: 108376012222640)
 -- -------------------------------------------------------------
 local ToggleLogo = Instance.new("ImageButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
 ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
-ToggleLogo.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
+ToggleLogo.BackgroundColor3 = Color3.fromRGB(15, 10, 22)
 ToggleLogo.BorderSizePixel = 0
-ToggleLogo.Image = "rbxassetid://87983507897868"
+ToggleLogo.Image = "rbxassetid://108376012222640"
 ToggleLogo.Active = true
 ToggleLogo.Draggable = true
 ToggleLogo.Parent = ScreenGui
@@ -274,7 +274,7 @@ ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI (LEFT & RIGHT AMETHYSTS)
+-- 🔮 AMETİST KANAT/YAN ANİMASYONLARI
 local function createSideAmethyst(isLeft)
     local amethyst = Instance.new("TextLabel")
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
