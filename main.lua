@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - MULTI-LANGUAGE / TR - EN - IT) 🔮
+-- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - ULTIMATE GUI & INTRO) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -11,96 +11,11 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local Connections = {}
-
--- =============================================================
--- 🌐 LANGUAGE SYSTEM (TR / ENG / IT)
--- =============================================================
-local CurrentLang = "TR" -- "TR", "EN", "IT"
-local LanguageOrder = {"TR", "EN", "IT"}
-
-local Translations = {
-    TR = {
-        LoadingSub = "Ametist Gücü Yükleniyor...",
-        Ready = "Hazır!",
-        ConfirmText = "GUI'yi kapatıp silmek istediğinize emin misiniz?",
-        Yes = "EVET",
-        No = "HAYIR",
-        LuckTitle = "🔮 ŞANS ORANI YÜKSELTİCİ",
-        LuckStatus = "ÇARPAN: ",
-        ChanceDisplay = "Mistik Düşme Oranı: ~",
-        ToggleLuck = "🔮 Şans Oranı Yükseltici GUI",
-        SliderLuckPower = "🔮 Şans Çarpanı Gücü",
-        ToggleAutoFarm = "🌾 Otomatik Seviye Kasma (Yaratıklar)",
-        ToggleAutoStore = "📦 Meyveyi Envantere Depola",
-        ToggleFruitESP = "🖼️ Meyve ESP (Resimli İkonlar)",
-        TogglePlayerESP = "👁️ Oyuncu ESP (Kutu & Can)",
-        ToggleAimbot = "🎯 Aimbot (En Yakın Oyuncu)",
-        ToggleAutoHunt = "⚡ Otomatik Odül Avı (Hızlı Uçuş)",
-        SliderFlySpeed = "⚙️ Uçuş / Av Hızı",
-        SliderFarmDist = "⚙️ Kasılma Mesafesi (Yükseklik)"
-    },
-    EN = {
-        LoadingSub = "Loading Amethyst Power...",
-        Ready = "Ready!",
-        ConfirmText = "Are you sure you want to close and destroy the GUI?",
-        Yes = "YES",
-        No = "NO",
-        LuckTitle = "🔮 LUCK RATE BOOSTER",
-        LuckStatus = "MULTIPLIER: ",
-        ChanceDisplay = "Mythical Drop Rate: ~",
-        ToggleLuck = "🔮 Luck Rate Booster GUI",
-        SliderLuckPower = "🔮 Luck Multiplier Power",
-        ToggleAutoFarm = "🌾 Auto Farm Level (Mobs)",
-        ToggleAutoStore = "📦 Auto Store Fruit (Inventory)",
-        ToggleFruitESP = "🖼️ Fruit ESP (With Image Icons)",
-        TogglePlayerESP = "👁️ Player ESP (Boxes & HP)",
-        ToggleAimbot = "🎯 Aimbot (Nearest Player)",
-        ToggleAutoHunt = "⚡ Auto Bounty Hunt (Fast Fly)",
-        SliderFlySpeed = "⚙️ Fly / Hunt Speed",
-        SliderFarmDist = "⚙️ Auto Farm Distance (Height)"
-    },
-    IT = {
-        LoadingSub = "Caricamento Potere Ametista...",
-        Ready = "Pronto!",
-        ConfirmText = "Sei sicuro di voler chiudere e distruggere la GUI?",
-        Yes = "SÌ",
-        No = "NO",
-        LuckTitle = "🔮 POTENZIATORE DI FORTUNA",
-        LuckStatus = "MOLTIPLICATORE: ",
-        ChanceDisplay = "Tasso di Drop Mitico: ~",
-        ToggleLuck = "🔮 GUI Potenziatore di Fortuna",
-        SliderLuckPower = "🔮 Potenza Moltiplicatore Fortuna",
-        ToggleAutoFarm = "🌾 Auto Farm Livello (Mob)",
-        ToggleAutoStore = "📦 Conserva Frutto Automaticamente",
-        ToggleFruitESP = "🖼️ ESP Frutti (Con Icone)",
-        TogglePlayerESP = "👁️ ESP Giocatori (Rettangoli & HP)",
-        ToggleAimbot = "🎯 Aimbot (Giocatore Più Vicino)",
-        ToggleAutoHunt = "⚡ Caccia alla Taglia Auto (Volo Rapido)",
-        SliderFlySpeed = "⚙️ Velocità Volo / Caccia",
-        SliderFarmDist = "⚙️ Distanza Auto Farm (Altezza)"
-    }
-}
-
--- Registry to hold text update functions for UI elements
-local TextUpdaters = {}
-
-local function RegisterText(updateFunc)
-    table.insert(TextUpdaters, updateFunc)
-    updateFunc(Translations[CurrentLang])
-end
-
-local function SetLanguage(lang)
-    CurrentLang = lang
-    for _, updateFunc in ipairs(TextUpdaters) do
-        pcall(updateFunc, Translations[CurrentLang])
-    end
-end
 
 -- Anti-AFK
 table.insert(Connections, LocalPlayer.Idled:Connect(function()
@@ -200,13 +115,12 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(1, 0, 0, 30)
 LoadingSub.Position = UDim2.new(0, 0, 0.45, 0)
 LoadingSub.BackgroundTransparency = 1
+LoadingSub.Text = "Ametist Gücü Yükleniyor..."
 LoadingSub.TextColor3 = Color3.fromRGB(200, 170, 255)
 LoadingSub.TextSize = 14
 LoadingSub.Font = Enum.Font.GothamMedium
 LoadingSub.ZIndex = 101
 LoadingSub.Parent = LoadingFrame
-
-RegisterText(function(t) LoadingSub.Text = t.LoadingSub end)
 
 local BarBg = Instance.new("Frame")
 BarBg.Size = UDim2.new(0, 320, 0, 10)
@@ -243,7 +157,7 @@ task.spawn(function()
     tween:Play()
     tween.Completed:Wait()
     
-    LoadingSub.Text = Translations[CurrentLang].Ready
+    LoadingSub.Text = "Hazır!"
     task.wait(0.4)
     
     local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1})
@@ -307,12 +221,13 @@ ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI
+-- 🔮 AMETİST KANAT/YAN ANİMASYONLARI (LEFT & RIGHT AMETHYSTS)
 local function createSideAmethyst(isLeft)
     local amethyst = Instance.new("TextLabel")
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
     amethyst.Size = UDim2.new(0, 40, 0, 40)
     
+    -- X Pozisyonu: Sol veya Sağ yan
     local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
     amethyst.Position = posX
     amethyst.BackgroundTransparency = 1
@@ -321,8 +236,10 @@ local function createSideAmethyst(isLeft)
     amethyst.ZIndex = 5
     amethyst.Parent = MainFrame
 
+    -- Yüzme / İnip-Çıkma Animasyonu (Floating Tween)
     local upPos = posX + UDim2.new(0, 0, 0, -25)
     local downPos = posX + UDim2.new(0, 0, 0, 25)
+    
     amethyst.Position = upPos
     
     local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
@@ -330,11 +247,11 @@ local function createSideAmethyst(isLeft)
     floatTween:Play()
 end
 
-createSideAmethyst(true)
-createSideAmethyst(false)
+createSideAmethyst(true)  -- Sol Ametist
+createSideAmethyst(false) -- Sağ Ametist
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -120, 0, 45)
+Title.Size = UDim2.new(1, -40, 0, 45)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "💎 MORGAN HUB V5.0"
@@ -343,36 +260,6 @@ Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
-
--- 🌐 LANGUAGE SELECTOR BUTTON (TOP RIGHT NEXT TO CLOSE)
-local LangBtn = Instance.new("TextButton")
-LangBtn.Name = "LangBtn"
-LangBtn.Size = UDim2.new(0, 60, 0, 26)
-LangBtn.Position = UDim2.new(1, -98, 0, 8)
-LangBtn.BackgroundColor3 = Color3.fromRGB(45, 30, 75)
-LangBtn.BorderSizePixel = 0
-LangBtn.Text = "🌐 TR"
-LangBtn.TextColor3 = Color3.fromRGB(220, 180, 255)
-LangBtn.Font = Enum.Font.GothamBold
-LangBtn.TextSize = 11
-LangBtn.Parent = MainFrame
-
-local LangCorner = Instance.new("UICorner")
-LangCorner.CornerRadius = UDim.new(0, 6)
-LangCorner.Parent = LangBtn
-
-local LangStroke = Instance.new("UIStroke")
-LangStroke.Color = Color3.fromRGB(150, 60, 255)
-LangStroke.Thickness = 1
-LangStroke.Parent = LangBtn
-
-local currentLangIndex = 1
-LangBtn.MouseButton1Click:Connect(function()
-    currentLangIndex = (currentLangIndex % #LanguageOrder) + 1
-    local nextLang = LanguageOrder[currentLangIndex]
-    LangBtn.Text = "🌐 " .. nextLang
-    SetLanguage(nextLang)
-end)
 
 -- INTERACTIVE ADVANCED LUCK BOOSTER GUI
 local LuckFrame = Instance.new("Frame")
@@ -399,29 +286,28 @@ local LuckTitle = Instance.new("TextLabel")
 LuckTitle.Size = UDim2.new(1, 0, 0, 30)
 LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
 LuckTitle.BackgroundTransparency = 1
+LuckTitle.Text = "🔮 LUCK RATE BOOSTER"
 LuckTitle.TextColor3 = Color3.fromRGB(220, 150, 255)
 LuckTitle.Font = Enum.Font.GothamBold
 LuckTitle.TextSize = 13
 LuckTitle.Parent = LuckFrame
 
-RegisterText(function(t) LuckTitle.Text = t.LuckTitle end)
-
 local LuckStatus = Instance.new("TextLabel")
 LuckStatus.Size = UDim2.new(1, 0, 0, 25)
 LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
 LuckStatus.BackgroundTransparency = 1
+LuckStatus.Text = "MULTIPLIER: 100x"
 LuckStatus.TextColor3 = Color3.fromRGB(170, 100, 255)
 LuckStatus.Font = Enum.Font.GothamBold
 LuckStatus.TextSize = 12
 LuckStatus.Parent = LuckFrame
-
-RegisterText(function(t) LuckStatus.Text = t.LuckStatus .. Settings.LuckPower .. "x" end)
 
 local ChanceDisplay = Instance.new("TextLabel")
 ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
 ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
 ChanceDisplay.BackgroundColor3 = Color3.fromRGB(30, 20, 48)
 ChanceDisplay.BorderSizePixel = 0
+ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
 ChanceDisplay.TextColor3 = Color3.fromRGB(255, 170, 0)
 ChanceDisplay.Font = Enum.Font.GothamMedium
 ChanceDisplay.TextSize = 11
@@ -430,11 +316,6 @@ ChanceDisplay.Parent = LuckFrame
 local ChanceCorner = Instance.new("UICorner")
 ChanceCorner.CornerRadius = UDim.new(0, 6)
 ChanceCorner.Parent = ChanceDisplay
-
-RegisterText(function(t)
-    local simulatedRate = math.min(99.9, math.floor(Settings.LuckPower * 0.85 * 10) / 10)
-    ChanceDisplay.Text = t.ChanceDisplay .. simulatedRate .. "%"
-end)
 
 -- CONFIRM DESTROY FRAME
 local ConfirmFrame = Instance.new("Frame")
@@ -453,24 +334,22 @@ local ConfirmText = Instance.new("TextLabel")
 ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
 ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
 ConfirmText.BackgroundTransparency = 1
+ConfirmText.Text = "GUI'yi kapatıp silmek istediğinize emin misiniz?"
 ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ConfirmText.Font = Enum.Font.GothamBold
 ConfirmText.TextSize = 14
 ConfirmText.ZIndex = 11
 ConfirmText.Parent = ConfirmFrame
 
-RegisterText(function(t) ConfirmText.Text = t.ConfirmText end)
-
 local YesBtn = Instance.new("TextButton")
 YesBtn.Size = UDim2.new(0, 100, 0, 35)
 YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
 YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
+YesBtn.Text = "EVET"
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.ZIndex = 11
 YesBtn.Parent = ConfirmFrame
-
-RegisterText(function(t) YesBtn.Text = t.Yes end)
 
 local YesCorner = Instance.new("UICorner")
 YesCorner.CornerRadius = UDim.new(0, 6)
@@ -480,12 +359,11 @@ local NoBtn = Instance.new("TextButton")
 NoBtn.Size = UDim2.new(0, 100, 0, 35)
 NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
 NoBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 75)
+NoBtn.Text = "HAYIR"
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.ZIndex = 11
 NoBtn.Parent = ConfirmFrame
-
-RegisterText(function(t) NoBtn.Text = t.No end)
 
 local NoCorner = Instance.new("UICorner")
 NoCorner.CornerRadius = UDim.new(0, 6)
@@ -520,7 +398,7 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
 Layout.Parent = Container
 
-local function addToggle(translationKey, defaultState, callback)
+local function addToggle(text, defaultState, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 42)
     card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
@@ -535,13 +413,12 @@ local function addToggle(translationKey, defaultState, callback)
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0.04, 0, 0, 0)
     label.BackgroundTransparency = 1
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(225, 215, 245)
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = card
-
-    RegisterText(function(t) label.Text = t[translationKey] end)
 
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 44, 0, 22)
@@ -575,7 +452,7 @@ local function addToggle(translationKey, defaultState, callback)
     end)
 end
 
-local function addSlider(translationKey, min, max, default, callback)
+local function addSlider(text, min, max, default, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 50)
     card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
@@ -590,13 +467,12 @@ local function addSlider(translationKey, min, max, default, callback)
     label.Size = UDim2.new(0.7, 0, 0.5, 0)
     label.Position = UDim2.new(0.04, 0, 0.08, 0)
     label.BackgroundTransparency = 1
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(225, 215, 245)
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = card
-
-    RegisterText(function(t) label.Text = t[translationKey] end)
 
     local valueLabel = Instance.new("TextLabel")
     valueLabel.Size = UDim2.new(0.2, 0, 0.5, 0)
@@ -653,7 +529,7 @@ local function addSlider(translationKey, min, max, default, callback)
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input)
         end
@@ -661,28 +537,27 @@ local function addSlider(translationKey, min, max, default, callback)
 end
 
 -- MENU ITEMS
-addToggle("ToggleLuck", Settings.LuckMultiplier, function(v) 
+addToggle("🔮 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
 end)
-
-addSlider("SliderLuckPower", 1, 1000, Settings.LuckPower, function(v)
+addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
     Settings.LuckPower = v
-    LuckStatus.Text = Translations[CurrentLang].LuckStatus .. v .. "x"
+    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
     local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
-    ChanceDisplay.Text = Translations[CurrentLang].ChanceDisplay .. simulatedRate .. "%"
+    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
 end)
 
-addToggle("ToggleAutoFarm", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addToggle("ToggleAutoStore", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addToggle("ToggleFruitESP", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addToggle("TogglePlayerESP", Settings.ESP, function(v) Settings.ESP = v end)
-addToggle("ToggleAimbot", Settings.Aimbot, function(v) Settings.Aimbot = v end)
-addToggle("ToggleAutoHunt", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
+addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
 
 -- SETTINGS SECTION
-addSlider("SliderFlySpeed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
-addSlider("SliderFarmDist", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
 -- =============================================================
 -- AUTO STORE FRUIT ENGINE
@@ -986,33 +861,35 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end)
 end))
 
--- =============================================================
--- DESTROY & CLEANUP ENGINE
--- =============================================================
+-- DESTROY FUNCTION
 YesBtn.MouseButton1Click:Connect(function()
-    -- Clear Connections
-    for _, conn in pairs(Connections) do
-        if conn then conn:Disconnect() end
+    Settings.AutoFarm = false
+    Settings.AutoHunt = false
+    Settings.ESP = false
+    Settings.FruitESP = false
+    Settings.AutoStore = false
+    Settings.LuckMultiplier = false
+
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.PlatformStand = false
     end
-    
-    -- Clear Drawing ESP
-    for p, _ in pairs(ESPCache) do
-        removeESP(p)
+
+    for _, conn in pairs(Connections) do conn:Disconnect() end
+    for _, esp in pairs(ESPCache) do
+        esp.BoxOutline:Remove()
+        esp.Box:Remove()
+        esp.Text:Remove()
     end
-    
-    -- Clear Billboard ESP
     for _, data in pairs(FruitBillboards) do
         if data.Gui then data.Gui:Destroy() end
     end
-    
-    -- Reset Character State
-    pcall(function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.PlatformStand = false
-        end
-    end)
 
-    -- Destroy UI
-    if ScreenGui then ScreenGui:Destroy() end
-    if LuckFrame then LuckFrame:Destroy() end
+    ScreenGui:Destroy()
 end)
+
+-- NOTIFICATION
+game.StarterGui:SetCore("SendNotification", {
+    Title = "💎 MORGAN HUB V5.0",
+    Text = "Ametist temalı arayüz yüklendi!",
+    Duration = 4
+})
