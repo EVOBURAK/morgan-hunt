@@ -229,7 +229,7 @@ task.spawn(function()
 end)
 
 -- -------------------------------------------------------------
--- LOGO BUTTON (SQUARE & CUSTOM IMAGE ICON)
+-- LOGO BUTTON (TAM KARE & GÜNCELLENMİŞ GÖRSEL)
 -- -------------------------------------------------------------
 local ToggleLogo = Instance.new("ImageButton")
 ToggleLogo.Name = "ToggleLogo"
@@ -237,14 +237,10 @@ ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
 ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
 ToggleLogo.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
 ToggleLogo.BorderSizePixel = 0
-ToggleLogo.Image = "rbxassetid://108376012222640"
+ToggleLogo.Image = "rbxassetid://87983507897868"
 ToggleLogo.Active = true
 ToggleLogo.Draggable = true
 ToggleLogo.Parent = ScreenGui
-
-local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(0, 0) -- Tam kare
-LogoCorner.Parent = ToggleLogo
 
 local LogoStroke = Instance.new("UIStroke")
 LogoStroke.Color = Color3.fromRGB(170, 0, 255)
@@ -284,7 +280,6 @@ local function createSideAmethyst(isLeft)
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
     amethyst.Size = UDim2.new(0, 40, 0, 40)
     
-    -- X Pozisyonu: Sol veya Sağ yan
     local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
     amethyst.Position = posX
     amethyst.BackgroundTransparency = 1
@@ -293,7 +288,6 @@ local function createSideAmethyst(isLeft)
     amethyst.ZIndex = 5
     amethyst.Parent = MainFrame
 
-    -- Yüzme / İnip-Çıkma Animasyonu (Floating Tween)
     local upPos = posX + UDim2.new(0, 0, 0, -25)
     local downPos = posX + UDim2.new(0, 0, 0, 25)
     
