@@ -1,4 +1,62 @@
 -- =================================================================================
+-- 🌐 LANGUAGE CONFIGURATION / CONFIGURAZIONE LINGUA
+-- =================================================================================
+local SelectedLanguage = "it" -- "it" = Italiano (Auto/Default), "en" = English
+
+local Translations = {
+    ["it"] = {
+        LoadingTitle = "💎 MORGAN HUB V5 💎",
+        LoadingSub = "Caricamento Potere Ametista...",
+        Ready = "Pronto!",
+        HubTitle = "💎 MORGAN HUB V5.0",
+        LuckTitle = "🔮 LUCK RATE BOOSTER",
+        Multiplier = "MOLTIPLICATORE: ",
+        MythicalRate = "Tasso di drop mitico: ~",
+        ConfirmDestroy = "Sei sicuro di voler chiudere ed eliminare la GUI?",
+        Yes = "SÌ",
+        No = "NO",
+        GuiLuckBooster = "🔮 Luck Rate Booster GUI",
+        LuckPower = "🔮 Potere Moltiplicatore Fortuna",
+        AutoFarmMobs = "🌾 Auto Farm Level (Mobs)",
+        AutoStoreFruit = "📦 Auto Store Fruit (Inventario)",
+        FruitESP = "🖼️ Fruit ESP (Con Icone)",
+        PlayerESP = "👁️ Player ESP (Box & HP)",
+        Aimbot = "🎯 Aimbot (Giocatore più vicino)",
+        AutoBounty = "⚡ Auto Bounty Hunt (Volo Rapido)",
+        FlySpeed = "⚙️ Velocità Volo / Caccia",
+        FarmDistance = "⚙️ Distanza Auto Farm (Altezza)",
+        NotifTitle = "💎 MORGAN HUB V5.0",
+        NotifText = "Interfaccia Ametista caricata!"
+    },
+    ["en"] = {
+        LoadingTitle = "💎 MORGAN HUB V5 💎",
+        LoadingSub = "Loading Amethyst Power...",
+        Ready = "Ready!",
+        HubTitle = "💎 MORGAN HUB V5.0",
+        LuckTitle = "🔮 LUCK RATE BOOSTER",
+        Multiplier = "MULTIPLIER: ",
+        MythicalRate = "Mythical Drop Rate: ~",
+        ConfirmDestroy = "Are you sure you want to close and destroy the GUI?",
+        Yes = "YES",
+        No = "NO",
+        GuiLuckBooster = "🔮 Luck Rate Booster GUI",
+        LuckPower = "🔮 Luck Multiplier Power",
+        AutoFarmMobs = "🌾 Auto Farm Level (Mobs)",
+        AutoStoreFruit = "📦 Auto Store Fruit (Inventory)",
+        FruitESP = "🖼️ Fruit ESP (With Image Icons)",
+        PlayerESP = "👁️ Player ESP (Boxes & HP)",
+        Aimbot = "🎯 Aimbot (Nearest Player)",
+        AutoBounty = "⚡ Auto Bounty Hunt (Fast Fly)",
+        FlySpeed = "⚙️ Fly / Hunt Speed",
+        FarmDistance = "⚙️ Auto Farm Distance (Height)",
+        NotifTitle = "💎 MORGAN HUB V5.0",
+        NotifText = "Amethyst UI loaded!"
+    }
+}
+
+local L = Translations[SelectedLanguage] or Translations["it"]
+
+-- =================================================================================
 -- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - ULTIMATE GUI & INTRO) 🔮
 -- =================================================================================
 
@@ -104,7 +162,7 @@ local LoadingTitle = Instance.new("TextLabel")
 LoadingTitle.Size = UDim2.new(1, 0, 0, 50)
 LoadingTitle.Position = UDim2.new(0, 0, 0.38, 0)
 LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "💎 MORGAN HUB V5 💎"
+LoadingTitle.Text = L.LoadingTitle
 LoadingTitle.TextColor3 = Color3.fromRGB(180, 100, 255)
 LoadingTitle.TextSize = 28
 LoadingTitle.Font = Enum.Font.GothamBold
@@ -115,7 +173,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(1, 0, 0, 30)
 LoadingSub.Position = UDim2.new(0, 0, 0.45, 0)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "Ametist Gücü Yükleniyor..."
+LoadingSub.Text = L.LoadingSub
 LoadingSub.TextColor3 = Color3.fromRGB(200, 170, 255)
 LoadingSub.TextSize = 14
 LoadingSub.Font = Enum.Font.GothamMedium
@@ -157,7 +215,7 @@ task.spawn(function()
     tween:Play()
     tween.Completed:Wait()
     
-    LoadingSub.Text = "Hazır!"
+    LoadingSub.Text = L.Ready
     task.wait(0.4)
     
     local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1})
@@ -254,7 +312,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -40, 0, 45)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "💎 MORGAN HUB V5.0"
+Title.Text = L.HubTitle
 Title.TextColor3 = Color3.fromRGB(200, 130, 255)
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
@@ -286,7 +344,7 @@ local LuckTitle = Instance.new("TextLabel")
 LuckTitle.Size = UDim2.new(1, 0, 0, 30)
 LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
 LuckTitle.BackgroundTransparency = 1
-LuckTitle.Text = "🔮 LUCK RATE BOOSTER"
+LuckTitle.Text = L.LuckTitle
 LuckTitle.TextColor3 = Color3.fromRGB(220, 150, 255)
 LuckTitle.Font = Enum.Font.GothamBold
 LuckTitle.TextSize = 13
@@ -296,7 +354,7 @@ local LuckStatus = Instance.new("TextLabel")
 LuckStatus.Size = UDim2.new(1, 0, 0, 25)
 LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
 LuckStatus.BackgroundTransparency = 1
-LuckStatus.Text = "MULTIPLIER: 100x"
+LuckStatus.Text = L.Multiplier .. "100x"
 LuckStatus.TextColor3 = Color3.fromRGB(170, 100, 255)
 LuckStatus.Font = Enum.Font.GothamBold
 LuckStatus.TextSize = 12
@@ -307,7 +365,7 @@ ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
 ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
 ChanceDisplay.BackgroundColor3 = Color3.fromRGB(30, 20, 48)
 ChanceDisplay.BorderSizePixel = 0
-ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
+ChanceDisplay.Text = L.MythicalRate .. "84.5%"
 ChanceDisplay.TextColor3 = Color3.fromRGB(255, 170, 0)
 ChanceDisplay.Font = Enum.Font.GothamMedium
 ChanceDisplay.TextSize = 11
@@ -334,7 +392,7 @@ local ConfirmText = Instance.new("TextLabel")
 ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
 ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
 ConfirmText.BackgroundTransparency = 1
-ConfirmText.Text = "GUI'yi kapatıp silmek istediğinize emin misiniz?"
+ConfirmText.Text = L.ConfirmDestroy
 ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ConfirmText.Font = Enum.Font.GothamBold
 ConfirmText.TextSize = 14
@@ -345,7 +403,7 @@ local YesBtn = Instance.new("TextButton")
 YesBtn.Size = UDim2.new(0, 100, 0, 35)
 YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
 YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
-YesBtn.Text = "EVET"
+YesBtn.Text = L.Yes
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.ZIndex = 11
@@ -359,7 +417,7 @@ local NoBtn = Instance.new("TextButton")
 NoBtn.Size = UDim2.new(0, 100, 0, 35)
 NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
 NoBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 75)
-NoBtn.Text = "HAYIR"
+NoBtn.Text = L.No
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.ZIndex = 11
@@ -537,27 +595,27 @@ local function addSlider(text, min, max, default, callback)
 end
 
 -- MENU ITEMS
-addToggle("🔮 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
+addToggle(L.GuiLuckBooster, Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
 end)
-addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
+addSlider(L.LuckPower, 1, 1000, Settings.LuckPower, function(v)
     Settings.LuckPower = v
-    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
+    LuckStatus.Text = L.Multiplier .. v .. "x"
     local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
-    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
+    ChanceDisplay.Text = L.MythicalRate .. simulatedRate .. "%"
 end)
 
-addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
-addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
-addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+addToggle(L.AutoFarmMobs, Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle(L.AutoStoreFruit, Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle(L.FruitESP, Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle(L.PlayerESP, Settings.ESP, function(v) Settings.ESP = v end)
+addToggle(L.Aimbot, Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle(L.AutoBounty, Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
 
 -- SETTINGS SECTION
-addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
-addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+addSlider(L.FlySpeed, 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider(L.FarmDistance, 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
 -- =============================================================
 -- AUTO STORE FRUIT ENGINE
@@ -889,7 +947,7 @@ end)
 
 -- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
-    Title = "💎 MORGAN HUB V5.0",
-    Text = "Ametist temalı arayüz yüklendi!",
+    Title = L.NotifTitle,
+    Text = L.NotifText,
     Duration = 4
 })
