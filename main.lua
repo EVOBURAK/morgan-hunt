@@ -241,39 +241,6 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
--- SERVER HOP SYSTEM
-local function serverHop()
-    local sf, servers = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-    end)
-    if sf and servers and servers.data then
-        for _, server in pairs(servers.data) do
-            if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
-                break
-            end
-        end
-    end
-end
-
-local function checkAdminPresence(player)
-    local adminIDs = {[410143093] = true, [1552391024] = true, [4424317] = true}
-    if adminIDs[player.UserId] or player:GetRankInGroup(11424103) >= 100 then
-        task.spawn(function()
-            game.StarterGui:SetCore("SendNotification", {
-                Title = Languages[Settings.Language].notif_title,
-                Text = Languages[Settings.Language].admin_hop,
-                Duration = 5
-            })
-            task.wait(2)
-            serverHop()
-        end)
-    end
-end
-
-for _, p in pairs(Players:GetPlayers()) do checkAdminPresence(p) end
-table.insert(Connections, Players.PlayerAdded:Connect(checkAdminPresence))
-
 -- SCREEN GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
@@ -404,7 +371,7 @@ ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI DEFINITION (Must be defined BEFORE calling!)
+-- 🔮 AMETİST KANAT/YAN ANİMASYONLARI DEFINITION
 local function createSideAmethyst(isLeft)
     local amethyst = Instance.new("TextLabel")
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
@@ -426,7 +393,6 @@ local function createSideAmethyst(isLeft)
     floatTween:Play()
 end
 
--- Call functions safely after they are defined
 createSideAmethyst(true)
 createSideAmethyst(false)
 
@@ -740,3 +706,516 @@ local function addSlider(key, min, max, default, callback)
 
     UI_Elements[key] = label
 end
+
+local function changeLanguage(lang)
+    Settings.Language = lang
+    LangBtn.Text = Languages[lang].lang_btn
+    Title.Text = Languages[lang].title
+    ConfirmText.Text = Languages[lang].confirm_destroy
+    YesBtn.Text = Languages[lang].yes
+    NoBtn.Text = Languages[lang].no
+
+    for key, label in pairs(UI_Elements) do
+        if Languages[lang][key] then
+            label.Text = Languages[lang][key]
+        end
+    end
+end
+
+LangBtn.MouseButton1Click:Connect(function()
+    if Settings.Language == "EN" then changeLanguage("IT") else changeLanguage("EN") end
+end)
+
+-- CALLING FUNCTIONS TO CONSTRUCT THE MENU CONTROLS
+addToggle("luck_booster", Settings.LuckMultiplier, function(v) 
+    Settings.LuckMultiplier = v
+    LuckFrame.Visible = v
+end)
+addSlider("luck_power", 1, 1000, Settings.LuckPower, function(v)
+    Settings.LuckPower = v
+    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
+    local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
+    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
+end)
+
+addToggle("auto_farm", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("auto_store", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("fruit_esp", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("player_esp", Settings.ESP, function(v) Settings.ESP = v end)
+addToggle("aimbot", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("auto_hunt", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+
+addSlider("fly_speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider("farm_dist", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+
+-- NOCLIP SERVICE
+local function checkNoClip()
+    if Settings.AutoFarm or Settings.AutoHunt then
+        local char = LocalPlayer.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end
+table.insert(Connections, RunService.Stepped:Connect(checkNoClip))
+
+-- AUTO STORE FRUIT
+local function storeFruit(tool)
+    if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
+    if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
+        pcall(function()
+            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("StoreFruit", tool.Name, tool)
+        end)
+    end
+end
+
+table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
+    char.ChildAdded:Connect(storeFruit)
+end))
+if LocalPlayer.Character then
+    LocalPlayer.Character.ChildAdded:Connect(storeFruit)
+end
+
+table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
+    task.wait(0.5)
+    storeFruit(tool)
+end))
+
+-- AUTO FARM UTILS
+local function getQuestNPCAndData()
+    local myLevel = (Level and Level.Value) or 1
+    for _, data in ipairs(QuestMap) do
+        if myLevel >= data.Min and myLevel <= data.Max then
+            return data
+        end
+    end
+    return QuestMap[#QuestMap]
+end
+
+local function findNPC(npcName)
+    -- Direct exact find
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj.Name == npcName and obj:FindFirstChild("HumanoidRootPart") then
+            return obj
+        end
+    end
+    -- Fallback proximity search for dynamic map updates
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and (obj.Name:find("Quest") or obj.Name:find("Adventurer") or obj.Name == "Villager" or obj.Name:find("Officer") or obj.Name:find("Keeper")) and obj:FindFirstChild("HumanoidRootPart") then
+            local dist = (obj.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if dist < 1200 then
+                return obj
+            end
+        end
+    end
+    return nil
+end
+
+local function getEnemy(enemyName)
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, enemy in pairs(enemies:GetChildren()) do
+            if enemy.Name:find(enemyName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                return enemy
+            end
+        end
+    end
+    for _, enemy in pairs(Workspace:GetChildren()) do
+        if enemy:IsA("Model") and enemy.Name:find(enemyName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            return enemy
+        end
+    end
+    return nil
+end
+
+-- MOB BRING ENGINE
+local function aggregateMobs(enemyName, baseEnemy)
+    if not baseEnemy or not baseEnemy:FindFirstChild("HumanoidRootPart") then return end
+    local basePos = baseEnemy.HumanoidRootPart.Position
+
+    local sourceFolders = {Workspace, Workspace:FindFirstChild("Enemies")}
+    for _, folder in pairs(sourceFolders) do
+        if folder then
+            for _, enemy in pairs(folder:GetChildren()) do
+                if enemy.Name:find(enemyName) and enemy ~= baseEnemy and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                    enemy.HumanoidRootPart.CFrame = CFrame.new(basePos)
+                    enemy.Humanoid.PlatformStand = true
+                    enemy.HumanoidRootPart.Anchored = true
+                    enemy.HumanoidRootPart.CanCollide = false
+                    enemy.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                end
+            end
+        end
+    end
+end
+
+local function checkCorrectQuest(neededMob)
+    local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+    if mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible then
+        local titleText = mainGui.Quest.Container.QuestTitle.Title.Text:lower()
+        if titleText:find(neededMob:lower()) then
+            return true
+        end
+    end
+    return false
+end
+
+-- AUTO FARM CORE HEARTBEAT LOOP
+table.insert(Connections, RunService.Heartbeat:Connect(function()
+    if not Settings.AutoFarm then return end
+
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
+        local root = myChar.HumanoidRootPart
+
+        local questData = getQuestNPCAndData()
+        if not questData then return end
+
+        local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+        local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
+
+        if hasQuest then
+            if not checkCorrectQuest(questData.Mob) then
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+                task.wait(0.5)
+                return
+            end
+
+            local enemy = getEnemy(questData.Mob)
+            if enemy and enemy:FindFirstChild("HumanoidRootPart") then
+                myChar.Humanoid.PlatformStand = true
+                enemy.HumanoidRootPart.Anchored = true
+                aggregateMobs(questData.Mob, enemy)
+
+                -- Fast Attack Weapon Equip
+                local tool = myChar:FindFirstChildOfClass("Tool")
+                if not tool then
+                    local backpack = LocalPlayer:FindFirstChild("Backpack")
+                    if backpack then
+                        local weapon = backpack:FindFirstChildOfClass("Tool") or backpack:FindFirstChild("Combat")
+                        if weapon then myChar.Humanoid:EquipTool(weapon) end
+                    end
+                end
+
+                local targetPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+                root.CFrame = CFrame.lookAt(targetPos, enemy.HumanoidRootPart.Position)
+
+                local activeTool = myChar:FindFirstChildOfClass("Tool")
+                if activeTool then activeTool:Activate() end
+
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(500, 500))
+            else
+                local mobSpawn = Workspace:FindFirstChild(questData.Mob) or Workspace.Enemies:FindFirstChild(questData.Mob)
+                if mobSpawn and mobSpawn:FindFirstChild("HumanoidRootPart") then
+                    root.CFrame = mobSpawn.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)
+                end
+            end
+        else
+            local npc = findNPC(questData.NPC)
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                root.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                task.wait(0.2)
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, questData.Index)
+            else
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, questData.Index)
+                task.wait(0.5)
+            end
+        end
+    end)
+end))
+
+-- FRUIT ESP SYSTEM
+local FruitBillboards = {}
+
+local function getFruitImage(fruitName)
+    for name, iconId in pairs(FruitIcons) do
+        if fruitName:lower():find(name:lower()) then
+            return iconId
+        end
+    end
+    return DefaultIcon
+end
+
+local function createFruitESP(obj)
+    if FruitBillboards[obj] then return end
+
+    local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part") or obj:FindFirstChildOfClass("MeshPart")
+    if not handle then return end
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "FruitESP_G"
+    bb.Adornee = handle
+    bb.Size = UDim2.new(0, 70, 0, 85)
+    bb.AlwaysOnTop = true
+
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(0, 48, 0, 48)
+    img.Position = UDim2.new(0.5, -24, 0, 0)
+    img.BackgroundTransparency = 1
+    img.Image = getFruitImage(obj.Name)
+    img.Parent = bb
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 0.35, 0)
+    textLabel.Position = UDim2.new(0, 0, 0.65, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = obj.Name
+    textLabel.TextColor3 = Color3.fromRGB(220, 150, 255)
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextSize = 11
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Parent = bb
+
+    bb.Parent = ParentGui
+    FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
+end
+
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    if not Settings.FruitESP then
+        for obj, data in pairs(FruitBillboards) do
+            if data.Gui then data.Gui.Enabled = false end
+        end
+        return
+    end
+
+    local myChar = LocalPlayer.Character
+    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
+
+    for _, obj in pairs(Workspace:GetChildren()) do
+        if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or obj.Name:find("Meyve") or obj.Name:find("Blox")) then
+            createFruitESP(obj)
+        end
+    end
+
+    for obj, data in pairs(FruitBillboards) do
+        if obj and obj.Parent and data.Handle and data.Handle.Parent then
+            data.Gui.Enabled = true
+            local dist = math.floor((data.Handle.Position - myPos).Magnitude)
+            data.Text.Text = obj.Name .. "\n[" .. dist .. "m]"
+        else
+            if data.Gui then data.Gui:Destroy() end
+            FruitBillboards[obj] = nil
+        end
+    end
+end))
+
+-- ROBOTIC-PRECISION PLAYER ESP (HIGHLIGHT + LIVE HP BILLBOARD)
+local function createPlayerESP(p)
+    if p == LocalPlayer or PlayerESPCache[p] then return end
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "PlayerESP_Premium"
+    bb.Size = UDim2.new(0, 150, 0, 55)
+    bb.AlwaysOnTop = true
+    bb.ExtentsOffset = Vector3.new(0, 3, 0)
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = bb
+
+    local txt = Instance.new("TextLabel")
+    txt.Size = UDim2.new(1, 0, 0.5, 0)
+    txt.BackgroundTransparency = 1
+    txt.TextColor3 = Color3.fromRGB(240, 220, 255)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 11
+    txt.TextStrokeTransparency = 0
+    txt.Parent = container
+
+    local hbBg = Instance.new("Frame")
+    hbBg.Size = UDim2.new(0.8, 0, 0, 6)
+    hbBg.Position = UDim2.new(0.1, 0, 0.6, 0)
+    hbBg.BackgroundColor3 = Color3.fromRGB(40, 30, 50)
+    hbBg.BorderSizePixel = 0
+    hbBg.Parent = container
+
+    local hbBgCorner = Instance.new("UICorner")
+    hbBgCorner.CornerRadius = UDim.new(1, 0)
+    hbBgCorner.Parent = hbBg
+
+    local hbFill = Instance.new("Frame")
+    hbFill.Size = UDim2.new(1, 0, 1, 0)
+    hbFill.BackgroundColor3 = Color3.fromRGB(160, 50, 255)
+    hbFill.BorderSizePixel = 0
+    hbFill.Parent = hbBg
+
+    local hbFillCorner = Instance.new("UICorner")
+    hbFillCorner.CornerRadius = UDim.new(1, 0)
+    hbFillCorner.Parent = hbFill
+
+    local hbTxt = Instance.new("TextLabel")
+    hbTxt.Size = UDim2.new(1, 0, 0.3, 0)
+    hbTxt.Position = UDim2.new(0, 0, 0.75, 0)
+    hbTxt.BackgroundTransparency = 1
+    hbTxt.TextColor3 = Color3.fromRGB(200, 170, 255)
+    hbTxt.Font = Enum.Font.GothamMedium
+    hbTxt.TextSize = 9
+    hbTxt.TextStrokeTransparency = 0
+    hbTxt.Parent = container
+
+    local hl = Instance.new("Highlight")
+    hl.Name = "PlayerESP_Highlight"
+    hl.FillColor = Color3.fromRGB(160, 50, 255)
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+    hl.FillTransparency = 0.6
+    hl.OutlineTransparency = 0
+
+    PlayerESPCache[p] = {Gui = bb, Text = txt, Fill = hbFill, HpText = hbTxt, Glow = hl}
+end
+
+local function removePlayerESP(p)
+    if PlayerESPCache[p] then
+        if PlayerESPCache[p].Gui then PlayerESPCache[p].Gui:Destroy() end
+        if PlayerESPCache[p].Glow then PlayerESPCache[p].Glow:Destroy() end
+        PlayerESPCache[p] = nil
+    end
+end
+
+for _, p in pairs(Players:GetPlayers()) do createPlayerESP(p) end
+table.insert(Connections, Players.PlayerAdded:Connect(createPlayerESP))
+table.insert(Connections, Players.PlayerRemoving:Connect(removePlayerESP))
+
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    local myChar = LocalPlayer.Character
+    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
+
+    for targetPlayer, esp in pairs(PlayerESPCache) do
+        local char = targetPlayer.Character
+        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+            local root = char.HumanoidRootPart
+            local dist = math.floor((root.Position - myPos).Magnitude)
+            local hp = char.Humanoid.Health
+            local maxHp = char.Humanoid.MaxHealth
+            local percent = math.clamp(hp / maxHp, 0, 1)
+
+            esp.Gui.Adornee = root
+            esp.Gui.Parent = ParentGui
+            esp.Gui.Enabled = true
+
+            esp.Glow.Adornee = char
+            esp.Glow.Parent = ParentGui
+            esp.Glow.Enabled = true
+
+            esp.Text.Text = targetPlayer.Name .. " [" .. dist .. "m]"
+            esp.Fill.Size = UDim2.new(percent, 0, 1, 0)
+            esp.HpText.Text = math.floor(hp) .. " / " .. math.floor(maxHp) .. " HP"
+
+            -- Health color dynamics
+            if percent > 0.6 then
+                esp.Fill.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
+            elseif percent > 0.25 then
+                esp.Fill.BackgroundColor3 = Color3.fromRGB(220, 180, 60)
+            else
+                esp.Fill.BackgroundColor3 = Color3.fromRGB(220, 60, 80)
+            end
+        else
+            if esp.Gui then esp.Gui.Enabled = false end
+            if esp.Glow then esp.Glow.Enabled = false end
+        end
+    end
+end))
+
+-- AIMBOT & AUTO BOUNTY HUNT
+local function getClosestPlayer()
+    local closest, minDistance = nil, math.huge
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = myChar.HumanoidRootPart.Position
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+            if dist < minDistance then
+                minDistance = dist
+                closest = p
+            end
+        end
+    end
+    return closest
+end
+
+table.insert(Connections, RunService.Heartbeat:Connect(function()
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
+        local root = myChar.HumanoidRootPart
+
+        local target = getClosestPlayer()
+
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local targetRoot = target.Character.HumanoidRootPart
+
+            if Settings.Aimbot then
+                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position + Vector3.new(0, 1.5, 0))
+            end
+
+            if Settings.AutoHunt then
+                myChar.Humanoid.PlatformStand = true
+                
+                local tool = myChar:FindFirstChildOfClass("Tool")
+                if not tool then
+                    local bp = LocalPlayer:FindFirstChild("Backpack")
+                    if bp then
+                        local weapon = bp:FindFirstChildOfClass("Tool")
+                        if weapon then myChar.Humanoid:EquipTool(weapon) end
+                    end
+                end
+
+                local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
+                local distance = (targetPos - root.Position).Magnitude
+
+                if distance > 5 then
+                    root.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
+                else
+                    root.CFrame = CFrame.lookAt(root.Position, targetPos)
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton1(Vector2.new(500, 500))
+                end
+            elseif not Settings.AutoFarm then
+                myChar.Humanoid.PlatformStand = false
+            end
+        else
+            if Settings.AutoHunt and not Settings.AutoFarm then
+                myChar.Humanoid.PlatformStand = false
+            end
+        end
+    end)
+end))
+
+-- GUI CLEANUP HANDLER
+YesBtn.MouseButton1Click:Connect(function()
+    Settings.AutoFarm = false
+    Settings.AutoHunt = false
+    Settings.ESP = false
+    Settings.FruitESP = false
+    Settings.AutoStore = false
+    Settings.LuckMultiplier = false
+
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.PlatformStand = false
+    end
+
+    for _, conn in pairs(Connections) do conn:Disconnect() end
+    for _, esp in pairs(PlayerESPCache) do
+        if esp.Gui then esp.Gui:Destroy() end
+        if esp.Glow then esp.Glow:Destroy() end
+    end
+    for _, data in pairs(FruitBillboards) do
+        if data.Gui then data.Gui:Destroy() end
+    end
+
+    ScreenGui:Destroy()
+end)
+
+game.StarterGui:SetCore("SendNotification", {
+    Title = Languages[Settings.Language].notif_title,
+    Text = Languages[Settings.Language].notif_desc,
+    Duration = 4
+})
