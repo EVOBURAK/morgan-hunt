@@ -2,7 +2,11 @@
 -- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - OPTIMIZED & REFACTORED) 🔮
 -- =================================================================================
 
-if not game:IsLoaded() then game.Loaded:Wait() end
+if not game:IsLoaded() then 
+    pcall(function()
+        game.Loaded:Wait()
+    end) 
+end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -15,11 +19,34 @@ local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 
-local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
+
+-- Wait for critical components to prevent runtime crashes
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 15)
+local Data = LocalPlayer:WaitForChild("Data", 15)
+local Level = Data and Data:WaitForChild("Level", 15)
 
 local Connections = {}
 local PlayerESPCache = {}
+
+-- Safe GUI Parent Detection (Bypasses security restrictions on custom executors)
+local function getGuiParent()
+    local success, result = pcall(function()
+        local test = Instance.new("Folder")
+        test.Parent = CoreGui
+        test:Destroy()
+        return CoreGui
+    end)
+    if success and result then
+        return CoreGui
+    end
+    return PlayerGui
+end
+
+local ParentGui = getGuiParent()
+
+-- Clear Previous GUI instances
+if ParentGui:FindFirstChild("MorganHubV5") then ParentGui.MorganHubV5:Destroy() end
 
 -- Anti-AFK
 table.insert(Connections, LocalPlayer.Idled:Connect(function()
@@ -27,9 +54,6 @@ table.insert(Connections, LocalPlayer.Idled:Connect(function()
     task.wait(1)
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end))
-
--- Clear Previous GUI
-if CoreGui:FindFirstChild("MorganHubV5") then CoreGui.MorganHubV5:Destroy() end
 
 -- SETTINGS
 local Settings = {
@@ -217,121 +241,11 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
--- SERVER HOP SYSTEM
-local function serverHop()
-    local sf, servers = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-    end)
-    if sf and servers and servers.data then
-        for _, server in pairs(servers.data) do
-            if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
-                break
-            end
-        end
-    end
-end
-
-local function checkAdminPresence(player)
-    local adminIDs = {[410143093] = true, [1552391024] = true, [4424317] = true}
-    if adminIDs[player.UserId] or player:GetRankInGroup(11424103) >= 100 then
-        task.spawn(function()
-            game.StarterGui:SetCore("SendNotification", {
-                Title = Languages[Settings.Language].notif_title,
-                Text = Languages[Settings.Language].admin_hop,
-                Duration = 5
-            })
-            task.wait(2)
-            serverHop()
-        end)
-    end
-end
-
-for _, p in pairs(Players:GetPlayers()) do checkAdminPresence(p) end
-table.insert(Connections, Players.PlayerAdded:Connect(checkAdminPresence))
-
 -- SCREEN GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = CoreGui
-
--- LOADING BAR
-local LoadingFrame = Instance.new("Frame")
-LoadingFrame.Name = "LoadingFrame"
-LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
-LoadingFrame.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
-LoadingFrame.BorderSizePixel = 0
-LoadingFrame.ZIndex = 100
-LoadingFrame.Parent = ScreenGui
-
-local LoadingTitle = Instance.new("TextLabel")
-LoadingTitle.Size = UDim2.new(1, 0, 0, 50)
-LoadingTitle.Position = UDim2.new(0, 0, 0.38, 0)
-LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "💎 MORGAN HUB V5 💎"
-LoadingTitle.TextColor3 = Color3.fromRGB(180, 100, 255)
-LoadingTitle.TextSize = 28
-LoadingTitle.Font = Enum.Font.GothamBold
-LoadingTitle.ZIndex = 101
-LoadingTitle.Parent = LoadingFrame
-
-local LoadingSub = Instance.new("TextLabel")
-LoadingSub.Size = UDim2.new(1, 0, 0, 30)
-LoadingSub.Position = UDim2.new(0, 0, 0.45, 0)
-LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = Languages[Settings.Language].loading
-LoadingSub.TextColor3 = Color3.fromRGB(200, 170, 255)
-LoadingSub.TextSize = 14
-LoadingSub.Font = Enum.Font.GothamMedium
-LoadingSub.ZIndex = 101
-LoadingSub.Parent = LoadingFrame
-
-local BarBg = Instance.new("Frame")
-BarBg.Size = UDim2.new(0, 320, 0, 10)
-BarBg.Position = UDim2.new(0.5, -160, 0.55, 0)
-BarBg.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-BarBg.BorderSizePixel = 0
-BarBg.ZIndex = 101
-BarBg.Parent = LoadingFrame
-
-local BarBgCorner = Instance.new("UICorner")
-BarBgCorner.CornerRadius = UDim.new(1, 0)
-BarBgCorner.Parent = BarBg
-
-local BarFill = Instance.new("Frame")
-BarFill.Size = UDim2.new(0, 0, 1, 0)
-BarFill.BackgroundColor3 = Color3.fromRGB(160, 30, 255)
-BarFill.BorderSizePixel = 0
-BarFill.ZIndex = 102
-BarFill.Parent = BarBg
-
-local BarFillCorner = Instance.new("UICorner")
-BarFillCorner.CornerRadius = UDim.new(1, 0)
-BarFillCorner.Parent = BarFill
-
-local BarGlow = Instance.new("UIStroke")
-BarGlow.Color = Color3.fromRGB(200, 80, 255)
-BarGlow.Thickness = 2
-BarGlow.Parent = BarFill
-
-task.spawn(function()
-    local tween = TweenService:Create(BarFill, TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
-    tween:Play()
-    tween.Completed:Wait()
-    
-    LoadingSub.Text = Languages[Settings.Language].ready
-    task.wait(0.4)
-    
-    local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1})
-    TweenService:Create(LoadingTitle, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
-    TweenService:Create(LoadingSub, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
-    TweenService:Create(BarBg, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(BarFill, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
-    fadeTween:Play()
-    fadeTween.Completed:Wait()
-    LoadingFrame:Destroy()
-end)
+ScreenGui.Parent = ParentGui
 
 -- LOGO TRIGGER BUTTON
 local ToggleLogo = Instance.new("TextButton")
@@ -379,27 +293,6 @@ MainStroke.Parent = MainFrame
 ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
-
-local function createSideAmethyst(isLeft)
-    local amethyst = Instance.new("TextLabel")
-    amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
-    amethyst.Size = UDim2.new(0, 40, 0, 40)
-    local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
-    amethyst.Position = posX
-    amethyst.BackgroundTransparency = 1
-    amethyst.Text = "💎"
-    amethyst.TextSize = 30
-    amethyst.ZIndex = 5
-    amethyst.Parent = MainFrame
-
-    local upPos = posX + UDim2.new(0, 0, 0, -25)
-    local downPos = posX + UDim2.new(0, 0, 0, 25)
-    amethyst.Position = upPos
-    
-    local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    local floatTween = TweenService:Create(amethyst, tweenInfo, {Position = downPos})
-    floatTween:Play()
-end
 
 createSideAmethyst(true)
 createSideAmethyst(false)
@@ -790,7 +683,7 @@ end))
 
 -- AUTO FARM UTILS
 local function getQuestNPCAndData()
-    local myLevel = LocalPlayer.Data.Level.Value
+    local myLevel = (Level and Level.Value) or 1
     for _, data in ipairs(QuestMap) do
         if myLevel >= data.Min and myLevel <= data.Max then
             return data
@@ -975,7 +868,7 @@ local function createFruitESP(obj)
     textLabel.TextStrokeTransparency = 0
     textLabel.Parent = bb
 
-    bb.Parent = CoreGui
+    bb.Parent = ParentGui
     FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
 end
 
@@ -1099,11 +992,11 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
             local percent = math.clamp(hp / maxHp, 0, 1)
 
             esp.Gui.Adornee = root
-            esp.Gui.Parent = CoreGui
+            esp.Gui.Parent = ParentGui
             esp.Gui.Enabled = true
 
             esp.Glow.Adornee = char
-            esp.Glow.Parent = CoreGui
+            esp.Glow.Parent = ParentGui
             esp.Glow.Enabled = true
 
             esp.Text.Text = targetPlayer.Name .. " [" .. dist .. "m]"
