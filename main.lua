@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - FIXED GUI & INTRO) 🔮
+-- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - FIXED & OPTIMIZED) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -11,21 +11,29 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local Connections = {}
 
--- Anti-AFK
-table.insert(Connections, LocalPlayer.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0, 0), Camera.CFrame)
-    task.wait(1)
-    VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
-end))
+-- Safe GUI Parent Detection
+local ParentGui
+if gethui then
+    ParentGui = gethui()
+elseif syn and syn.protect_gui then
+    ParentGui = Instance.new("Folder")
+    syn.protect_gui(ParentGui)
+    ParentGui.Parent = CoreGui
+else
+    ParentGui = CoreGui:FindFirstChild("RobloxGui") or CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+end
 
 -- Clear Previous GUI
-if CoreGui:FindFirstChild("MorganHubV5") then CoreGui.MorganHubV5:Destroy() end
+if ParentGui:FindFirstChild("MorganHubV5") then 
+    ParentGui.MorganHubV5:Destroy() 
+end
 
 -- SETTINGS
 local Settings = {
@@ -81,434 +89,48 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
--- =============================================================
--- GUI ARCHITECTURE & SCREEN GUI
--- =============================================================
+-- Anti-AFK
+table.insert(Connections, LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0, 0), Camera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
+end))
+
+-- Smooth Drag Utility
+local function makeDraggable(guiObject)
+    local dragging, dragInput, dragStart, startPos
+    guiObject.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    guiObject.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            guiObject.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- SCREEN GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = ParentGui
 
--- Executer Desteği Kontrolü
-if syn and syn.protect_gui then
-    syn.protect_gui(ScreenGui)
-    ScreenGui.Parent = CoreGui
-elseif gethui then
-    ScreenGui.Parent = gethui()
-else
-    ScreenGui.Parent = CoreGui
-end
-
--- -------------------------------------------------------------
--- LOGO BUTTON (DÜZELTİLDİ - ZINDEX VE BAŞLANGIÇ DURUMU)
--- -------------------------------------------------------------
-local ToggleLogo = Instance.new("TextButton")
-ToggleLogo.Name = "ToggleLogo"
-ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
-ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
-ToggleLogo.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
-ToggleLogo.BorderSizePixel = 0
-ToggleLogo.Text = "💎"
-ToggleLogo.TextSize = 26
-ToggleLogo.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleLogo.Active = true
-ToggleLogo.Draggable = true
-ToggleLogo.ZIndex = 50
-ToggleLogo.Parent = ScreenGui
-
-local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(1, 0)
-LogoCorner.Parent = ToggleLogo
-
-local LogoStroke = Instance.new("UIStroke")
-LogoStroke.Color = Color3.fromRGB(170, 0, 255)
-LogoStroke.Thickness = 2
-LogoStroke.Parent = ToggleLogo
-
--- -------------------------------------------------------------
--- MAIN WINDOW (AMETHYST STYLE)
--- -------------------------------------------------------------
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 460, 0, 480)
-MainFrame.Position = UDim2.new(0.5, -230, 0.5, -240)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 24)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Visible = true
-MainFrame.ZIndex = 10
-MainFrame.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(160, 50, 255)
-MainStroke.Thickness = 2
-MainStroke.Transparency = 0.2
-MainStroke.Parent = MainFrame
-
-ToggleLogo.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI (LEFT & RIGHT AMETHYSTS)
-local function createSideAmethyst(isLeft)
-    local amethyst = Instance.new("TextLabel")
-    amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
-    amethyst.Size = UDim2.new(0, 40, 0, 40)
-    
-    local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
-    amethyst.Position = posX
-    amethyst.BackgroundTransparency = 1
-    amethyst.Text = "💎"
-    amethyst.TextSize = 30
-    amethyst.ZIndex = 12
-    amethyst.Parent = MainFrame
-
-    local upPos = posX + UDim2.new(0, 0, 0, -25)
-    local downPos = posX + UDim2.new(0, 0, 0, 25)
-    
-    amethyst.Position = upPos
-    
-    local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    local floatTween = TweenService:Create(amethyst, tweenInfo, {Position = downPos})
-    floatTween:Play()
-end
-
-createSideAmethyst(true)
-createSideAmethyst(false)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -40, 0, 45)
-Title.Position = UDim2.new(0, 15, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "💎 MORGAN HUB V5.0"
-Title.TextColor3 = Color3.fromRGB(200, 130, 255)
-Title.TextSize = 16
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 11
-Title.Parent = MainFrame
-
--- INTERACTIVE ADVANCED LUCK BOOSTER GUI
-local LuckFrame = Instance.new("Frame")
-LuckFrame.Name = "LuckFrame"
-LuckFrame.Size = UDim2.new(0, 260, 0, 140)
-LuckFrame.Position = UDim2.new(0.8, -260, 0.15, 0)
-LuckFrame.BackgroundColor3 = Color3.fromRGB(20, 15, 32)
-LuckFrame.BorderSizePixel = 0
-LuckFrame.Active = true
-LuckFrame.Draggable = true
-LuckFrame.Visible = false
-LuckFrame.ZIndex = 20
-LuckFrame.Parent = ScreenGui
-
-local LuckCorner = Instance.new("UICorner")
-LuckCorner.CornerRadius = UDim.new(0, 8)
-LuckCorner.Parent = LuckFrame
-
-local LuckStroke = Instance.new("UIStroke")
-LuckStroke.Color = Color3.fromRGB(180, 80, 255)
-LuckStroke.Thickness = 2
-LuckStroke.Parent = LuckFrame
-
-local LuckTitle = Instance.new("TextLabel")
-LuckTitle.Size = UDim2.new(1, 0, 0, 30)
-LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
-LuckTitle.BackgroundTransparency = 1
-LuckTitle.Text = "🔮 LUCK RATE BOOSTER"
-LuckTitle.TextColor3 = Color3.fromRGB(220, 150, 255)
-LuckTitle.Font = Enum.Font.GothamBold
-LuckTitle.TextSize = 13
-LuckTitle.ZIndex = 21
-LuckTitle.Parent = LuckFrame
-
-local LuckStatus = Instance.new("TextLabel")
-LuckStatus.Size = UDim2.new(1, 0, 0, 25)
-LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
-LuckStatus.BackgroundTransparency = 1
-LuckStatus.Text = "MULTIPLIER: 100x"
-LuckStatus.TextColor3 = Color3.fromRGB(170, 100, 255)
-LuckStatus.Font = Enum.Font.GothamBold
-LuckStatus.TextSize = 12
-LuckStatus.ZIndex = 21
-LuckStatus.Parent = LuckFrame
-
-local ChanceDisplay = Instance.new("TextLabel")
-ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
-ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
-ChanceDisplay.BackgroundColor3 = Color3.fromRGB(30, 20, 48)
-ChanceDisplay.BorderSizePixel = 0
-ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
-ChanceDisplay.TextColor3 = Color3.fromRGB(255, 170, 0)
-ChanceDisplay.Font = Enum.Font.GothamMedium
-ChanceDisplay.TextSize = 11
-ChanceDisplay.ZIndex = 21
-ChanceDisplay.Parent = LuckFrame
-
-local ChanceCorner = Instance.new("UICorner")
-ChanceCorner.CornerRadius = UDim.new(0, 6)
-ChanceCorner.Parent = ChanceDisplay
-
--- CONFIRM DESTROY FRAME
-local ConfirmFrame = Instance.new("Frame")
-ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
-ConfirmFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 18)
-ConfirmFrame.BackgroundTransparency = 0.1
-ConfirmFrame.Visible = false
-ConfirmFrame.ZIndex = 30
-ConfirmFrame.Parent = MainFrame
-
-local ConfirmCorner = Instance.new("UICorner")
-ConfirmCorner.CornerRadius = UDim.new(0, 10)
-ConfirmCorner.Parent = ConfirmFrame
-
-local ConfirmText = Instance.new("TextLabel")
-ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
-ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
-ConfirmText.BackgroundTransparency = 1
-ConfirmText.Text = "GUI'yi kapatıp silmek istediğinize emin misiniz?"
-ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
-ConfirmText.Font = Enum.Font.GothamBold
-ConfirmText.TextSize = 14
-ConfirmText.ZIndex = 31
-ConfirmText.Parent = ConfirmFrame
-
-local YesBtn = Instance.new("TextButton")
-YesBtn.Size = UDim2.new(0, 100, 0, 35)
-YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
-YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
-YesBtn.Text = "EVET"
-YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-YesBtn.Font = Enum.Font.GothamBold
-YesBtn.ZIndex = 31
-YesBtn.Parent = ConfirmFrame
-
-local YesCorner = Instance.new("UICorner")
-YesCorner.CornerRadius = UDim.new(0, 6)
-YesCorner.Parent = YesBtn
-
-local NoBtn = Instance.new("TextButton")
-NoBtn.Size = UDim2.new(0, 100, 0, 35)
-NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
-NoBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 75)
-NoBtn.Text = "HAYIR"
-NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoBtn.Font = Enum.Font.GothamBold
-NoBtn.ZIndex = 31
-NoBtn.Parent = ConfirmFrame
-
-local NoCorner = Instance.new("UICorner")
-NoCorner.CornerRadius = UDim.new(0, 6)
-NoCorner.Parent = NoBtn
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 26, 0, 26)
-CloseBtn.Position = UDim2.new(1, -32, 0, 8)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 70)
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.ZIndex = 12
-CloseBtn.Parent = MainFrame
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseBtn
-
-CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
-NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
-
-local Container = Instance.new("ScrollingFrame")
-Container.Size = UDim2.new(1, -20, 1, -55)
-Container.Position = UDim2.new(0, 10, 0, 48)
-Container.BackgroundTransparency = 1
-Container.ScrollBarThickness = 4
-Container.ScrollBarImageColor3 = Color3.fromRGB(150, 60, 255)
-Container.ZIndex = 11
-Container.Parent = MainFrame
-
-local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0, 8)
-Layout.Parent = Container
-
-local function addToggle(text, defaultState, callback)
-    local card = Instance.new("Frame")
-    card.Size = UDim2.new(0.98, 0, 0, 42)
-    card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
-    card.BorderSizePixel = 0
-    card.ZIndex = 12
-    card.Parent = Container
-
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 6)
-    cardCorner.Parent = card
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.Position = UDim2.new(0.04, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(225, 215, 245)
-    label.Font = Enum.Font.GothamMedium
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 13
-    label.Parent = card
-
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 44, 0, 22)
-    btn.Position = UDim2.new(0.86, 0, 0.24, 0)
-    btn.BackgroundColor3 = defaultState and Color3.fromRGB(150, 40, 255) or Color3.fromRGB(45, 35, 65)
-    btn.BorderSizePixel = 0
-    btn.Text = ""
-    btn.ZIndex = 13
-    btn.Parent = card
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 11)
-    btnCorner.Parent = btn
-
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 16, 0, 16)
-    circle.Position = defaultState and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
-    circle.BackgroundColor3 = Color3.fromRGB(240, 230, 255)
-    circle.BorderSizePixel = 0
-    circle.ZIndex = 14
-    circle.Parent = btn
-
-    local circleCorner = Instance.new("UICorner")
-    circleCorner.CornerRadius = UDim.new(0, 8)
-    circleCorner.Parent = circle
-
-    local state = defaultState
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.BackgroundColor3 = state and Color3.fromRGB(150, 40, 255) or Color3.fromRGB(45, 35, 65)
-        circle.Position = state and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
-        pcall(callback, state)
-    end)
-end
-
-local function addSlider(text, min, max, default, callback)
-    local card = Instance.new("Frame")
-    card.Size = UDim2.new(0.98, 0, 0, 50)
-    card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
-    card.BorderSizePixel = 0
-    card.ZIndex = 12
-    card.Parent = Container
-
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 6)
-    cardCorner.Parent = card
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 0.5, 0)
-    label.Position = UDim2.new(0.04, 0, 0.08, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(225, 215, 245)
-    label.Font = Enum.Font.GothamMedium
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 13
-    label.Parent = card
-
-    local valueLabel = Instance.new("TextLabel")
-    valueLabel.Size = UDim2.new(0.2, 0, 0.5, 0)
-    valueLabel.Position = UDim2.new(0.76, 0, 0.08, 0)
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.Text = tostring(default)
-    valueLabel.TextColor3 = Color3.fromRGB(200, 120, 255)
-    valueLabel.Font = Enum.Font.GothamBold
-    valueLabel.TextSize = 13
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valueLabel.ZIndex = 13
-    valueLabel.Parent = card
-
-    local sliderBg = Instance.new("TextButton")
-    sliderBg.Size = UDim2.new(0.92, 0, 0, 8)
-    sliderBg.Position = UDim2.new(0.04, 0, 0.65, 0)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(45, 35, 65)
-    sliderBg.BorderSizePixel = 0
-    sliderBg.Text = ""
-    sliderBg.ZIndex = 13
-    sliderBg.Parent = card
-
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 4)
-    sliderCorner.Parent = sliderBg
-
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(160, 50, 255)
-    fill.BorderSizePixel = 0
-    fill.ZIndex = 14
-    fill.Parent = sliderBg
-
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 4)
-    fillCorner.Parent = fill
-
-    local dragging = false
-    local function update(input)
-        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
-        local val = math.floor(min + ((max - min) * pos))
-        fill.Size = UDim2.new(pos, 0, 1, 0)
-        valueLabel.Text = tostring(val)
-        pcall(callback, val)
-    end
-
-    sliderBg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            update(input)
-        end
-    end)
-
-    sliderBg.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
-    end)
-end
-
--- MENU ITEMS
-addToggle("🔮 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
-    Settings.LuckMultiplier = v
-    LuckFrame.Visible = v
-end)
-addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
-    Settings.LuckPower = v
-    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
-    local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
-    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
-end)
-
-addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
-addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
-addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
-
--- SETTINGS SECTION
-addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
-addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
-
--- -------------------------------------------------------------
--- 🔮 AÇILIŞ EKRANI (DÜZELTİLDİ - TAM SİLİNME SİSTEMİ)
--- -------------------------------------------------------------
+-- LOADING FRAME
 local LoadingFrame = Instance.new("Frame")
 LoadingFrame.Name = "LoadingFrame"
 LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -562,12 +184,6 @@ local BarFillCorner = Instance.new("UICorner")
 BarFillCorner.CornerRadius = UDim.new(1, 0)
 BarFillCorner.Parent = BarFill
 
-local BarGlow = Instance.new("UIStroke")
-BarGlow.Color = Color3.fromRGB(200, 80, 255)
-BarGlow.Thickness = 2
-BarGlow.Parent = BarFill
-
--- Animasyon Süreci
 task.spawn(function()
     local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     local tween = TweenService:Create(BarFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
@@ -577,31 +193,408 @@ task.spawn(function()
     LoadingSub.Text = "Hazır!"
     task.wait(0.3)
     
-    local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+    TweenService:Create(LoadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     TweenService:Create(LoadingTitle, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
     TweenService:Create(LoadingSub, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
     TweenService:Create(BarBg, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(BarFill, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-    fadeTween:Play()
-    fadeTween.Completed:Wait()
-    
-    -- Ekran tamamen silinsin
+    local fade = TweenService:Create(BarFill, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+    fade:Play()
+    fade.Completed:Wait()
     LoadingFrame:Destroy()
 end)
 
--- =============================================================
+-- TOGGLE LOGO
+local ToggleLogo = Instance.new("TextButton")
+ToggleLogo.Name = "ToggleLogo"
+ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
+ToggleLogo.Position = UDim2.new(0, 20, 0.2, 0)
+ToggleLogo.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
+ToggleLogo.BorderSizePixel = 0
+ToggleLogo.Text = "💎"
+ToggleLogo.TextSize = 26
+ToggleLogo.Parent = ScreenGui
+makeDraggable(ToggleLogo)
+
+local LogoCorner = Instance.new("UICorner")
+LogoCorner.CornerRadius = UDim.new(1, 0)
+LogoCorner.Parent = ToggleLogo
+
+local LogoStroke = Instance.new("UIStroke")
+LogoStroke.Color = Color3.fromRGB(170, 0, 255)
+LogoStroke.Thickness = 2
+LogoStroke.Parent = ToggleLogo
+
+-- MAIN FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 460, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -240)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 24)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+makeDraggable(MainFrame)
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(160, 50, 255)
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.2
+MainStroke.Parent = MainFrame
+
+ToggleLogo.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- AMETHYSTS
+local function createSideAmethyst(isLeft)
+    local amethyst = Instance.new("TextLabel")
+    amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
+    amethyst.Size = UDim2.new(0, 40, 0, 40)
+    local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
+    amethyst.Position = posX
+    amethyst.BackgroundTransparency = 1
+    amethyst.Text = "💎"
+    amethyst.TextSize = 30
+    amethyst.ZIndex = 5
+    amethyst.Parent = MainFrame
+
+    local downPos = posX + UDim2.new(0, 0, 0, 20)
+    local floatTween = TweenService:Create(amethyst, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Position = downPos})
+    floatTween:Play()
+end
+createSideAmethyst(true)
+createSideAmethyst(false)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 0, 45)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "💎 MORGAN HUB V5.0"
+Title.TextColor3 = Color3.fromRGB(200, 130, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = MainFrame
+
+-- LUCK FRAME
+local LuckFrame = Instance.new("Frame")
+LuckFrame.Name = "LuckFrame"
+LuckFrame.Size = UDim2.new(0, 260, 0, 140)
+LuckFrame.Position = UDim2.new(0.8, -260, 0.15, 0)
+LuckFrame.BackgroundColor3 = Color3.fromRGB(20, 15, 32)
+LuckFrame.BorderSizePixel = 0
+LuckFrame.Visible = false
+LuckFrame.Parent = ScreenGui
+makeDraggable(LuckFrame)
+
+local LuckCorner = Instance.new("UICorner")
+LuckCorner.CornerRadius = UDim.new(0, 8)
+LuckCorner.Parent = LuckFrame
+
+local LuckTitle = Instance.new("TextLabel")
+LuckTitle.Size = UDim2.new(1, 0, 0, 30)
+LuckTitle.Position = UDim2.new(0, 0, 0.05, 0)
+LuckTitle.BackgroundTransparency = 1
+LuckTitle.Text = "🔮 LUCK RATE BOOSTER"
+LuckTitle.TextColor3 = Color3.fromRGB(220, 150, 255)
+LuckTitle.Font = Enum.Font.GothamBold
+LuckTitle.TextSize = 13
+LuckTitle.Parent = LuckFrame
+
+local LuckStatus = Instance.new("TextLabel")
+LuckStatus.Size = UDim2.new(1, 0, 0, 25)
+LuckStatus.Position = UDim2.new(0, 0, 0.3, 0)
+LuckStatus.BackgroundTransparency = 1
+LuckStatus.Text = "MULTIPLIER: 100x"
+LuckStatus.TextColor3 = Color3.fromRGB(170, 100, 255)
+LuckStatus.Font = Enum.Font.GothamBold
+LuckStatus.TextSize = 12
+LuckStatus.Parent = LuckFrame
+
+local ChanceDisplay = Instance.new("TextLabel")
+ChanceDisplay.Size = UDim2.new(1, -20, 0, 30)
+ChanceDisplay.Position = UDim2.new(0, 10, 0.55, 0)
+ChanceDisplay.BackgroundColor3 = Color3.fromRGB(30, 20, 48)
+ChanceDisplay.BorderSizePixel = 0
+ChanceDisplay.Text = "Mythical Drop Rate: ~84.5%"
+ChanceDisplay.TextColor3 = Color3.fromRGB(255, 170, 0)
+ChanceDisplay.Font = Enum.Font.GothamMedium
+ChanceDisplay.TextSize = 11
+ChanceDisplay.Parent = LuckFrame
+
+local ChanceCorner = Instance.new("UICorner")
+ChanceCorner.CornerRadius = UDim.new(0, 6)
+ChanceCorner.Parent = ChanceDisplay
+
+-- CONFIRM DESTROY FRAME
+local ConfirmFrame = Instance.new("Frame")
+ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
+ConfirmFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 18)
+ConfirmFrame.BackgroundTransparency = 0.1
+ConfirmFrame.Visible = false
+ConfirmFrame.ZIndex = 10
+ConfirmFrame.Parent = MainFrame
+
+local ConfirmCorner = Instance.new("UICorner")
+ConfirmCorner.CornerRadius = UDim.new(0, 10)
+ConfirmCorner.Parent = ConfirmFrame
+
+local ConfirmText = Instance.new("TextLabel")
+ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
+ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
+ConfirmText.BackgroundTransparency = 1
+ConfirmText.Text = "GUI'yi kapatıp silmek istediğinize emin misiniz?"
+ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
+ConfirmText.Font = Enum.Font.GothamBold
+ConfirmText.TextSize = 14
+ConfirmText.ZIndex = 11
+ConfirmText.Parent = ConfirmFrame
+
+local YesBtn = Instance.new("TextButton")
+YesBtn.Size = UDim2.new(0, 100, 0, 35)
+YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
+YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
+YesBtn.Text = "EVET"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.ZIndex = 11
+YesBtn.Parent = ConfirmFrame
+
+local YesCorner = Instance.new("UICorner")
+YesCorner.CornerRadius = UDim.new(0, 6)
+YesCorner.Parent = YesBtn
+
+local NoBtn = Instance.new("TextButton")
+NoBtn.Size = UDim2.new(0, 100, 0, 35)
+NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
+NoBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 75)
+NoBtn.Text = "HAYIR"
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.ZIndex = 11
+NoBtn.Parent = ConfirmFrame
+
+local NoCorner = Instance.new("UICorner")
+NoCorner.CornerRadius = UDim.new(0, 6)
+NoCorner.Parent = NoBtn
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -32, 0, 8)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 70)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = MainFrame
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
+NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
+
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -20, 1, -55)
+Container.Position = UDim2.new(0, 10, 0, 48)
+Container.BackgroundTransparency = 1
+Container.ScrollBarThickness = 4
+Container.ScrollBarImageColor3 = Color3.fromRGB(150, 60, 255)
+Container.Parent = MainFrame
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.Parent = Container
+
+local function addToggle(text, defaultState, callback)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0.98, 0, 0, 42)
+    card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
+    card.BorderSizePixel = 0
+    card.Parent = Container
+
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 6)
+    cardCorner.Parent = card
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0.04, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(225, 215, 245)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = card
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(0.86, 0, 0.24, 0)
+    btn.BackgroundColor3 = defaultState and Color3.fromRGB(150, 40, 255) or Color3.fromRGB(45, 35, 65)
+    btn.BorderSizePixel = 0
+    btn.Text = ""
+    btn.Parent = card
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 11)
+    btnCorner.Parent = btn
+
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 16, 0, 16)
+    circle.Position = defaultState and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
+    circle.BackgroundColor3 = Color3.fromRGB(240, 230, 255)
+    circle.BorderSizePixel = 0
+    circle.Parent = btn
+
+    local circleCorner = Instance.new("UICorner")
+    circleCorner.CornerRadius = UDim.new(0, 8)
+    circleCorner.Parent = circle
+
+    local state = defaultState
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.BackgroundColor3 = state and Color3.fromRGB(150, 40, 255) or Color3.fromRGB(45, 35, 65)
+        circle.Position = state and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
+        pcall(callback, state)
+    end)
+end
+
+local function addSlider(text, min, max, default, callback)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0.98, 0, 0, 50)
+    card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
+    card.BorderSizePixel = 0
+    card.Parent = Container
+
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 6)
+    cardCorner.Parent = card
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 0.5, 0)
+    label.Position = UDim2.new(0.04, 0, 0.08, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(225, 215, 245)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = card
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.2, 0, 0.5, 0)
+    valueLabel.Position = UDim2.new(0.76, 0, 0.08, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(default)
+    valueLabel.TextColor3 = Color3.fromRGB(200, 120, 255)
+    valueLabel.Font = Enum.Font.GothamBold
+    valueLabel.TextSize = 13
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = card
+
+    local sliderBg = Instance.new("TextButton")
+    sliderBg.Size = UDim2.new(0.92, 0, 0, 8)
+    sliderBg.Position = UDim2.new(0.04, 0, 0.65, 0)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(45, 35, 65)
+    sliderBg.BorderSizePixel = 0
+    sliderBg.Text = ""
+    sliderBg.Parent = card
+
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(0, 4)
+    sliderCorner.Parent = sliderBg
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(160, 50, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = sliderBg
+
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 4)
+    fillCorner.Parent = fill
+
+    local dragging = false
+    local function update(input)
+        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        local val = math.floor(min + ((max - min) * pos))
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        valueLabel.Text = tostring(val)
+        pcall(callback, val)
+    end
+
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input)
+        end
+    end)
+
+    sliderBg.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input)
+        end
+    end)
+end
+
+-- MENU OPTIONS
+addToggle("🔮 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
+    Settings.LuckMultiplier = v
+    LuckFrame.Visible = v
+end)
+addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
+    Settings.LuckPower = v
+    LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
+    local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
+    ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
+end)
+
+addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
+addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+
+addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+
+-- NOCLIP SYSTEM (Prevents Rubberbanding/Collisions)
+table.insert(Connections, RunService.Stepped:Connect(function()
+    if Settings.AutoFarm or Settings.AutoHunt then
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end))
+
 -- AUTO STORE FRUIT ENGINE
--- =============================================================
 local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
     if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
-        pcall(function()
-            local args = {
-                [1] = "StoreFruit",
-                [2] = tool.Name,
-                [3] = tool
-            }
-            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
+        task.spawn(function()
+            pcall(function()
+                local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+                if remotes and remotes:FindFirstChild("CommF_") then
+                    remotes.CommF_:InvokeServer("StoreFruit", tool.Name, tool)
+                end
+            end)
         end)
     end
 end
@@ -614,13 +607,11 @@ if LocalPlayer.Character then
 end
 
 table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
-    task.wait(0.5)
+    task.wait(0.3)
     storeFruit(tool)
 end))
 
--- =============================================================
--- AUTO FARM ENGINE
--- =============================================================
+-- TARGET FINDERS
 local function getClosestEnemy()
     local closest, minDistance = nil, math.huge
     local myChar = LocalPlayer.Character
@@ -642,41 +633,96 @@ local function getClosestEnemy()
     return closest
 end
 
+local function getClosestPlayer()
+    local closest, minDistance = nil, math.huge
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = myChar.HumanoidRootPart.Position
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+            if dist < minDistance then
+                minDistance = dist
+                closest = p
+            end
+        end
+    end
+    return closest
+end
+
+-- MAIN COMBAT & MOVEMENT LOOP (Throttled for Performance)
+local lastClick = 0
 table.insert(Connections, RunService.Heartbeat:Connect(function()
-    if not Settings.AutoFarm then return end
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
+    local root = myChar.HumanoidRootPart
+    local humanoid = myChar.Humanoid
 
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
+    -- 1. AUTO FARM
+    if Settings.AutoFarm then
         local enemy = getClosestEnemy()
         if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            myChar.Humanoid.PlatformStand = true
-
-            local tool = myChar:FindFirstChildOfClass("Tool")
-            if not tool then
+            humanoid.PlatformStand = true
+            
+            -- Equip Weapon
+            if not myChar:FindFirstChildOfClass("Tool") then
                 local backpack = LocalPlayer:FindFirstChild("Backpack")
                 if backpack then
                     local weapon = backpack:FindFirstChildOfClass("Tool")
-                    if weapon then myChar.Humanoid:EquipTool(weapon) end
+                    if weapon then humanoid:EquipTool(weapon) end
                 end
             end
 
             local enemyPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
             root.CFrame = CFrame.lookAt(enemyPos, enemy.HumanoidRootPart.Position)
 
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(500, 500))
-        else
-            myChar.Humanoid.PlatformStand = false
+            -- Safe Click (Max 10 clicks per second to prevent crash)
+            if tick() - lastClick >= 0.1 then
+                lastClick = tick()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(500, 500))
+            end
+            return
         end
-    end)
+    end
+
+    -- 2. AUTO HUNT & AIMBOT
+    local target = getClosestPlayer()
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        local targetRoot = target.Character.HumanoidRootPart
+
+        if Settings.Aimbot then
+            Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
+        end
+
+        if Settings.AutoHunt then
+            humanoid.PlatformStand = true
+            local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
+            local distance = (targetPos - root.Position).Magnitude
+
+            if distance > 6 then
+                local newCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
+                myChar:PivotTo(newCFrame)
+            else
+                myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
+                if tick() - lastClick >= 0.1 then
+                    lastClick = tick()
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton1(Vector2.new(500, 500))
+                end
+            end
+            return
+        end
+    end
+
+    -- Restore Normal State
+    if not Settings.AutoFarm and not Settings.AutoHunt then
+        humanoid.PlatformStand = false
+    end
 end))
 
--- =============================================================
--- IMAGE FRUIT ESP ENGINE
--- =============================================================
+-- FRUIT ESP ENGINE
 local FruitBillboards = {}
 
 local function getFruitImage(fruitName)
@@ -718,13 +764,13 @@ local function createFruitESP(obj)
     textLabel.TextStrokeTransparency = 0
     textLabel.Parent = bb
 
-    bb.Parent = ScreenGui
+    bb.Parent = ParentGui
     FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
 end
 
 table.insert(Connections, RunService.RenderStepped:Connect(function()
     if not Settings.FruitESP then
-        for obj, data in pairs(FruitBillboards) do
+        for _, data in pairs(FruitBillboards) do
             if data.Gui then data.Gui.Enabled = false end
         end
         return
@@ -751,149 +797,90 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     end
 end))
 
--- =============================================================
--- DRAWING PLAYER ESP ENGINE
--- =============================================================
+-- DRAWING PLAYER ESP ENGINE (With Mobile Safe Check)
 local ESPCache = {}
+local DrawingSupported = pcall(function() return Drawing.new("Square") end)
 
-local function createESP(targetPlayer)
-    if targetPlayer == LocalPlayer or not Drawing then return end
+if DrawingSupported then
+    local function createESP(targetPlayer)
+        if targetPlayer == LocalPlayer then return end
 
-    local boxOutline = Drawing.new("Square")
-    boxOutline.Thickness = 3
-    boxOutline.Color = Color3.fromRGB(0, 0, 0)
+        local boxOutline = Drawing.new("Square")
+        boxOutline.Thickness = 3
+        boxOutline.Color = Color3.fromRGB(0, 0, 0)
 
-    local box = Drawing.new("Square")
-    box.Thickness = 1
-    box.Color = Color3.fromRGB(180, 50, 255)
+        local box = Drawing.new("Square")
+        box.Thickness = 1
+        box.Color = Color3.fromRGB(180, 50, 255)
 
-    local text = Drawing.new("Text")
-    text.Size = 14
-    text.Center = true
-    text.Outline = true
-    text.Color = Color3.fromRGB(255, 255, 255)
+        local text = Drawing.new("Text")
+        text.Size = 14
+        text.Center = true
+        text.Outline = true
+        text.Color = Color3.fromRGB(255, 255, 255)
 
-    ESPCache[targetPlayer] = {BoxOutline = boxOutline, Box = box, Text = text}
-end
-
-local function removeESP(targetPlayer)
-    if ESPCache[targetPlayer] then
-        pcall(function()
-            ESPCache[targetPlayer].BoxOutline:Remove()
-            ESPCache[targetPlayer].Box:Remove()
-            ESPCache[targetPlayer].Text:Remove()
-        end)
-        ESPCache[targetPlayer] = nil
+        ESPCache[targetPlayer] = {BoxOutline = boxOutline, Box = box, Text = text}
     end
-end
 
-for _, p in pairs(Players:GetPlayers()) do createESP(p) end
-table.insert(Connections, Players.PlayerAdded:Connect(createESP))
-table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
+    local function removeESP(targetPlayer)
+        if ESPCache[targetPlayer] then
+            pcall(function()
+                ESPCache[targetPlayer].BoxOutline:Remove()
+                ESPCache[targetPlayer].Box:Remove()
+                ESPCache[targetPlayer].Text:Remove()
+            end)
+            ESPCache[targetPlayer] = nil
+        end
+    end
 
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    for targetPlayer, esp in pairs(ESPCache) do
-        local char = targetPlayer.Character
-        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
-            local root = char.HumanoidRootPart
-            local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+    for _, p in pairs(Players:GetPlayers()) do createESP(p) end
+    table.insert(Connections, Players.PlayerAdded:Connect(createESP))
+    table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
-            if onScreen then
-                local head = char:FindFirstChild("Head")
-                local headPos = head and head.Position or (root.Position + Vector3.new(0, 2, 0))
-                local legPos = root.Position - Vector3.new(0, 3, 0)
+    table.insert(Connections, RunService.RenderStepped:Connect(function()
+        for targetPlayer, esp in pairs(ESPCache) do
+            local char = targetPlayer.Character
+            if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+                local root = char.HumanoidRootPart
+                local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
 
-                local topScreen = Camera:WorldToViewportPoint(headPos + Vector3.new(0, 1, 0))
-                local bottomScreen = Camera:WorldToViewportPoint(legPos)
+                if onScreen then
+                    local head = char:FindFirstChild("Head")
+                    local headPos = head and head.Position or (root.Position + Vector3.new(0, 2, 0))
+                    local legPos = root.Position - Vector3.new(0, 3, 0)
 
-                local height = math.abs(topScreen.Y - bottomScreen.Y)
-                local width = height / 1.6
+                    local topScreen = Camera:WorldToViewportPoint(headPos + Vector3.new(0, 1, 0))
+                    local bottomScreen = Camera:WorldToViewportPoint(legPos)
 
-                esp.BoxOutline.Size = Vector2.new(width, height)
-                esp.BoxOutline.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
-                esp.BoxOutline.Visible = true
+                    local height = math.abs(topScreen.Y - bottomScreen.Y)
+                    local width = height / 1.6
 
-                esp.Box.Size = Vector2.new(width, height)
-                esp.Box.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
-                esp.Box.Visible = true
+                    esp.BoxOutline.Size = Vector2.new(width, height)
+                    esp.BoxOutline.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
+                    esp.BoxOutline.Visible = true
 
-                esp.Text.Text = targetPlayer.Name .. " [" .. math.floor(char.Humanoid.Health) .. " HP]"
-                esp.Text.Position = Vector2.new(pos.X, pos.Y - (height / 2) - 16)
-                esp.Text.Visible = true
+                    esp.Box.Size = Vector2.new(width, height)
+                    esp.Box.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
+                    esp.Box.Visible = true
+
+                    esp.Text.Text = targetPlayer.Name .. " [" .. math.floor(char.Humanoid.Health) .. " HP]"
+                    esp.Text.Position = Vector2.new(pos.X, pos.Y - (height / 2) - 16)
+                    esp.Text.Visible = true
+                else
+                    esp.BoxOutline.Visible = false
+                    esp.Box.Visible = false
+                    esp.Text.Visible = false
+                end
             else
                 esp.BoxOutline.Visible = false
                 esp.Box.Visible = false
                 esp.Text.Visible = false
             end
-        else
-            esp.BoxOutline.Visible = false
-            esp.Box.Visible = false
-            esp.Text.Visible = false
         end
-    end
-end))
-
--- =============================================================
--- AIMBOT & AUTO BOUNTY HUNT ENGINE
--- =============================================================
-local function getClosestPlayer()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
-
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-            if dist < minDistance then
-                minDistance = dist
-                closest = p
-            end
-        end
-    end
-    return closest
+    end))
 end
 
-table.insert(Connections, RunService.Heartbeat:Connect(function()
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
-        local target = getClosestPlayer()
-
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local targetRoot = target.Character.HumanoidRootPart
-
-            if Settings.Aimbot then
-                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
-            end
-
-            if Settings.AutoHunt then
-                myChar.Humanoid.PlatformStand = true
-                local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
-                local distance = (targetPos - root.Position).Magnitude
-
-                if distance > 6 then
-                    local newCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
-                    myChar:PivotTo(newCFrame)
-                else
-                    myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton1(Vector2.new(500, 500))
-                end
-            elseif not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        else
-            if Settings.AutoHunt and not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        end
-    end)
-end))
-
--- DESTROY FUNCTION
+-- CLEANUP / DESTROY FUNCTION
 YesBtn.MouseButton1Click:Connect(function()
     Settings.AutoFarm = false
     Settings.AutoHunt = false
@@ -906,7 +893,9 @@ YesBtn.MouseButton1Click:Connect(function()
         LocalPlayer.Character.Humanoid.PlatformStand = false
     end
 
-    for _, conn in pairs(Connections) do conn:Disconnect() end
+    for _, conn in pairs(Connections) do 
+        pcall(function() conn:Disconnect() end) 
+    end
     for _, esp in pairs(ESPCache) do
         pcall(function()
             esp.BoxOutline:Remove()
@@ -923,9 +912,9 @@ end)
 
 -- NOTIFICATION
 pcall(function()
-    game.StarterGui:SetCore("SendNotification", {
+    game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "💎 MORGAN HUB V5.0",
-        Text = "Ametist temalı arayüz yüklendi!",
+        Text = "Sistem optimize edildi ve çalışıyor!",
         Duration = 4
     })
 end)
