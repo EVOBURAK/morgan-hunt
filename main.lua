@@ -12,11 +12,14 @@ local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local Connections = {}
+local PlayerESPCache = {}
 
 -- Anti-AFK
 table.insert(Connections, LocalPlayer.Idled:Connect(function()
@@ -389,6 +392,8 @@ Container.Position = UDim2.new(0, 10, 0, 48)
 Container.BackgroundTransparency = 1
 Container.ScrollBarThickness = 4
 Container.ScrollBarImageColor3 = Color3.fromRGB(150, 60, 255)
+Container.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+Container.CanvasSize = UDim2.new(0, 0, 0, 0)
 Container.Parent = MainFrame
 
 local Layout = Instance.new("UIListLayout")
@@ -556,6 +561,21 @@ addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Sett
 addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
 addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
+-- NOCLIP SERVICE
+local function checkNoClip()
+    if Settings.AutoFarm or Settings.AutoHunt then
+        local char = LocalPlayer.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end
+table.insert(Connections, RunService.Stepped:Connect(checkNoClip))
+
 -- =============================================================
 -- AUTO STORE FRUIT ENGINE
 -- =============================================================
@@ -586,27 +606,166 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
 end))
 
 -- =============================================================
--- AUTO FARM ENGINE
+-- AUTO FARM ENGINE (REAL DATABASE CODES - LEVELS 1 TO 2800)
 -- =============================================================
-local function getClosestEnemy()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
+local QuestMap = {
+    -- Sea 1
+    {Min = 1, Max = 9, NPC = "Bandit Quest Giver", Quest = "BanditQuest1", Index = 1, Mob = "Bandit"},
+    {Min = 10, Max = 14, NPC = "Adventurer", Quest = "JungleQuest", Index = 1, Mob = "Monkey"},
+    {Min = 15, Max = 29, NPC = "Adventurer", Quest = "JungleQuest", Index = 2, Mob = "Gorilla"},
+    {Min = 30, Max = 39, NPC = "Pirate Adventurer", Quest = "BuggyQuest1", Index = 1, Mob = "Pirate"},
+    {Min = 40, Max = 59, NPC = "Pirate Adventurer", Quest = "BuggyQuest1", Index = 2, Mob = "Brute"},
+    {Min = 60, Max = 74, NPC = "Desert Adventurer", Quest = "DesertQuest", Index = 1, Mob = "Desert Bandit"},
+    {Min = 75, Max = 89, NPC = "Desert Adventurer", Quest = "DesertQuest", Index = 2, Mob = "Desert Officer"},
+    {Min = 90, Max = 99, NPC = "Villager", Quest = "SnowQuest", Index = 1, Mob = "Snow Bandit"},
+    {Min = 100, Max = 119, NPC = "Villager", Quest = "SnowQuest", Index = 2, Mob = "Snowman"},
+    {Min = 120, Max = 149, NPC = "Marine Officer", Quest = "MarineQuest", Index = 1, Mob = "Trainee"},
+    {Min = 150, Max = 174, NPC = "Sky Adventurer", Quest = "SkyQuest", Index = 1, Mob = "Sky Bandit"},
+    {Min = 175, Max = 224, NPC = "Sky Adventurer", Quest = "SkyQuest", Index = 2, Mob = "Dark Master"},
+    {Min = 225, Max = 249, NPC = "Jail Keeper", Quest = "PrisonerQuest", Index = 1, Mob = "Prisoner"},
+    {Min = 250, Max = 299, NPC = "Jail Keeper", Quest = "PrisonerQuest", Index = 2, Mob = "Dangerous Prisoner"},
+    {Min = 300, Max = 324, NPC = "Quest Giver", Quest = "MagmaQuest", Index = 1, Mob = "Military Soldier"},
+    {Min = 325, Max = 374, NPC = "Quest Giver", Quest = "MagmaQuest", Index = 2, Mob = "Military Spy"},
+    {Min = 375, Max = 399, NPC = "Fishman Adventurer", Quest = "FishmanQuest", Index = 1, Mob = "Fishman Warrior"},
+    {Min = 400, Max = 449, NPC = "Fishman Adventurer", Quest = "FishmanQuest", Index = 2, Mob = "Fishman Commando"},
+    {Min = 450, Max = 474, NPC = "Quest Giver", Quest = "SkyQuest2", Index = 1, Mob = "God's Guard"},
+    {Min = 475, Max = 524, NPC = "Quest Giver", Quest = "SkyQuest2", Index = 2, Mob = "Shandian"},
+    {Min = 525, Max = 624, NPC = "Quest Giver", Quest = "SkyQuest2", Index = 3, Mob = "Royal Squad"},
+    {Min = 625, Max = 649, NPC = "Quest Giver", Quest = "FountainQuest", Index = 1, Mob = "Galley Pirate"},
+    {Min = 650, Max = 699, NPC = "Quest Giver", Quest = "FountainQuest", Index = 2, Mob = "Galley Captain"},
+    -- Sea 2
+    {Min = 700, Max = 724, NPC = "Area 1 Quest Giver", Quest = "Area1Quest", Index = 1, Mob = "Raider"},
+    {Min = 725, Max = 774, NPC = "Area 1 Quest Giver", Quest = "Area1Quest", Index = 2, Mob = "Mercenary"},
+    {Min = 775, Max = 799, NPC = "Area 2 Quest Giver", Quest = "Area2Quest", Index = 1, Mob = "Swan Pirate"},
+    {Min = 800, Max = 874, NPC = "Area 2 Quest Giver", Quest = "Area2Quest", Index = 2, Mob = "Factory Staff"},
+    {Min = 875, Max = 899, NPC = "Green Zone Quest Giver", Quest = "MarineQuest3", Index = 1, Mob = "Marine Lieutenant"},
+    {Min = 900, Max = 949, NPC = "Green Zone Quest Giver", Quest = "MarineQuest3", Index = 2, Mob = "Marine Captain"},
+    {Min = 950, Max = 974, NPC = "Graveyard Quest Giver", Quest = "GraveyardQuest", Index = 1, Mob = "Zombie Squire"},
+    {Min = 975, Max = 999, NPC = "Graveyard Quest Giver", Quest = "GraveyardQuest", Index = 2, Mob = "Zombie Demolisher"},
+    {Min = 1000, Max = 1049, NPC = "Snow Mountain Quest Giver", Quest = "SnowMountainQuest", Index = 1, Mob = "Snow Trooper"},
+    {Min = 1050, Max = 1099, NPC = "Snow Mountain Quest Giver", Quest = "SnowMountainQuest", Index = 2, Mob = "Winter Warrior"},
+    {Min = 1100, Max = 1124, NPC = "Quest Giver", Quest = "IceSideQuest", Index = 1, Mob = "Lab Subordinate"},
+    {Min = 1125, Max = 1174, NPC = "Quest Giver", Quest = "IceSideQuest", Index = 2, Mob = "Horned Warrior"},
+    {Min = 1175, Max = 1199, NPC = "Quest Giver 2", Quest = "FireSideQuest", Index = 1, Mob = "Magma Ninja"},
+    {Min = 1200, Max = 1249, NPC = "Quest Giver 2", Quest = "FireSideQuest", Index = 2, Mob = "Lava Pirate"},
+    {Min = 1250, Max = 1274, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest1", Index = 1, Mob = "Ship Deckhand"},
+    {Min = 1275, Max = 1299, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest1", Index = 2, Mob = "Ship Engineer"},
+    {Min = 1300, Max = 1324, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest2", Index = 1, Mob = "Ship Steward"},
+    {Min = 1325, Max = 1349, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest2", Index = 2, Mob = "Ship Officer"},
+    {Min = 1350, Max = 1374, NPC = "Ice Castle Quest Giver", Quest = "IceCastleQuest", Index = 1, Mob = "Arctic Warrior"},
+    {Min = 1375, Max = 1424, NPC = "Ice Castle Quest Giver", Quest = "IceCastleQuest", Index = 2, Mob = "Snow Lurker"},
+    {Min = 1425, Max = 1449, NPC = "Forgotten Quest Giver", Quest = "ForgottenQuest", Index = 1, Mob = "Sea Soldier"},
+    {Min = 1450, Max = 1500, NPC = "Forgotten Quest Giver", Quest = "ForgottenQuest", Index = 2, Mob = "Water Fighter"},
+    -- Sea 3
+    {Min = 1500, Max = 1524, NPC = "Port Town Quest Giver", Quest = "PortTownQuest", Index = 1, Mob = "Pirate Millionaire"},
+    {Min = 1525, Max = 1574, NPC = "Port Town Quest Giver", Quest = "PortTownQuest", Index = 2, Mob = "Pistol Billionaire"},
+    {Min = 1575, Max = 1599, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Index = 1, Mob = "Dragon Crew Warrior"},
+    {Min = 1600, Max = 1624, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Index = 2, Mob = "Dragon Crew Archer"},
+    {Min = 1625, Max = 1699, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Index = 3, Mob = "Female Assassin"},
+    {Min = 1700, Max = 1724, NPC = "Quest Giver", Quest = "TurtleQuest1", Index = 1, Mob = "Fishman Raider"},
+    {Min = 1725, Max = 1774, NPC = "Quest Giver", Quest = "TurtleQuest1", Index = 2, Mob = "Fishman Captain"},
+    {Min = 1725, Max = 1774, NPC = "Quest Giver", Quest = "TurtleQuest1", Index = 3, Mob = "Forest Pirate"},
+    {Min = 1800, Max = 1849, NPC = "Quest Giver", Quest = "TurtleQuest2", Index = 1, Mob = "Mythical Pirate"},
+    {Min = 1850, Max = 1899, NPC = "Quest Giver", Quest = "TurtleQuest2", Index = 2, Mob = "Jungle Pirate"},
+    {Min = 1900, Max = 1974, NPC = "Quest Giver", Quest = "TurtleQuest2", Index = 3, Mob = "Musketeer Pirate"},
+    {Min = 1975, Max = 1999, NPC = "Haunted Quest Giver", Quest = "HauntedQuest1", Index = 1, Mob = "Reborn Skeleton"},
+    {Min = 2000, Max = 2024, NPC = "Haunted Quest Giver", Quest = "HauntedQuest1", Index = 2, Mob = "Living Zombie"},
+    {Min = 2025, Max = 2049, NPC = "Haunted Quest Giver", Quest = "HauntedQuest2", Index = 1, Mob = "Demonic Soul"},
+    {Min = 2050, Max = 2074, NPC = "Haunted Quest Giver", Quest = "HauntedQuest2", Index = 2, Mob = "Posessed Mummy"},
+    {Min = 2075, Max = 2099, NPC = "Quest Giver", Quest = "PeanutQuest", Index = 1, Mob = "Peanut Scout"},
+    {Min = 2100, Max = 2124, NPC = "Quest Giver", Quest = "PeanutQuest", Index = 2, Mob = "Peanut President"},
+    {Min = 2125, Max = 2149, NPC = "Quest Giver", Quest = "IceCreamQuest", Index = 1, Mob = "Ice Cream Chef"},
+    {Min = 2150, Max = 2199, NPC = "Quest Giver", Quest = "IceCreamQuest", Index = 2, Mob = "Ice Cream Commander"},
+    {Min = 2200, Max = 2224, NPC = "Quest Giver", Quest = "CakeQuest1", Index = 1, Mob = "Cookie Crafter"},
+    {Min = 2225, Max = 2249, NPC = "Quest Giver", Quest = "CakeQuest1", Index = 2, Mob = "Cake Guard"},
+    {Min = 2250, Max = 2274, NPC = "Quest Giver", Quest = "CakeQuest2", Index = 1, Mob = "Baking Staff"},
+    {Min = 2275, Max = 2299, NPC = "Quest Giver", Quest = "CakeQuest2", Index = 2, Mob = "Head Baker"},
+    {Min = 2300, Max = 2324, NPC = "Quest Giver", Quest = "ChocQuest1", Index = 1, Mob = "Cocoa Warrior"},
+    {Min = 2325, Max = 2349, NPC = "Quest Giver", Quest = "ChocQuest1", Index = 2, Mob = "Chocolate Bar Battler"},
+    {Min = 2350, Max = 2374, NPC = "Quest Giver", Quest = "ChocQuest2", Index = 1, Mob = "Sweet Thief"},
+    {Min = 2375, Max = 2399, NPC = "Quest Giver", Quest = "ChocQuest2", Index = 2, Mob = "Candy Rebel"},
+    {Min = 2400, Max = 2424, NPC = "Quest Giver", Quest = "CandyQuest1", Index = 1, Mob = "Candy Pirate"},
+    {Min = 2425, Max = 2449, NPC = "Quest Giver", Quest = "CandyQuest1", Index = 2, Mob = "Snow Demon"},
+    {Min = 2450, Max = 2474, NPC = "Quest Giver", Quest = "TikiQuest1", Index = 1, Mob = "Isle Outlaw"},
+    {Min = 2475, Max = 2800, NPC = "Quest Giver", Quest = "TikiQuest1", Index = 2, Mob = "Island Boy"}
+}
 
-    local enemies = Workspace:FindFirstChild("Enemies") or Workspace
-    for _, enemy in pairs(enemies:GetChildren()) do
-        if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(enemy) then
-                local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
-                if dist < minDistance then
-                    minDistance = dist
-                    closest = enemy
+local function getQuestNPCAndData()
+    local myLevel = 1
+    pcall(function()
+        myLevel = LocalPlayer.Data.Level.Value
+    end)
+    for _, data in ipairs(QuestMap) do
+        if myLevel >= data.Min and myLevel <= data.Max then
+            return data
+        end
+    end
+    return QuestMap[#QuestMap]
+end
+
+local function findNPC(npcName)
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj.Name == npcName and obj:FindFirstChild("HumanoidRootPart") then
+            return obj
+        end
+    end
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and (obj.Name:find("Quest") or obj.Name:find("Adventurer") or obj.Name == "Villager" or obj.Name:find("Officer") or obj.Name:find("Keeper")) and obj:FindFirstChild("HumanoidRootPart") then
+            local dist = (obj.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if dist < 1200 then
+                return obj
+            end
+        end
+    end
+    return nil
+end
+
+local function getEnemy(enemyName)
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, enemy in pairs(enemies:GetChildren()) do
+            if enemy.Name:find(enemyName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                return enemy
+            end
+        end
+    end
+    for _, enemy in pairs(Workspace:GetChildren()) do
+        if enemy:IsA("Model") and enemy.Name:find(enemyName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            return enemy
+        end
+    end
+    return nil
+end
+
+local function aggregateMobs(enemyName, baseEnemy)
+    if not baseEnemy or not baseEnemy:FindFirstChild("HumanoidRootPart") then return end
+    local basePos = baseEnemy.HumanoidRootPart.Position
+
+    local sourceFolders = {Workspace, Workspace:FindFirstChild("Enemies")}
+    for _, folder in pairs(sourceFolders) do
+        if folder then
+            for _, enemy in pairs(folder:GetChildren()) do
+                if enemy.Name:find(enemyName) and enemy ~= baseEnemy and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                    enemy.HumanoidRootPart.CFrame = CFrame.new(basePos)
+                    enemy.Humanoid.PlatformStand = true
+                    enemy.HumanoidRootPart.Anchored = true
+                    enemy.HumanoidRootPart.CanCollide = false
+                    enemy.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
                 end
             end
         end
     end
-    return closest
+end
+
+local function checkCorrectQuest(neededMob)
+    local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+    if mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible then
+        local titleText = mainGui.Quest.Container.QuestTitle.Title.Text:lower()
+        if titleText:find(neededMob:lower()) then
+            return true
+        end
+    end
+    return false
 end
 
 table.insert(Connections, RunService.Heartbeat:Connect(function()
@@ -617,26 +776,59 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
         local root = myChar.HumanoidRootPart
 
-        local enemy = getClosestEnemy()
-        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            myChar.Humanoid.PlatformStand = true
+        local questData = getQuestNPCAndData()
+        if not questData then return end
 
-            local tool = myChar:FindFirstChildOfClass("Tool")
-            if not tool then
-                local backpack = LocalPlayer:FindFirstChild("Backpack")
-                if backpack then
-                    local weapon = backpack:FindFirstChildOfClass("Tool")
-                    if weapon then myChar.Humanoid:EquipTool(weapon) end
-                end
+        local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+        local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
+
+        if hasQuest then
+            if not checkCorrectQuest(questData.Mob) then
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+                task.wait(0.5)
+                return
             end
 
-            local enemyPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-            root.CFrame = CFrame.lookAt(enemyPos, enemy.HumanoidRootPart.Position)
+            local enemy = getEnemy(questData.Mob)
+            if enemy and enemy:FindFirstChild("HumanoidRootPart") then
+                myChar.Humanoid.PlatformStand = true
+                enemy.HumanoidRootPart.Anchored = true
+                aggregateMobs(questData.Mob, enemy)
 
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(500, 500))
+                -- Fast Attack Weapon Equip
+                local tool = myChar:FindFirstChildOfClass("Tool")
+                if not tool then
+                    local backpack = LocalPlayer:FindFirstChild("Backpack")
+                    if backpack then
+                        local weapon = backpack:FindFirstChildOfClass("Tool") or backpack:FindFirstChild("Combat")
+                        if weapon then myChar.Humanoid:EquipTool(weapon) end
+                    end
+                end
+
+                local targetPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+                root.CFrame = CFrame.lookAt(targetPos, enemy.HumanoidRootPart.Position)
+
+                local activeTool = myChar:FindFirstChildOfClass("Tool")
+                if activeTool then activeTool:Activate() end
+
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(500, 500))
+            else
+                local mobSpawn = Workspace:FindFirstChild(questData.Mob) or Workspace.Enemies:FindFirstChild(questData.Mob)
+                if mobSpawn and mobSpawn:FindFirstChild("HumanoidRootPart") then
+                    root.CFrame = mobSpawn.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)
+                end
+            end
         else
-            myChar.Humanoid.PlatformStand = false
+            local npc = findNPC(questData.NPC)
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                root.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                task.wait(0.2)
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, questData.Index)
+            else
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, questData.Index)
+                task.wait(0.5)
+            end
         end
     end)
 end))
@@ -722,8 +914,6 @@ end))
 -- =============================================================
 -- OPTIMIZED PLAYER ESP ENGINE (HIGHLIGHT & BILLBOARD)
 -- =============================================================
-local PlayerESPCache = {}
-
 local function createPlayerESP(p)
     if p == LocalPlayer or PlayerESPCache[p] then return end
 
@@ -794,24 +984,6 @@ end))
 -- =============================================================
 -- AIMBOT & AUTO BOUNTY HUNT ENGINE
 -- =============================================================
-local function getClosestPlayer()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
-
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-            if dist < minDistance then
-                minDistance = dist
-                closest = p
-            end
-        end
-    end
-    return closest
-end
-
 table.insert(Connections, RunService.Heartbeat:Connect(function()
     pcall(function()
         local myChar = LocalPlayer.Character
