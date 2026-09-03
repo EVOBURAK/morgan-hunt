@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V6.0 (AMETHYST BLOX FRUITS MAX - AUTO QUEST & ADMIN DETECT) 🔮
+-- 🔮 MORGAN HUB V6.1 (FIXED ADMIN DETECT & ROBUST SERVER HOP) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -36,12 +36,12 @@ if ParentGui:FindFirstChild("MorganHubV6") then
     ParentGui.MorganHubV6:Destroy() 
 end
 
--- LANGUAGE SYSTEM (DEFAULT: IT)
+-- LANGUAGE SYSTEM
 local CurrentLang = "IT"
 
 local Translations = {
     IT = {
-        Title = "💎 MORGAN HUB V6.0",
+        Title = "💎 MORGAN HUB V6.1",
         LoadingSub = "Caricamento Modulo Blox Fruits 2800...",
         Ready = "Pronto!",
         LuckGUI = "🔮 Potenziatore Fortuna (Luck)",
@@ -58,11 +58,11 @@ local Translations = {
         ConfirmText = "Sei sicuro di voler chiudere la GUI?",
         Yes = "SÌ",
         No = "NO",
-        NotifTitle = "💎 MORGAN HUB V6.0",
+        NotifTitle = "💎 MORGAN HUB V6.1",
         NotifText = "Sistema caricato con successo!"
     },
     EN = {
-        Title = "💎 MORGAN HUB V6.0",
+        Title = "💎 MORGAN HUB V6.1",
         LoadingSub = "Loading Blox Fruits 2800 Module...",
         Ready = "Ready!",
         LuckGUI = "🔮 Luck Rate Booster GUI",
@@ -79,7 +79,7 @@ local Translations = {
         ConfirmText = "Are you sure you want to close and destroy the GUI?",
         Yes = "YES",
         No = "NO",
-        NotifTitle = "💎 MORGAN HUB V6.0",
+        NotifTitle = "💎 MORGAN HUB V6.1",
         NotifText = "System loaded successfully!"
     }
 }
@@ -99,13 +99,122 @@ local Settings = {
     FarmDistance = 9
 }
 
--- KNOWN ADMINS & YOUTUBERS LIST
-local AdminList = {
-    "Uzoth", "rip_indra", "mygame43", "Zioles", "Axiore", "Wenlocktoad", 
-    "UzothTB", "Daigrock", "Kilobyte", "nobleee", "ElAdmin"
+-- STRICT ADMIN LIST (ONLY EXACT USERNAMES & USER IDS)
+local ExactAdminNames = {
+    ["uzoth"] = true,
+    ["rip_indra"] = true,
+    ["mygame43"] = true,
+    ["zioles"] = true,
+    ["axiore"] = true,
+    ["wenlocktoad"] = true,
+    ["daigrock"] = true,
+    ["kilobyte"] = true,
+    ["nobleee"] = true
 }
 
--- BLOX FRUITS LEVEL MAP (1 - 2800 LEVEL PROGRESSION TABLE)
+local AdminUserIds = {
+    [115003008] = true, -- rip_indra
+    [30005273] = true,  -- mygame43
+    [150047872] = true, -- Zioles
+    [89389230] = true,  -- Uzoth
+}
+
+-- ADVANCED ROBUST SERVER HOP ENGINE
+local isHopping = false
+local function ServerHop()
+    if isHopping then return end
+    isHopping = true
+
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "🛡️ ADMIN DETECTED!",
+            Text = "Gerçek Admin Algılandı! Sunucudan Kaçılıyor...",
+            Duration = 5
+        })
+    end)
+
+    local httpRequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    local placeId = game.PlaceId
+    local jobId = game.JobId
+
+    task.spawn(function()
+        for attempt = 1, 5 do
+            local servers = {}
+            local reqUrl = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/0?sortOrder=Asc&limit=100"
+
+            if httpRequest then
+                local res = pcall(function()
+                    return httpRequest({Url = reqUrl, Method = "GET"})
+                end)
+                if res and res.Body then
+                    local data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+                    if data and data.data then
+                        for _, v in pairs(data.data) do
+                            if type(v) == "table" and v.playing < v.maxPlayers and v.id ~= jobId then
+                                table.insert(servers, v.id)
+                            end
+                        end
+                    end
+                end
+            end
+
+            if #servers == 0 then
+                local success, result = pcall(function()
+                    return HttpService:JSONDecode(game:HttpGet(reqUrl))
+                end)
+                if success and result and result.data then
+                    for _, v in pairs(result.data) do
+                        if type(v) == "table" and v.playing < v.maxPlayers and v.id ~= jobId then
+                            table.insert(servers, v.id)
+                        end
+                    end
+                end
+            end
+
+            if #servers > 0 then
+                local targetServer = servers[math.random(1, #servers)]
+                TeleportService:TeleportToPlaceInstance(placeId, targetServer, LocalPlayer)
+                task.wait(2)
+            else
+                TeleportService:Teleport(placeId, LocalPlayer)
+                task.wait(3)
+            end
+        end
+        isHopping = false
+    end)
+end
+
+-- FIXED STRICT ADMIN CHECKER
+local function checkAdmin(player)
+    if not Settings.AdminHop or player == LocalPlayer then return end
+
+    local nameLower = player.Name:lower()
+
+    -- 1. Exact Name Check
+    if ExactAdminNames[nameLower] then
+        ServerHop()
+        return
+    end
+
+    -- 2. Exact User ID Check
+    if AdminUserIds[player.UserId] then
+        ServerHop()
+        return
+    end
+
+    -- 3. High Rank Group Check (Gamer Robot Inc Group ID: 2918800)
+    pcall(function()
+        local rank = player:GetRankInGroup(2918800)
+        if rank >= 250 then -- Only Developer / Official Admin ranks
+            ServerHop()
+        end
+    end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do checkAdmin(p) end
+table.insert(Connections, Players.PlayerAdded:Connect(checkAdmin))
+
+-- BLOX FRUITS LEVEL MAP (1 - 2800 LEVEL)
 local LevelData = {
     -- SEA 1
     {Min = 1, Max = 14, Quest = "BanditQuest1", QuestLvl = 1, Mob = "Bandit", QPos = Vector3.new(-1045, 16, 1561)},
@@ -133,7 +242,7 @@ local LevelData = {
     {Min = 1250, Max = 1349, Quest = "ShipQuest1", QuestLvl = 1, Mob = "Ship Deckhand", QPos = Vector3.new(1030, 125, 32900)},
     {Min = 1350, Max = 1499, Quest = "FrostQuest", QuestLvl = 1, Mob = "Arctic Warrior", QPos = Vector3.new(5660, 28, -6480)},
 
-    -- SEA 3 & 2800 LEVEL EXTENSION
+    -- SEA 3 & 2800 EXTENSION
     {Min = 1500, Max = 1574, Quest = "PiratePortQuest", QuestLvl = 1, Mob = "Pirate Millionaire", QPos = Vector3.new(-290, 44, 5580)},
     {Min = 1575, Max = 1699, Quest = "AmazonQuest", QuestLvl = 1, Mob = "Dragon Crew Warrior", QPos = Vector3.new(5830, 52, -1100)},
     {Min = 1700, Max = 1824, Quest = "MarineTreeQuest", QuestLvl = 1, Mob = "Marine Commodore", QPos = Vector3.new(2180, 28, -6740)},
@@ -153,7 +262,6 @@ local FruitIcons = {
     ["Shadow"] = "rbxassetid://13886869634", ["Blizzard"] = "rbxassetid://13886865660",
     ["Buddha"] = "rbxassetid://13886865890", ["Portal"] = "rbxassetid://13886869150"
 }
-local DefaultIcon = "rbxassetid://13886865768"
 
 -- Anti-AFK
 table.insert(Connections, LocalPlayer.Idled:Connect(function()
@@ -162,47 +270,7 @@ table.insert(Connections, LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end))
 
--- SERVER HOP FUNCTION (ADMIN DETECT)
-local function ServerHop()
-    local api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100"
-    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(api)) end)
-    if success and result and result.data then
-        for _, server in pairs(result.data) do
-            if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
-                break
-            end
-        end
-    end
-end
-
--- ADMIN CHECKER
-local function checkAdmin(player)
-    if not Settings.AdminHop then return end
-    for _, adminName in pairs(AdminList) do
-        if player.Name:lower() == adminName:lower() or player.DisplayName:lower():find("admin") or player.DisplayName:lower():find("rip_") then
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "⚠️ ADMIN DETECTED!",
-                    Text = "Admin " .. player.Name .. " joined! Hopping server...",
-                    Duration = 5
-                })
-            end)
-            task.wait(1)
-            ServerHop()
-        end
-    end
-    pcall(function()
-        if player:GetRankInGroup(2918800) >= 200 then
-            ServerHop()
-        end
-    end)
-end
-
-for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then checkAdmin(p) end end
-table.insert(Connections, Players.PlayerAdded:Connect(checkAdmin))
-
--- Smooth Drag Utility
+-- GUI UTILS
 local function makeDraggable(guiObject)
     local dragging, dragInput, dragStart, startPos
     guiObject.InputBegan:Connect(function(input)
@@ -228,13 +296,12 @@ local function makeDraggable(guiObject)
     end)
 end
 
--- GUI SETUP
+-- GUI BUILD
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV6"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = ParentGui
 
--- TOGGLE LOGO
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
@@ -255,7 +322,6 @@ LogoStroke.Color = Color3.fromRGB(170, 0, 255)
 LogoStroke.Thickness = 2
 LogoStroke.Parent = ToggleLogo
 
--- MAIN FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 460, 0, 480)
@@ -277,7 +343,6 @@ MainStroke.Parent = MainFrame
 
 ToggleLogo.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- TITLE & LANG BUTTON
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 260, 0, 45)
 Title.Position = UDim2.new(0, 15, 0, 0)
@@ -304,7 +369,6 @@ local LangCorner = Instance.new("UICorner")
 LangCorner.CornerRadius = UDim.new(0, 6)
 LangCorner.Parent = LangBtn
 
--- CONFIRM & CLOSE
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 18)
@@ -357,7 +421,6 @@ CloseBtn.Parent = MainFrame
 CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
 NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
 
--- LUCK FRAME
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -399,7 +462,6 @@ ChanceDisplay.Font = Enum.Font.GothamMedium
 ChanceDisplay.TextSize = 11
 ChanceDisplay.Parent = LuckFrame
 
--- CONTAINER & DYNAMIC UI CREATION
 local Container = Instance.new("ScrollingFrame")
 Container.Size = UDim2.new(1, -20, 1, -55)
 Container.Position = UDim2.new(0, 10, 0, 48)
@@ -546,7 +608,6 @@ local function addSlider(translationKey, min, max, default, callback)
     end)
 end
 
--- LANGUAGE SWITCH FUNCTION
 local function switchLanguage()
     if CurrentLang == "IT" then
         CurrentLang = "EN"
@@ -570,7 +631,6 @@ end
 
 LangBtn.MouseButton1Click:Connect(switchLanguage)
 
--- ADD MENU OPTIONS
 addToggle("LuckGUI", Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
@@ -684,7 +744,6 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
             local farmPos = enemyHrp.Position + Vector3.new(0, Settings.FarmDistance, 0)
             root.CFrame = CFrame.lookAt(farmPos, enemyHrp.Position)
 
-            -- EQUIP WEAPON
             local tool = myChar:FindFirstChildOfClass("Tool")
             if not tool then
                 local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -694,7 +753,6 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                 end
             end
 
-            -- ATTACK
             if tick() - lastClick >= 0.12 then
                 lastClick = tick()
                 if tool then pcall(function() tool:Activate() end) end
@@ -703,7 +761,6 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                 VirtualUser:Button1Up(Vector2.new(0, 0), Camera.CFrame)
             end
         else
-            -- TIKi OR SPAWN AREA IF MOB NOT SPAWNED YET
             root.CFrame = CFrame.new(qData.QPos + Vector3.new(0, 20, 0))
         end
         return
@@ -749,7 +806,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end
 end))
 
--- AUTO STORE FRUIT ENGINE
+-- AUTO STORE FRUIT
 local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
     if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
@@ -773,7 +830,7 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
     storeFruit(tool)
 end))
 
--- CLEANUP / DESTROY FUNCTION
+-- CLEANUP / DESTROY
 YesBtn.MouseButton1Click:Connect(function()
     Settings.AutoFarm = false
     Settings.AutoHunt = false
@@ -791,7 +848,6 @@ YesBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- NOTIFICATION
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = Translations[CurrentLang].NotifTitle,
