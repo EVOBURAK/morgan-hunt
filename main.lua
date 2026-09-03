@@ -1,8 +1,10 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - ULTIMATE GUI & INTRO) 🔮
+-- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - SAFE & FIXED) 🔮
 -- =================================================================================
 
-if not game:IsLoaded() then game.Loaded:Wait() end
+if not game:IsLoaded() then 
+    pcall(function() game.Loaded:Wait() end) 
+end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,6 +14,7 @@ local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -39,7 +42,48 @@ local Settings = {
     LuckMultiplier = false,
     LuckPower = 100,
     FlySpeed = 12,
-    FarmDistance = 8
+    FarmDistance = 8,
+    AdminHop = true
+}
+
+-- =============================================================
+-- BLOX FRUITS LEVEL & QUEST DATABASE (1 - 2800 LEVEL)
+-- =============================================================
+local QuestData = {
+    -- FIRST SEA
+    {MinLvl = 1, MaxLvl = 14, QuestName = "BanditQuest1", QuestLvl = 1, Mob = "Bandit", NPC = "Bandit Quest Giver", NPCPos = Vector3.new(1059, 16, 1549)},
+    {MinLvl = 15, MaxLvl = 29, QuestName = "JungleQuest", QuestLvl = 1, Mob = "Monkey", NPC = "Jungle Quest Giver", NPCPos = Vector3.new(-1598, 36, 153)},
+    {MinLvl = 30, MaxLvl = 59, QuestName = "PirateQuest", QuestLvl = 1, Mob = "Pirate", NPC = "Pirate Quest Giver", NPCPos = Vector3.new(-1140, 4, 3828)},
+    {MinLvl = 60, MaxLvl = 89, QuestName = "DesertQuest", QuestLvl = 1, Mob = "Desert Bandit", NPC = "Desert Quest Giver", NPCPos = Vector3.new(894, 6, 4388)},
+    {MinLvl = 90, MaxLvl = 119, QuestName = "SnowQuest", QuestLvl = 1, Mob = "Snow Bandit", NPC = "Snow Quest Giver", NPCPos = Vector3.new(1385, 87, -1298)},
+    {MinLvl = 120, MaxLvl = 149, QuestName = "MarineQuest2", QuestLvl = 1, Mob = "Chief Petty Officer", NPC = "Marine Quest Giver", NPCPos = Vector3.new(-5035, 20, 4324)},
+    {MinLvl = 150, MaxLvl = 189, QuestName = "SkyQuest", QuestLvl = 1, Mob = "Sky Bandit", NPC = "Sky Quest Giver", NPCPos = Vector3.new(-4839, 717, -2619)},
+    {MinLvl = 190, MaxLvl = 249, QuestName = "PrisonerQuest", QuestLvl = 1, Mob = "Prisoner", NPC = "Prison Quest Giver", NPCPos = Vector3.new(530, 1, 474)},
+    {MinLvl = 250, MaxLvl = 299, QuestName = "ColosseumQuest", QuestLvl = 1, Mob = "Toga Warrior", NPC = "Colosseum Quest Giver", NPCPos = Vector3.new(-1580, 7, -2982)},
+    {MinLvl = 300, MaxLvl = 374, QuestName = "MagmaQuest", QuestLvl = 1, Mob = "Military Soldier", NPC = "Magma Quest Giver", NPCPos = Vector3.new(-5313, 12, 8515)},
+    {MinLvl = 375, MaxLvl = 449, QuestName = "FishmanQuest", QuestLvl = 1, Mob = "Fishman Warrior", NPC = "Fishman Quest Giver", NPCPos = Vector3.new(61122, 18, 1569)},
+    {MinLvl = 450, MaxLvl = 524, QuestName = "Sky2Quest", QuestLvl = 1, Mob = "God's Guard", NPC = "Upper Sky Quest Giver", NPCPos = Vector3.new(-7906, 5611, -2280)},
+    {MinLvl = 525, MaxLvl = 624, QuestName = "FountainQuest", QuestLvl = 1, Mob = "Shandora Warrior", NPC = "Fountain Quest Giver", NPCPos = Vector3.new(5259, 38, 4050)},
+    {MinLvl = 625, MaxLvl = 699, QuestName = "GalleyQuest", QuestLvl = 1, Mob = "Galley Pirate", NPC = "Fountain Quest Giver", NPCPos = Vector3.new(5259, 38, 4050)},
+    
+    -- SECOND SEA
+    {MinLvl = 700, MaxLvl = 774, QuestName = "Area1Quest", QuestLvl = 1, Mob = "Raider", NPC = "Quest Giver", NPCPos = Vector3.new(-424, 73, 1836)},
+    {MinLvl = 775, MaxLvl = 874, QuestName = "Area2Quest", QuestLvl = 1, Mob = "Mercenary", NPC = "Quest Giver", NPCPos = Vector3.new(638, 73, 918)},
+    {MinLvl = 875, MaxLvl = 999, QuestName = "MarineQuest3", QuestLvl = 1, Mob = "Marine Lieutenant", NPC = "Quest Giver", NPCPos = Vector3.new(-2440, 73, -3216)},
+    {MinLvl = 1000, MaxLvl = 1174, QuestName = "SnowMountainQuest", QuestLvl = 1, Mob = "Snow Trooper", NPC = "Quest Giver", NPCPos = Vector3.new(609, 401, -5372)},
+    {MinLvl = 1175, MaxLvl = 1349, QuestName = "ShipQuest1", QuestLvl = 1, Mob = "Ship Deckhand", NPC = "Quest Giver", NPCPos = Vector3.new(920, 125, 32800)},
+    {MinLvl = 1350, MaxLvl = 1499, QuestName = "FrostQuest", QuestLvl = 1, Mob = "Arctic Warrior", NPC = "Quest Giver", NPCPos = Vector3.new(5667, 28, -6480)},
+
+    -- THIRD SEA & 2026 UPDATE (UP TO LEVEL 2800)
+    {MinLvl = 1500, MaxLvl = 1574, QuestName = "PiratePortQuest", QuestLvl = 1, Mob = "Pirate Millionaire", NPC = "Quest Giver", NPCPos = Vector3.new(-290, 44, 5580)},
+    {MinLvl = 1575, MaxLvl = 1699, QuestName = "AmazonQuest", QuestLvl = 1, Mob = "Dragon Crew Warrior", NPC = "Quest Giver", NPCPos = Vector3.new(5833, 52, -1105)},
+    {MinLvl = 1700, MaxLvl = 1824, QuestName = "MarineTreeQuest", QuestLvl = 1, Mob = "Marine Commodore", NPC = "Quest Giver", NPCPos = Vector3.new(2180, 29, -6740)},
+    {MinLvl = 1825, MaxLvl = 1974, QuestName = "DeepForestIslandQuest", QuestLvl = 1, Mob = "Fishman Raider", NPC = "Quest Giver", NPCPos = Vector3.new(-10500, 332, -8760)},
+    {MinLvl = 1975, MaxLvl = 2074, QuestName = "HauntedQuest1", QuestLvl = 1, Mob = "Reborn Skeleton", NPC = "Quest Giver", NPCPos = Vector3.new(-9515, 142, 5520)},
+    {MinLvl = 2075, MaxLvl = 2199, QuestName = "PeanutQuest", QuestLvl = 1, Mob = "Peanut Scout", NPC = "Quest Giver", NPCPos = Vector3.new(-2100, 38, -10190)},
+    {MinLvl = 2200, MaxLvl = 2449, QuestName = "IceCreamQuest1", QuestLvl = 1, Mob = "Ice Cream Chef", NPC = "Quest Giver", NPCPos = Vector3.new(-820, 65, -10960)},
+    {MinLvl = 2450, MaxLvl = 2599, QuestName = "TikiQuest1", QuestLvl = 1, Mob = "Sun-kissed Warrior", NPC = "Quest Giver", NPCPos = Vector3.new(-16533, 55, -172]},
+    {MinLvl = 2600, MaxLvl = 2800, QuestName = "TikiQuest2", QuestLvl = 2, Mob = "Isle Outlaw", NPC = "Quest Giver", NPCPos = Vector3.new(-16700, 70, 200)}
 }
 
 -- FRUIT ICONS
@@ -82,17 +126,47 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
+-- SERVER HOP ENGINE
+local function ServerHop()
+    pcall(function()
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end)
+end
+
+local function CheckForAdmins()
+    if not Settings.AdminHop then return end
+    pcall(function()
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                if p:GetRankInGroup(2924100) and p:GetRankInGroup(2924100) >= 2 then
+                    ServerHop()
+                elseif p.Name:lower():find("admin") or p.Name:lower():find("mod") or p.Name:lower():find("uzoth") then
+                    ServerHop()
+                end
+            end
+        end
+    end)
+end
+
+table.insert(Connections, Players.PlayerAdded:Connect(function() CheckForAdmins() end))
+
 -- =============================================================
 -- GUI ARCHITECTURE & SCREEN GUI
 -- =============================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = CoreGui
 
--- -------------------------------------------------------------
+-- Executor Desteği için CoreGui denemesi, yoksa LocalPlayer.PlayerGui
+local parentTarget = CoreGui
+pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+if not ScreenGui.Parent then
+    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
 -- 🔮 AÇILIŞ EKRANI (LOADING / INTRO SCREEN)
--- -------------------------------------------------------------
 local LoadingFrame = Instance.new("Frame")
 LoadingFrame.Name = "LoadingFrame"
 LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -146,34 +220,18 @@ local BarFillCorner = Instance.new("UICorner")
 BarFillCorner.CornerRadius = UDim.new(1, 0)
 BarFillCorner.Parent = BarFill
 
-local BarGlow = Instance.new("UIStroke")
-BarGlow.Color = Color3.fromRGB(200, 80, 255)
-BarGlow.Thickness = 2
-BarGlow.Parent = BarFill
-
--- Loading Animation Execution
 task.spawn(function()
-    local tweenInfo = TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     local tween = TweenService:Create(BarFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
     tween:Play()
     tween.Completed:Wait()
     
     LoadingSub.Text = "Hazır!"
-    task.wait(0.4)
-    
-    local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1})
-    TweenService:Create(LoadingTitle, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
-    TweenService:Create(LoadingSub, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
-    TweenService:Create(BarBg, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(BarFill, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
-    fadeTween:Play()
-    fadeTween.Completed:Wait()
+    task.wait(0.3)
     LoadingFrame:Destroy()
 end)
 
--- -------------------------------------------------------------
--- LOGO BUTTON (YENİLENMİŞ & DÜZELTİLMİŞ)
--- -------------------------------------------------------------
+-- LOGO BUTTON
 local ToggleLogo = Instance.new("ImageButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 48, 0, 48)
@@ -189,26 +247,15 @@ local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(0, 12)
 LogoCorner.Parent = ToggleLogo
 
-local LogoStroke = Instance.new("UIStroke")
-LogoStroke.Color = Color3.fromRGB(180, 50, 255)
-LogoStroke.Thickness = 2
-LogoStroke.Parent = ToggleLogo
-
 local LogoImage = Instance.new("ImageLabel")
 LogoImage.Name = "LogoImage"
 LogoImage.Size = UDim2.new(1, 0, 1, 0)
 LogoImage.BackgroundTransparency = 1
-LogoImage.Image = "rbxassetid://15312061073" -- Varsayılan logo görsel kimliği
+LogoImage.Image = "rbxassetid://15312061073"
 LogoImage.ScaleType = Enum.ScaleType.Fit
 LogoImage.Parent = ToggleLogo
 
-local LogoImageCorner = Instance.new("UICorner")
-LogoImageCorner.CornerRadius = UDim.new(0, 12)
-LogoImageCorner.Parent = LogoImage
-
--- -------------------------------------------------------------
--- MAIN WINDOW (AMETHYST STYLE)
--- -------------------------------------------------------------
+-- MAIN WINDOW
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 460, 0, 480)
@@ -223,13 +270,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(160, 50, 255)
-MainStroke.Thickness = 2
-MainStroke.Transparency = 0.2
-MainStroke.Parent = MainFrame
-
--- Sürükleme ve Tıklama Mantığı Düzeltmesi
 local startPos
 ToggleLogo.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -241,39 +281,12 @@ ToggleLogo.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         if startPos then
             local delta = (input.Position - startPos).Magnitude
-            if delta < 10 then -- Eğer belirgin şekilde sürüklenmediyse tıklama kabul et
+            if delta < 10 then
                 MainFrame.Visible = not MainFrame.Visible
             end
         end
     end
 end)
-
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI (LEFT & RIGHT AMETHYSTS)
-local function createSideAmethyst(isLeft)
-    local amethyst = Instance.new("TextLabel")
-    amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
-    amethyst.Size = UDim2.new(0, 40, 0, 40)
-    
-    local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
-    amethyst.Position = posX
-    amethyst.BackgroundTransparency = 1
-    amethyst.Text = "💎"
-    amethyst.TextSize = 30
-    amethyst.ZIndex = 5
-    amethyst.Parent = MainFrame
-
-    local upPos = posX + UDim2.new(0, 0, 0, -25)
-    local downPos = posX + UDim2.new(0, 0, 0, 25)
-    
-    amethyst.Position = upPos
-    
-    local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    local floatTween = TweenService:Create(amethyst, tweenInfo, {Position = downPos})
-    floatTween:Play()
-end
-
-createSideAmethyst(true)  -- Sol Ametist
-createSideAmethyst(false) -- Sağ Ametist
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -40, 0, 45)
@@ -286,7 +299,7 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- INTERACTIVE ADVANCED LUCK BOOSTER GUI
+-- LUCK BOOSTER GUI
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -301,11 +314,6 @@ LuckFrame.Parent = ScreenGui
 local LuckCorner = Instance.new("UICorner")
 LuckCorner.CornerRadius = UDim.new(0, 8)
 LuckCorner.Parent = LuckFrame
-
-local LuckStroke = Instance.new("UIStroke")
-LuckStroke.Color = Color3.fromRGB(180, 80, 255)
-LuckStroke.Thickness = 2
-LuckStroke.Parent = LuckFrame
 
 local LuckTitle = Instance.new("TextLabel")
 LuckTitle.Size = UDim2.new(1, 0, 0, 30)
@@ -338,10 +346,6 @@ ChanceDisplay.Font = Enum.Font.GothamMedium
 ChanceDisplay.TextSize = 11
 ChanceDisplay.Parent = LuckFrame
 
-local ChanceCorner = Instance.new("UICorner")
-ChanceCorner.CornerRadius = UDim.new(0, 6)
-ChanceCorner.Parent = ChanceDisplay
-
 -- CONFIRM DESTROY FRAME
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -350,10 +354,6 @@ ConfirmFrame.BackgroundTransparency = 0.1
 ConfirmFrame.Visible = false
 ConfirmFrame.ZIndex = 10
 ConfirmFrame.Parent = MainFrame
-
-local ConfirmCorner = Instance.new("UICorner")
-ConfirmCorner.CornerRadius = UDim.new(0, 10)
-ConfirmCorner.Parent = ConfirmFrame
 
 local ConfirmText = Instance.new("TextLabel")
 ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
@@ -376,10 +376,6 @@ YesBtn.Font = Enum.Font.GothamBold
 YesBtn.ZIndex = 11
 YesBtn.Parent = ConfirmFrame
 
-local YesCorner = Instance.new("UICorner")
-YesCorner.CornerRadius = UDim.new(0, 6)
-YesCorner.Parent = YesBtn
-
 local NoBtn = Instance.new("TextButton")
 NoBtn.Size = UDim2.new(0, 100, 0, 35)
 NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
@@ -390,10 +386,6 @@ NoBtn.Font = Enum.Font.GothamBold
 NoBtn.ZIndex = 11
 NoBtn.Parent = ConfirmFrame
 
-local NoCorner = Instance.new("UICorner")
-NoCorner.CornerRadius = UDim.new(0, 6)
-NoCorner.Parent = NoBtn
-
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
 CloseBtn.Position = UDim2.new(1, -32, 0, 8)
@@ -403,10 +395,6 @@ CloseBtn.Text = "✕"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Parent = MainFrame
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
 NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
@@ -430,10 +418,6 @@ local function addToggle(text, defaultState, callback)
     card.BorderSizePixel = 0
     card.Parent = Container
 
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 6)
-    cardCorner.Parent = card
-
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0.04, 0, 0, 0)
@@ -453,20 +437,12 @@ local function addToggle(text, defaultState, callback)
     btn.Text = ""
     btn.Parent = card
 
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 11)
-    btnCorner.Parent = btn
-
     local circle = Instance.new("Frame")
     circle.Size = UDim2.new(0, 16, 0, 16)
     circle.Position = defaultState and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
     circle.BackgroundColor3 = Color3.fromRGB(240, 230, 255)
     circle.BorderSizePixel = 0
     circle.Parent = btn
-
-    local circleCorner = Instance.new("UICorner")
-    circleCorner.CornerRadius = UDim.new(0, 8)
-    circleCorner.Parent = circle
 
     local state = defaultState
     btn.MouseButton1Click:Connect(function()
@@ -483,10 +459,6 @@ local function addSlider(text, min, max, default, callback)
     card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
     card.BorderSizePixel = 0
     card.Parent = Container
-
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 6)
-    cardCorner.Parent = card
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.7, 0, 0.5, 0)
@@ -518,19 +490,11 @@ local function addSlider(text, min, max, default, callback)
     sliderBg.Text = ""
     sliderBg.Parent = card
 
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 4)
-    sliderCorner.Parent = sliderBg
-
     local fill = Instance.new("Frame")
     fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
     fill.BackgroundColor3 = Color3.fromRGB(160, 50, 255)
     fill.BorderSizePixel = 0
     fill.Parent = sliderBg
-
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 4)
-    fillCorner.Parent = fill
 
     local dragging = false
     local function update(input)
@@ -573,7 +537,8 @@ addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
     ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
 end)
 
-addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("🌾 Auto Farm Level + Quest (1-2800)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("⚡ Admin Detect Auto Server Hop", Settings.AdminHop, function(v) Settings.AdminHop = v end)
 addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
 addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
 addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
@@ -591,11 +556,7 @@ local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
     if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
         pcall(function()
-            local args = {
-                [1] = "StoreFruit",
-                [2] = tool.Name,
-                [3] = tool
-            }
+            local args = {[1] = "StoreFruit", [2] = tool.Name, [3] = tool}
             ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
         end)
     end
@@ -604,9 +565,7 @@ end
 table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
     char.ChildAdded:Connect(storeFruit)
 end))
-if LocalPlayer.Character then
-    LocalPlayer.Character.ChildAdded:Connect(storeFruit)
-end
+if LocalPlayer.Character then LocalPlayer.Character.ChildAdded:Connect(storeFruit) end
 
 table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
     task.wait(0.5)
@@ -614,9 +573,49 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
 end))
 
 -- =============================================================
--- AUTO FARM ENGINE
+-- AUTO FARM LEVEL & QUEST ENGINE
 -- =============================================================
-local function getClosestEnemy()
+local function getMyLevel()
+    local level = 1
+    pcall(function()
+        level = LocalPlayer.Data.Level.Value
+    end)
+    return level
+end
+
+local function getCurrentQuest()
+    local myLevel = getMyLevel()
+    for _, quest in pairs(QuestData) do
+        if myLevel >= quest.MinLvl and myLevel <= quest.MaxLvl then
+            return quest
+        end
+    end
+    return QuestData[#QuestData]
+end
+
+local function hasActiveQuest()
+    local active = false
+    pcall(function()
+        local mainFrame = LocalPlayer.PlayerGui:FindFirstChild("Main")
+        if mainFrame and mainFrame:FindFirstChild("Quest") and mainFrame.Quest.Visible then
+            active = true
+        end
+    end)
+    return active
+end
+
+local function takeQuest(quest)
+    pcall(function()
+        local args = {
+            [1] = "StartQuest",
+            [2] = quest.QuestName,
+            [3] = quest.QuestLvl
+        }
+        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
+    end)
+end
+
+local function getTargetEnemy(mobName)
     local closest, minDistance = nil, math.huge
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -624,13 +623,11 @@ local function getClosestEnemy()
 
     local enemies = Workspace:FindFirstChild("Enemies") or Workspace
     for _, enemy in pairs(enemies:GetChildren()) do
-        if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(enemy) then
-                local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
-                if dist < minDistance then
-                    minDistance = dist
-                    closest = enemy
-                end
+        if enemy:IsA("Model") and enemy.Name == mobName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
+            if dist < minDistance then
+                minDistance = dist
+                closest = enemy
             end
         end
     end
@@ -645,7 +642,20 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
         local root = myChar.HumanoidRootPart
 
-        local enemy = getClosestEnemy()
+        local currentQuest = getCurrentQuest()
+
+        if not hasActiveQuest() then
+            myChar.Humanoid.PlatformStand = true
+            local distToNPC = (root.Position - currentQuest.NPCPos).Magnitude
+            if distToNPC > 8 then
+                root.CFrame = CFrame.new(currentQuest.NPCPos + Vector3.new(0, 5, 0))
+            else
+                takeQuest(currentQuest)
+            end
+            return
+        end
+
+        local enemy = getTargetEnemy(currentQuest.Mob)
         if enemy and enemy:FindFirstChild("HumanoidRootPart") then
             myChar.Humanoid.PlatformStand = true
 
@@ -669,223 +679,6 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end)
 end))
 
--- =============================================================
--- IMAGE FRUIT ESP ENGINE
--- =============================================================
-local FruitBillboards = {}
-
-local function getFruitImage(fruitName)
-    for name, iconId in pairs(FruitIcons) do
-        if fruitName:lower():find(name:lower()) then
-            return iconId
-        end
-    end
-    return DefaultIcon
-end
-
-local function createFruitESP(obj)
-    if FruitBillboards[obj] then return end
-
-    local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("Part") or obj:FindFirstChildOfClass("MeshPart")
-    if not handle then return end
-
-    local bb = Instance.new("BillboardGui")
-    bb.Name = "FruitESPLogo"
-    bb.Adornee = handle
-    bb.Size = UDim2.new(0, 65, 0, 80)
-    bb.AlwaysOnTop = true
-
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.new(0, 48, 0, 48)
-    img.Position = UDim2.new(0.5, -24, 0, 0)
-    img.BackgroundTransparency = 1
-    img.Image = getFruitImage(obj.Name)
-    img.Parent = bb
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 0.35, 0)
-    textLabel.Position = UDim2.new(0, 0, 0.65, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = obj.Name
-    textLabel.TextColor3 = Color3.fromRGB(200, 130, 255)
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextSize = 11
-    textLabel.TextStrokeTransparency = 0
-    textLabel.Parent = bb
-
-    bb.Parent = CoreGui
-    FruitBillboards[obj] = {Gui = bb, Text = textLabel, Handle = handle}
-end
-
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    if not Settings.FruitESP then
-        for obj, data in pairs(FruitBillboards) do
-            if data.Gui then data.Gui.Enabled = false end
-        end
-        return
-    end
-
-    local myChar = LocalPlayer.Character
-    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
-
-    for _, obj in pairs(Workspace:GetChildren()) do
-        if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or obj.Name:find("Meyve") or obj.Name:find("Blox")) then
-            createFruitESP(obj)
-        end
-    end
-
-    for obj, data in pairs(FruitBillboards) do
-        if obj and obj.Parent and data.Handle and data.Handle.Parent then
-            data.Gui.Enabled = true
-            local dist = math.floor((data.Handle.Position - myPos).Magnitude)
-            data.Text.Text = obj.Name .. "\n[" .. dist .. "m]"
-        else
-            if data.Gui then data.Gui:Destroy() end
-            FruitBillboards[obj] = nil
-        end
-    end
-end))
-
--- =============================================================
--- DRAWING PLAYER ESP ENGINE
--- =============================================================
-local ESPCache = {}
-
-local function createESP(targetPlayer)
-    if targetPlayer == LocalPlayer then return end
-
-    local boxOutline = Drawing.new("Square")
-    boxOutline.Thickness = 3
-    boxOutline.Color = Color3.fromRGB(0, 0, 0)
-
-    local box = Drawing.new("Square")
-    box.Thickness = 1
-    box.Color = Color3.fromRGB(180, 50, 255)
-
-    local text = Drawing.new("Text")
-    text.Size = 14
-    text.Center = true
-    text.Outline = true
-    text.Color = Color3.fromRGB(255, 255, 255)
-
-    ESPCache[targetPlayer] = {BoxOutline = boxOutline, Box = box, Text = text}
-end
-
-local function removeESP(targetPlayer)
-    if ESPCache[targetPlayer] then
-        ESPCache[targetPlayer].BoxOutline:Remove()
-        ESPCache[targetPlayer].Box:Remove()
-        ESPCache[targetPlayer].Text:Remove()
-        ESPCache[targetPlayer] = nil
-    end
-end
-
-for _, p in pairs(Players:GetPlayers()) do createESP(p) end
-table.insert(Connections, Players.PlayerAdded:Connect(createESP))
-table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
-
-table.insert(Connections, RunService.RenderStepped:Connect(function()
-    for targetPlayer, esp in pairs(ESPCache) do
-        local char = targetPlayer.Character
-        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
-            local root = char.HumanoidRootPart
-            local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
-
-            if onScreen then
-                local head = char:FindFirstChild("Head")
-                local headPos = head and head.Position or (root.Position + Vector3.new(0, 2, 0))
-                local legPos = root.Position - Vector3.new(0, 3, 0)
-
-                local topScreen = Camera:WorldToViewportPoint(headPos + Vector3.new(0, 1, 0))
-                local bottomScreen = Camera:WorldToViewportPoint(legPos)
-
-                local height = math.abs(topScreen.Y - bottomScreen.Y)
-                local width = height / 1.6
-
-                esp.BoxOutline.Size = Vector2.new(width, height)
-                esp.BoxOutline.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
-                esp.BoxOutline.Visible = true
-
-                esp.Box.Size = Vector2.new(width, height)
-                esp.Box.Position = Vector2.new(pos.X - width / 2, pos.Y - height / 2)
-                esp.Box.Visible = true
-
-                esp.Text.Text = targetPlayer.Name .. " [" .. math.floor(char.Humanoid.Health) .. " HP]"
-                esp.Text.Position = Vector2.new(pos.X, pos.Y - (height / 2) - 16)
-                esp.Text.Visible = true
-            else
-                esp.BoxOutline.Visible = false
-                esp.Box.Visible = false
-                esp.Text.Visible = false
-            end
-        else
-            esp.BoxOutline.Visible = false
-            esp.Box.Visible = false
-            esp.Text.Visible = false
-        end
-    end
-end))
-
--- =============================================================
--- AIMBOT & AUTO BOUNTY HUNT ENGINE
--- =============================================================
-local function getClosestPlayer()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
-
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-            if dist < minDistance then
-                minDistance = dist
-                closest = p
-            end
-        end
-    end
-    return closest
-end
-
-table.insert(Connections, RunService.Heartbeat:Connect(function()
-    pcall(function()
-        local myChar = LocalPlayer.Character
-        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
-        local root = myChar.HumanoidRootPart
-
-        local target = getClosestPlayer()
-
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local targetRoot = target.Character.HumanoidRootPart
-
-            if Settings.Aimbot then
-                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position)
-            end
-
-            if Settings.AutoHunt then
-                myChar.Humanoid.PlatformStand = true
-                local targetPos = targetRoot.Position + Vector3.new(0, 2, 0)
-                local distance = (targetPos - root.Position).Magnitude
-
-                if distance > 6 then
-                    local newCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
-                    myChar:PivotTo(newCFrame)
-                else
-                    myChar:PivotTo(CFrame.lookAt(root.Position, targetPos))
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton1(Vector2.new(500, 500))
-                end
-            elseif not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        else
-            if Settings.AutoHunt and not Settings.AutoFarm then
-                myChar.Humanoid.PlatformStand = false
-            end
-        end
-    end)
-end))
-
 -- DESTROY FUNCTION
 YesBtn.MouseButton1Click:Connect(function()
     Settings.AutoFarm = false
@@ -894,27 +687,12 @@ YesBtn.MouseButton1Click:Connect(function()
     Settings.FruitESP = false
     Settings.AutoStore = false
     Settings.LuckMultiplier = false
+    Settings.AdminHop = false
 
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.PlatformStand = false
     end
 
-    for _, conn in pairs(Connections) do conn:Disconnect() end
-    for _, esp in pairs(ESPCache) do
-        esp.BoxOutline:Remove()
-        esp.Box:Remove()
-        esp.Text:Remove()
-    end
-    for _, data in pairs(FruitBillboards) do
-        if data.Gui then data.Gui:Destroy() end
-    end
-
+    for _, conn in pairs(Connections) do pcall(function() conn:Disconnect() end) end
     ScreenGui:Destroy()
 end)
-
--- NOTIFICATION
-game.StarterGui:SetCore("SendNotification", {
-    Title = "💎 MORGAN HUB V5.0",
-    Text = "Ametist temalı arayüz yüklendi!",
-    Duration = 4
-})
