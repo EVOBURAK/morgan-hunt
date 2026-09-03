@@ -21,7 +21,7 @@ local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
 
--- Wait for critical components to prevent runtime crashes
+-- Wait for critical components to prevent runtime crashes (Safe for Emulators)
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 15)
 local Data = LocalPlayer:WaitForChild("Data", 15)
 local Level = Data and Data:WaitForChild("Level", 15)
@@ -29,7 +29,7 @@ local Level = Data and Data:WaitForChild("Level", 15)
 local Connections = {}
 local PlayerESPCache = {}
 
--- Safe GUI Parent Detection (Bypasses security restrictions on custom executors)
+-- Safe GUI Parent Detection (Prevents empty GUI glitches on BlueStacks/Mobile executors)
 local function getGuiParent()
     local success, result = pcall(function()
         local test = Instance.new("Folder")
@@ -241,11 +241,121 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
+-- SERVER HOP SYSTEM
+local function serverHop()
+    local sf, servers = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+    end)
+    if sf and servers and servers.data then
+        for _, server in pairs(servers.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
+                break
+            end
+        end
+    end
+end
+
+local function checkAdminPresence(player)
+    local adminIDs = {[410143093] = true, [1552391024] = true, [4424317] = true}
+    if adminIDs[player.UserId] or player:GetRankInGroup(11424103) >= 100 then
+        task.spawn(function()
+            game.StarterGui:SetCore("SendNotification", {
+                Title = Languages[Settings.Language].notif_title,
+                Text = Languages[Settings.Language].admin_hop,
+                Duration = 5
+            })
+            task.wait(2)
+            serverHop()
+        end)
+    end
+end
+
+for _, p in pairs(Players:GetPlayers()) do checkAdminPresence(p) end
+table.insert(Connections, Players.PlayerAdded:Connect(checkAdminPresence))
+
 -- SCREEN GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = ParentGui
+
+-- LOADING BAR
+local LoadingFrame = Instance.new("Frame")
+LoadingFrame.Name = "LoadingFrame"
+LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
+LoadingFrame.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
+LoadingFrame.BorderSizePixel = 0
+LoadingFrame.ZIndex = 100
+LoadingFrame.Parent = ScreenGui
+
+local LoadingTitle = Instance.new("TextLabel")
+LoadingTitle.Size = UDim2.new(1, 0, 0, 50)
+LoadingTitle.Position = UDim2.new(0, 0, 0.38, 0)
+LoadingTitle.BackgroundTransparency = 1
+LoadingTitle.Text = "💎 MORGAN HUB V5 💎"
+LoadingTitle.TextColor3 = Color3.fromRGB(180, 100, 255)
+LoadingTitle.TextSize = 28
+LoadingTitle.Font = Enum.Font.GothamBold
+LoadingTitle.ZIndex = 101
+LoadingTitle.Parent = LoadingFrame
+
+local LoadingSub = Instance.new("TextLabel")
+LoadingSub.Size = UDim2.new(1, 0, 0, 30)
+LoadingSub.Position = UDim2.new(0, 0, 0.45, 0)
+LoadingSub.BackgroundTransparency = 1
+LoadingSub.Text = Languages[Settings.Language].loading
+LoadingSub.TextColor3 = Color3.fromRGB(200, 170, 255)
+LoadingSub.TextSize = 14
+LoadingSub.Font = Enum.Font.GothamMedium
+LoadingSub.ZIndex = 101
+LoadingSub.Parent = LoadingFrame
+
+local BarBg = Instance.new("Frame")
+BarBg.Size = UDim2.new(0, 320, 0, 10)
+BarBg.Position = UDim2.new(0.5, -160, 0.55, 0)
+BarBg.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+BarBg.BorderSizePixel = 0
+BarBg.ZIndex = 101
+BarBg.Parent = LoadingFrame
+
+local BarBgCorner = Instance.new("UICorner")
+BarBgCorner.CornerRadius = UDim.new(1, 0)
+BarBgCorner.Parent = BarBg
+
+local BarFill = Instance.new("Frame")
+BarFill.Size = UDim2.new(0, 0, 1, 0)
+BarFill.BackgroundColor3 = Color3.fromRGB(160, 30, 255)
+BarFill.BorderSizePixel = 0
+BarFill.ZIndex = 102
+BarFill.Parent = BarBg
+
+local BarFillCorner = Instance.new("UICorner")
+BarFillCorner.CornerRadius = UDim.new(1, 0)
+BarFillCorner.Parent = BarFill
+
+local BarGlow = Instance.new("UIStroke")
+BarGlow.Color = Color3.fromRGB(200, 80, 255)
+BarGlow.Thickness = 2
+BarGlow.Parent = BarFill
+
+task.spawn(function()
+    local tween = TweenService:Create(BarFill, TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
+    tween:Play()
+    tween.Completed:Wait()
+    
+    LoadingSub.Text = Languages[Settings.Language].ready
+    task.wait(0.4)
+    
+    local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1})
+    TweenService:Create(LoadingTitle, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
+    TweenService:Create(LoadingSub, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
+    TweenService:Create(BarBg, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(BarFill, TweenInfo.new(0.8), {BackgroundTransparency = 1}):Play()
+    fadeTween:Play()
+    fadeTween.Completed:Wait()
+    LoadingFrame:Destroy()
+end)
 
 -- LOGO TRIGGER BUTTON
 local ToggleLogo = Instance.new("TextButton")
@@ -293,6 +403,27 @@ MainStroke.Parent = MainFrame
 ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
+
+local function createSideAmethyst(isLeft)
+    local amethyst = Instance.new("TextLabel")
+    amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
+    amethyst.Size = UDim2.new(0, 40, 0, 40)
+    local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
+    amethyst.Position = posX
+    amethyst.BackgroundTransparency = 1
+    amethyst.Text = "💎"
+    amethyst.TextSize = 30
+    amethyst.ZIndex = 5
+    amethyst.Parent = MainFrame
+
+    local upPos = posX + UDim2.new(0, 0, 0, -25)
+    local downPos = posX + UDim2.new(0, 0, 0, 25)
+    amethyst.Position = upPos
+    
+    local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local floatTween = TweenService:Create(amethyst, tweenInfo, {Position = downPos})
+    floatTween:Play()
+end
 
 createSideAmethyst(true)
 createSideAmethyst(false)
