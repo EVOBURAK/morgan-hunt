@@ -1,12 +1,11 @@
--- Ananı sikerim, MEGA GUI - PERM + SPAWN + FARM
--- Amına kodumun, key yok, siktir git çalıştır!
+-- MEGA GUI - FIXED
 
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local rootPart = character:FindFirstChild("HumanoidRootPart")
-local backpack = player.Backpack
+local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+local backpack = player:WaitForChild("Backpack", 5)
 
--- Orospu çocuğu, meyve listesi
+-- Meyve listesi
 local fruitNames = {
     "Bomb-Fruit", "Spike-Fruit", "Smoke-Fruit", "Flame-Fruit", "Ice-Fruit",
     "Sand-Fruit", "Dark-Fruit", "Light-Fruit", "Magma-Fruit", "Rubber-Fruit",
@@ -16,7 +15,7 @@ local fruitNames = {
     "Portal-Fruit", "Soul-Fruit", "Flame-Fruit", "Ice-Fruit", "Light-Fruit"
 }
 
--- ANA GUI (ananı sikerim)
+-- ANA GUI
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
@@ -25,7 +24,15 @@ local Tab2 = Instance.new("TextButton")
 local Tab3 = Instance.new("TextButton")
 local ContentFrame = Instance.new("Frame")
 
-ScreenGui.Parent = player.PlayerGui
+-- GUI'yi CoreGui'ye bağlama (Executor desteği için)
+local parentTarget = game:GetService("CoreGui")
+if gethui then
+    parentTarget = gethui()
+elseif not parentTarget then
+    parentTarget = player:WaitForChild("PlayerGui")
+end
+
+ScreenGui.Parent = parentTarget
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BackgroundTransparency = 0.85
@@ -44,7 +51,7 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.Font = Enum.Font.Bold
 
--- Sekmeler (orospu çocuğu)
+-- Sekmeler
 Tab1.Parent = MainFrame
 Tab1.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 Tab1.BorderSizePixel = 0
@@ -75,7 +82,7 @@ Tab3.TextColor3 = Color3.fromRGB(255, 255, 255)
 Tab3.TextScaled = true
 Tab3.Font = Enum.Font.Bold
 
--- İçerik çerçevesi (amına kodumun)
+-- İçerik çerçevesi
 ContentFrame.Parent = MainFrame
 ContentFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 ContentFrame.BackgroundTransparency = 0.5
@@ -83,14 +90,14 @@ ContentFrame.BorderSizePixel = 0
 ContentFrame.Position = UDim2.new(0.02, 0, 0.18, 0)
 ContentFrame.Size = UDim2.new(0.96, 0, 0.78, 0)
 
--- Değişkenler (orospu çocuğu)
+-- Değişkenler
 local selectedFruit = fruitNames[1]
 local autoEatEnabled = false
 local permTaklidiEnabled = true
 local espEnabled = false
 local spawnedFruits = {}
 
--- TAB 1: SPAWN MEYVE (ananı sikerim)
+-- TAB 1: SPAWN MEYVE
 local SpawnTab = Instance.new("Frame")
 SpawnTab.Parent = ContentFrame
 SpawnTab.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -108,6 +115,19 @@ FruitScroll.Size = UDim2.new(0.9, 0, 0.5, 0)
 FruitScroll.ScrollBarThickness = 8
 FruitScroll.CanvasSize = UDim2.new(0, 0, 0, #fruitNames * 30)
 
+-- Durum etiketi (Sıralama düzeltildi)
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Parent = SpawnTab
+StatusLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+StatusLabel.BackgroundTransparency = 0.5
+StatusLabel.BorderSizePixel = 0
+StatusLabel.Position = UDim2.new(0.05, 0, 0.8, 0)
+StatusLabel.Size = UDim2.new(0.9, 0, 0, 30)
+StatusLabel.Text = "Seçilen: " .. selectedFruit
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.TextScaled = true
+StatusLabel.Font = Enum.Font.Bold
+
 local fruitButtons = {}
 for i, fruit in ipairs(fruitNames) do
     local btn = Instance.new("TextButton")
@@ -124,12 +144,11 @@ for i, fruit in ipairs(fruitNames) do
     btn.MouseButton1Click:Connect(function()
         selectedFruit = fruit
         StatusLabel.Text = "Seçilen: " .. fruit
-        print("Ananı sikerim, meyve seçildi: " .. fruit)
     end)
     table.insert(fruitButtons, btn)
 end
 
--- Spawn butonu (siktir git)
+-- Spawn butonu
 local SpawnBtn = Instance.new("TextButton")
 SpawnBtn.Parent = SpawnTab
 SpawnBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
@@ -141,7 +160,7 @@ SpawnBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpawnBtn.TextScaled = true
 SpawnBtn.Font = Enum.Font.Bold
 
--- Auto-Eat butonu (orospu çocuğu)
+-- Auto-Eat butonu
 local AutoEatBtn = Instance.new("TextButton")
 AutoEatBtn.Parent = SpawnTab
 AutoEatBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 0)
@@ -153,20 +172,7 @@ AutoEatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AutoEatBtn.TextScaled = true
 AutoEatBtn.Font = Enum.Font.Bold
 
--- Durum etiketi (ananı sikerim)
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Parent = SpawnTab
-StatusLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-StatusLabel.BackgroundTransparency = 0.5
-StatusLabel.BorderSizePixel = 0
-StatusLabel.Position = UDim2.new(0.05, 0, 0.8, 0)
-StatusLabel.Size = UDim2.new(0.9, 0, 0, 30)
-StatusLabel.Text = "Seçilen: " .. selectedFruit
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-StatusLabel.TextScaled = true
-StatusLabel.Font = Enum.Font.Bold
-
--- TAB 2: PERM HACK (amına kodumun)
+-- TAB 2: PERM HACK
 local PermTab = Instance.new("Frame")
 PermTab.Parent = ContentFrame
 PermTab.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -174,7 +180,6 @@ PermTab.BackgroundTransparency = 1
 PermTab.Size = UDim2.new(1, 0, 1, 0)
 PermTab.Visible = false
 
--- Perm listesi (orospu çocuğu)
 local PermScroll = Instance.new("ScrollingFrame")
 PermScroll.Parent = PermTab
 PermScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -183,6 +188,18 @@ PermScroll.Position = UDim2.new(0.05, 0, 0.05, 0)
 PermScroll.Size = UDim2.new(0.9, 0, 0.6, 0)
 PermScroll.ScrollBarThickness = 8
 PermScroll.CanvasSize = UDim2.new(0, 0, 0, #fruitNames * 30)
+
+local StatusLabel2 = Instance.new("TextLabel")
+StatusLabel2.Parent = PermTab
+StatusLabel2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+StatusLabel2.BackgroundTransparency = 0.5
+StatusLabel2.BorderSizePixel = 0
+StatusLabel2.Position = UDim2.new(0.05, 0, 0.8, 0)
+StatusLabel2.Size = UDim2.new(0.9, 0, 0, 30)
+StatusLabel2.Text = "Bir meyve seç ve al"
+StatusLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel2.TextScaled = true
+StatusLabel2.Font = Enum.Font.Bold
 
 local permFruits = {"Leopard", "Dragon", "Dough", "Venom", "Shadow", "Gravity", "Control", "Spirit", "Soul", "Rumble"}
 for i, fruit in ipairs(permFruits) do
@@ -197,32 +214,17 @@ for i, fruit in ipairs(permFruits) do
     btn.TextScaled = true
     btn.Font = Enum.Font.Bold
     btn.MouseButton1Click:Connect(function()
-        -- Perm hack fonksiyonu (ananı sikerim)
-        local remote = game:GetService("ReplicatedStorage").Remotes:FindFirstChild("PurchasePermFruit")
+        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("PurchasePermFruit")
         if remote then
             remote:InvokeServer(fruit, true)
-            print("Ananı sikerim, " .. fruit .. " perm olarak gönderildi!")
             StatusLabel2.Text = fruit .. " perm alındı (dene!)"
         else
-            print("Orospu çocuğu, remote bulunamadı!")
+            StatusLabel2.Text = "Remote bulunamadı!"
         end
     end)
 end
 
--- Durum etiketi 2 (siktir git)
-local StatusLabel2 = Instance.new("TextLabel")
-StatusLabel2.Parent = PermTab
-StatusLabel2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-StatusLabel2.BackgroundTransparency = 0.5
-StatusLabel2.BorderSizePixel = 0
-StatusLabel2.Position = UDim2.new(0.05, 0, 0.8, 0)
-StatusLabel2.Size = UDim2.new(0.9, 0, 0, 30)
-StatusLabel2.Text = "Bir meyve seç ve al"
-StatusLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
-StatusLabel2.TextScaled = true
-StatusLabel2.Font = Enum.Font.Bold
-
--- TAB 3: ESP & TELEPORT (orospu çocuğu)
+-- TAB 3: ESP & TELEPORT
 local EspTab = Instance.new("Frame")
 EspTab.Parent = ContentFrame
 EspTab.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -230,19 +232,17 @@ EspTab.BackgroundTransparency = 1
 EspTab.Size = UDim2.new(1, 0, 1, 0)
 EspTab.Visible = false
 
--- ESP butonu (amına kodumun)
 local ESPBtn = Instance.new("TextButton")
 ESPBtn.Parent = EspTab
 ESPBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 0)
 ESPBtn.BorderSizePixel = 0
 ESPBtn.Position = UDim2.new(0.1, 0, 0.1, 0)
 ESPBtn.Size = UDim2.new(0.8, 0, 0, 50)
-ESPBtn.Text = "🔍 FRUIT ESP (AKTIF)"
+ESPBtn.Text = "🔍 FRUIT ESP (KAPALI)"
 ESPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ESPBtn.TextScaled = true
 ESPBtn.Font = Enum.Font.Bold
 
--- Teleport butonu (siktir git)
 local TeleportBtn = Instance.new("TextButton")
 TeleportBtn.Parent = EspTab
 TeleportBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 100)
@@ -254,7 +254,6 @@ TeleportBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TeleportBtn.TextScaled = true
 TeleportBtn.Font = Enum.Font.Bold
 
--- Durum etiketi 3 (ananı sikerim)
 local StatusLabel3 = Instance.new("TextLabel")
 StatusLabel3.Parent = EspTab
 StatusLabel3.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -267,10 +266,13 @@ StatusLabel3.TextColor3 = Color3.fromRGB(255, 255, 255)
 StatusLabel3.TextScaled = true
 StatusLabel3.Font = Enum.Font.Bold
 
--- FONKSİYONLAR (amına kodumun)
+-- FONKSİYONLAR
 
--- SPAWN FRUIT (ananı sikerim)
 function SpawnFruit(fruitName)
+    local currentCharacter = player.Character or player.CharacterAdded:Wait()
+    local currentRoot = currentCharacter:FindFirstChild("HumanoidRootPart")
+    if not currentRoot then return end
+
     local fruitTool = Instance.new("Tool")
     fruitTool.Name = fruitName
     fruitTool.RequiresHandle = false
@@ -282,16 +284,13 @@ function SpawnFruit(fruitName)
     handle.Shape = Enum.PartType.Ball
     handle.BrickColor = BrickColor.Random()
     handle.Material = Enum.Material.Neon
-    handle.CFrame = rootPart.CFrame * CFrame.new(0, 3, -5)
+    handle.CFrame = currentRoot.CFrame * CFrame.new(0, 3, -5)
     handle.Parent = fruitTool
     
     handle.Touched:Connect(function(hit)
-        if hit.Parent == character and permTaklidiEnabled then
-            local args = { [1] = fruitName }
-            game:GetService("ReplicatedStorage").Remotes.DevConsole:InvokeServer("eat " .. fruitName)
-            print("Ananı sikerim, " .. fruitName .. " yenildi!")
+        if hit.Parent == currentCharacter and permTaklidiEnabled then
             fruitTool:Destroy()
-            wait(0.5)
+            task.wait(0.5)
             if autoEatEnabled then
                 SpawnFruit(selectedFruit)
             end
@@ -299,13 +298,11 @@ function SpawnFruit(fruitName)
     end)
     
     table.insert(spawnedFruits, fruitTool)
-    print("Orospu çocuğu, " .. fruitName .. " spawnlandı!")
 end
 
--- FRUIT ESP (orospu çocuğu)
 function FruitESP()
     while espEnabled do
-        wait(0.5)
+        task.wait(0.5)
         for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("Tool") and string.find(v.Name, "Fruit") then
                 if not v:FindFirstChild("ESPBox") then
@@ -315,12 +312,16 @@ function FruitESP()
                     box.Color3 = Color3.fromRGB(255, 0, 0)
                     box.Transparency = 0.5
                     box.AlwaysOnTop = true
+                    box.Adornee = v:FindFirstChild("Handle") or v
                     box.Parent = v
+                    
                     local label = Instance.new("BillboardGui")
                     label.Name = "ESPLabel"
                     label.Size = UDim2.new(0, 100, 0, 30)
-                    label.Adornee = v
+                    label.Adornee = v:FindFirstChild("Handle") or v
+                    label.AlwaysOnTop = true
                     label.Parent = v
+                    
                     local text = Instance.new("TextLabel")
                     text.Text = "🍎 " .. v.Name
                     text.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -333,13 +334,16 @@ function FruitESP()
     end
 end
 
--- TELEPORT (amına kodumun)
 function TeleportToFruit()
+    local currentCharacter = player.Character or player.CharacterAdded:Wait()
+    local currentRoot = currentCharacter:FindFirstChild("HumanoidRootPart")
+    if not currentRoot then return end
+
     local nearestFruit = nil
     local nearestDist = math.huge
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Tool") and string.find(v.Name, "Fruit") then
-            local dist = (rootPart.Position - v.Handle.Position).magnitude
+        if v:IsA("Tool") and string.find(v.Name, "Fruit") and v:FindFirstChild("Handle") then
+            local dist = (currentRoot.Position - v.Handle.Position).Magnitude
             if dist < nearestDist then
                 nearestDist = dist
                 nearestFruit = v
@@ -347,18 +351,15 @@ function TeleportToFruit()
         end
     end
     if nearestFruit then
-        rootPart.CFrame = nearestFruit.Handle.CFrame * CFrame.new(0, 0, -3)
-        print("Ananı sikerim, meyveye ışınlandım: " .. nearestFruit.Name)
+        currentRoot.CFrame = nearestFruit.Handle.CFrame * CFrame.new(0, 0, -3)
         StatusLabel3.Text = "Işınlandı: " .. nearestFruit.Name
     else
-        print("Orospu çocuğu, meyve yok!")
         StatusLabel3.Text = "Meyve bulunamadı!"
     end
 end
 
--- BUTON EVENTLERİ (siktir git)
+-- EVENTLER
 
--- Tab geçişleri (orospu çocuğu)
 Tab1.MouseButton1Click:Connect(function()
     SpawnTab.Visible = true
     PermTab.Visible = false
@@ -386,22 +387,20 @@ Tab3.MouseButton1Click:Connect(function()
     Tab3.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
 end)
 
--- SPAWN butonu (ananı sikerim)
 SpawnBtn.MouseButton1Click:Connect(function()
     SpawnFruit(selectedFruit)
     StatusLabel.Text = "Spawnlandı: " .. selectedFruit
 end)
 
--- AUTO-EAT butonu (orospu çocuğu)
 AutoEatBtn.MouseButton1Click:Connect(function()
     autoEatEnabled = not autoEatEnabled
     if autoEatEnabled then
         AutoEatBtn.Text = "🍽️ AUTO-EAT (AKTIF)"
         AutoEatBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-        spawn(function()
+        task.spawn(function()
             while autoEatEnabled do
                 SpawnFruit(selectedFruit)
-                wait(2)
+                task.wait(2)
             end
         end)
     else
@@ -410,13 +409,12 @@ AutoEatBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ESP butonu (amına kodumun)
 ESPBtn.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     if espEnabled then
         ESPBtn.Text = "🔍 FRUIT ESP (AKTIF)"
         ESPBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-        spawn(FruitESP)
+        task.spawn(FruitESP)
     else
         ESPBtn.Text = "🔍 FRUIT ESP (KAPALI)"
         ESPBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
@@ -428,9 +426,6 @@ ESPBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- TELEPORT butonu (siktir git)
 TeleportBtn.MouseButton1Click:Connect(function()
     TeleportToFruit()
 end)
-
-print("Ananı sikerim, MEGA GUI yüklendi! Orospu çocuğu, kullan şimdi!")
