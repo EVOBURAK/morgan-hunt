@@ -19,7 +19,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local Connections = {}
-local ESP_Objects = {}
+local PlayerESPCache = {}
 
 -- Anti-AFK
 table.insert(Connections, LocalPlayer.Idled:Connect(function()
@@ -43,10 +43,10 @@ local Settings = {
     LuckPower = 100,
     FlySpeed = 12,
     FarmDistance = 8,
-    Language = "EN" -- Default to English. Toggle option supports IT (Italian)
+    Language = "EN"
 }
 
--- TRANS-LATE DICTIONARY (EN & IT)
+-- BILINGUAL SYSTEM DICTIONARY
 local Languages = {
     EN = {
         title = "💎 MORGAN HUB V5.0",
@@ -60,7 +60,7 @@ local Languages = {
         auto_farm = "🌾 Auto Farm Level (Mobs - Max 2800)",
         auto_store = "📦 Auto Store Fruit (Inventory)",
         fruit_esp = "🖼️ Fruit ESP (With Image Icons)",
-        player_esp = "👁️ Player ESP (Box, Skeleton & HP)",
+        player_esp = "👁️ Player ESP (Box, Glow & HP Bar)",
         aimbot = "🎯 Aimbot (Nearest Player)",
         auto_hunt = "⚡ Auto Bounty Hunt (Fast Fly)",
         fly_speed = "⚙️ Fly / Hunt Speed",
@@ -82,7 +82,7 @@ local Languages = {
         auto_farm = "🌾 Auto Farm Livello (Mostri - Max 2800)",
         auto_store = "📦 Auto Conserva Frutti (Inventario)",
         fruit_esp = "🖼️ ESP Frutti (Con Icone)",
-        player_esp = "👁️ ESP Giocatori (Box, Scheletro & HP)",
+        player_esp = "👁️ ESP Giocatori (Box, Bagliore e Barra HP)",
         aimbot = "🎯 Aimbot (Giocatore Più Vicino)",
         auto_hunt = "⚡ Auto Caccia Taglie (Volo Rapido)",
         fly_speed = "⚙️ Velocità di Volo / Caccia",
@@ -94,78 +94,87 @@ local Languages = {
     }
 }
 
--- QUEST MAP DATA (LEVELS 0 - 2800)
+-- COMPREHENSIVE QUEST DATA (REAL DATABASE NAMES - LEVELS 1 TO 2800)
 local QuestMap = {
     -- Sea 1
-    {Min = 1, Max = 9, NPC = "Bandit Quest Giver", Quest = "BanditQuest1", Mob = "Bandit", Island = "Starter Island", PartName = "QuestGiver"},
-    {Min = 10, Max = 14, NPC = "Monkey Quest Giver", Quest = "JungleQuest", Mob = "Monkey", Island = "Jungle", PartName = "QuestGiver"},
-    {Min = 15, Max = 29, NPC = "Monkey Quest Giver", Quest = "JungleQuest", Mob = "Gorilla", Island = "Jungle", PartName = "QuestGiver"},
-    {Min = 30, Max = 39, NPC = "Pirate Quest Giver", Quest = "BuggyQuest1", Mob = "Pirate", Island = "Pirate Village", PartName = "QuestGiver"},
-    {Min = 40, Max = 59, NPC = "Pirate Quest Giver", Quest = "BuggyQuest1", Mob = "Brute", Island = "Pirate Village", PartName = "QuestGiver"},
-    {Min = 60, Max = 74, NPC = "Desert Quest Giver", Quest = "DesertQuest", Mob = "Desert Bandit", Island = "Desert", PartName = "QuestGiver"},
-    {Min = 75, Max = 89, NPC = "Desert Quest Giver", Quest = "DesertQuest", Mob = "Desert Officer", Island = "Desert", PartName = "QuestGiver"},
-    {Min = 90, Max = 119, NPC = "Snow Quest Giver", Quest = "SnowQuest", Mob = "Snow Bandit", Island = "Frozen Village", PartName = "QuestGiver"},
-    {Min = 120, Max = 149, NPC = "Marine Quest Giver", Quest = "MarineQuest", Mob = "Marine Trainee", Island = "Marine Fortress", PartName = "QuestGiver"},
-    {Min = 150, Max = 174, NPC = "Sky Quest Giver", Quest = "SkyQuest", Mob = "Sky Bandit", Island = "Skypiea", PartName = "QuestGiver"},
-    {Min = 175, Max = 224, NPC = "Sky Quest Giver", Quest = "SkyQuest", Mob = "Dark Master", Island = "Skypiea", PartName = "QuestGiver"},
-    {Min = 225, Max = 249, NPC = "Prison Quest Giver", Quest = "PrisonerQuest", Mob = "Prisoner", Island = "Prison", PartName = "QuestGiver"},
-    {Min = 250, Max = 299, NPC = "Prison Quest Giver", Quest = "PrisonerQuest", Mob = "Dangerous Prisoner", Island = "Prison", PartName = "QuestGiver"},
-    {Min = 300, Max = 324, NPC = "Magma Quest Giver", Quest = "MagmaQuest", Mob = "Military Soldier", Island = "Magma Village", PartName = "QuestGiver"},
-    {Min = 325, Max = 374, NPC = "Magma Quest Giver", Quest = "MagmaQuest", Mob = "Military Spy", Island = "Magma Village", PartName = "QuestGiver"},
-    {Min = 375, Max = 399, NPC = "Fishman Quest Giver", Quest = "FishmanQuest", Mob = "Fishman Warrior", Island = "Underwater City", PartName = "QuestGiver"},
-    {Min = 400, Max = 449, NPC = "Fishman Quest Giver", Quest = "FishmanQuest", Mob = "Fishman Commando", Island = "Underwater City", PartName = "QuestGiver"},
-    {Min = 450, Max = 474, NPC = "Sky Quest Giver 2", Quest = "SkyQuest2", Mob = "God's Guard", Island = "Upper Skylands", PartName = "QuestGiver"},
-    {Min = 475, Max = 524, NPC = "Sky Quest Giver 2", Quest = "SkyQuest2", Mob = "Shandian", Island = "Upper Skylands", PartName = "QuestGiver"},
-    {Min = 525, Max = 574, NPC = "Sky Quest Giver 2", Quest = "SkyQuest2", Mob = "Royal Squad", Island = "Upper Skylands", PartName = "QuestGiver"},
-    {Min = 575, Max = 624, NPC = "Cyborg Quest Giver", Quest = "CyborgQuest", Mob = "Cyborg", Island = "Fountain City", PartName = "QuestGiver"},
+    {Min = 1, Max = 9, NPC = "Bandit Quest Giver", Quest = "BanditQuest1", Index = 1, Mob = "Bandit"},
+    {Min = 10, Max = 14, NPC = "Adventurer", Quest = "JungleQuest", Index = 1, Mob = "Monkey"},
+    {Min = 15, Max = 29, NPC = "Adventurer", Quest = "JungleQuest", Index = 2, Mob = "Gorilla"},
+    {Min = 30, Max = 39, NPC = "Pirate Adventurer", Quest = "BuggyQuest1", Index = 1, Mob = "Pirate"},
+    {Min = 40, Max = 59, NPC = "Pirate Adventurer", Quest = "BuggyQuest1", Index = 2, Mob = "Brute"},
+    {Min = 60, Max = 74, NPC = "Desert Adventurer", Quest = "DesertQuest", Index = 1, Mob = "Desert Bandit"},
+    {Min = 75, Max = 89, NPC = "Desert Adventurer", Quest = "DesertQuest", Index = 2, Mob = "Desert Officer"},
+    {Min = 90, Max = 99, NPC = "Villager", Quest = "SnowQuest", Index = 1, Mob = "Snow Bandit"},
+    {Min = 100, Max = 119, NPC = "Villager", Quest = "SnowQuest", Index = 2, Mob = "Snowman"},
+    {Min = 120, Max = 149, NPC = "Marine Officer", Quest = "MarineQuest", Index = 1, Mob = "Trainee"},
+    {Min = 150, Max = 174, NPC = "Sky Adventurer", Quest = "SkyQuest", Index = 1, Mob = "Sky Bandit"},
+    {Min = 175, Max = 224, NPC = "Sky Adventurer", Quest = "SkyQuest", Index = 2, Mob = "Dark Master"},
+    {Min = 225, Max = 249, NPC = "Jail Keeper", Quest = "PrisonerQuest", Index = 1, Mob = "Prisoner"},
+    {Min = 250, Max = 299, NPC = "Jail Keeper", Quest = "PrisonerQuest", Index = 2, Mob = "Dangerous Prisoner"},
+    {Min = 300, Max = 324, NPC = "Quest Giver", Quest = "MagmaQuest", Index = 1, Mob = "Military Soldier"},
+    {Min = 325, Max = 374, NPC = "Quest Giver", Quest = "MagmaQuest", Index = 2, Mob = "Military Spy"},
+    {Min = 375, Max = 399, NPC = "Fishman Adventurer", Quest = "FishmanQuest", Index = 1, Mob = "Fishman Warrior"},
+    {Min = 400, Max = 449, NPC = "Fishman Adventurer", Quest = "FishmanQuest", Index = 2, Mob = "Fishman Commando"},
+    {Min = 450, Max = 474, NPC = "Quest Giver", Quest = "SkyQuest2", Index = 1, Mob = "God's Guard"},
+    {Min = 475, Max = 524, NPC = "Quest Giver", Quest = "SkyQuest2", Index = 2, Mob = "Shandian"},
+    {Min = 525, Max = 624, NPC = "Quest Giver", Quest = "SkyQuest2", Index = 3, Mob = "Royal Squad"},
+    {Min = 625, Max = 649, NPC = "Quest Giver", Quest = "FountainQuest", Index = 1, Mob = "Galley Pirate"},
+    {Min = 650, Max = 699, NPC = "Quest Giver", Quest = "FountainQuest", Index = 2, Mob = "Galley Captain"},
     -- Sea 2
-    {Min = 700, Max = 724, NPC = "Area 1 Quest Giver", Quest = "Area1Quest", Mob = "Raider", Island = "Kingdom of Rose", PartName = "QuestGiver"},
-    {Min = 725, Max = 774, NPC = "Area 1 Quest Giver", Quest = "Area1Quest", Mob = "Mercenary", Island = "Kingdom of Rose", PartName = "QuestGiver"},
-    {Min = 775, Max = 799, NPC = "Area 2 Quest Giver", Quest = "Area2Quest", Mob = "Swan Pirate", Island = "Kingdom of Rose", PartName = "QuestGiver"},
-    {Min = 800, Max = 874, NPC = "Area 2 Quest Giver", Quest = "Area2Quest", Mob = "Factory Worker", Island = "Kingdom of Rose", PartName = "QuestGiver"},
-    {Min = 875, Max = 899, NPC = "Green Zone Quest Giver", Quest = "GreenZoneQuest", Mob = "Marine Lieutenant", Island = "Green Zone", PartName = "QuestGiver"},
-    {Min = 900, Max = 949, NPC = "Green Zone Quest Giver", Quest = "GreenZoneQuest", Mob = "Giant Warrior", Island = "Green Zone", PartName = "QuestGiver"},
-    {Min = 950, Max = 974, NPC = "Graveyard Quest Giver", Quest = "GraveyardQuest", Mob = "Zombie Squire", Island = "Graveyard", PartName = "QuestGiver"},
-    {Min = 975, Max = 999, NPC = "Graveyard Quest Giver", Quest = "GraveyardQuest", Mob = "Zombie Demolisher", Island = "Graveyard", PartName = "QuestGiver"},
-    {Min = 1000, Max = 1049, NPC = "Snow Mountain Quest Giver", Quest = "SnowMountainQuest", Mob = "Snow Trooper", Island = "Snow Mountain", PartName = "QuestGiver"},
-    {Min = 1050, Max = 1099, NPC = "Snow Mountain Quest Giver", Quest = "SnowMountainQuest", Mob = "Winter Warrior", Island = "Snow Mountain", PartName = "QuestGiver"},
-    {Min = 1100, Max = 1124, NPC = "Hot and Cold Quest Giver", Quest = "HotAndColdQuest", Mob = "Lab Subordinate", Island = "Hot and Cold", PartName = "QuestGiver"},
-    {Min = 1125, Max = 1174, NPC = "Hot and Cold Quest Giver", Quest = "HotAndColdQuest", Mob = "Horned Warrior", Island = "Hot and Cold", PartName = "QuestGiver"},
-    {Min = 1175, Max = 1199, NPC = "Hot and Cold Quest Giver 2", Quest = "HotAndColdQuest2", Mob = "Magma Ninja", Island = "Hot and Cold", PartName = "QuestGiver"},
-    {Min = 1200, Max = 1249, NPC = "Hot and Cold Quest Giver 2", Quest = "HotAndColdQuest2", Mob = "Lava Pirate", Island = "Hot and Cold", PartName = "QuestGiver"},
-    {Min = 1250, Max = 1274, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest", Mob = "Ship Officer", Island = "Cursed Ship", PartName = "QuestGiver"},
-    {Min = 1275, Max = 1349, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest", Mob = "Ship Lieutenant", Island = "Cursed Ship", PartName = "QuestGiver"},
-    {Min = 1350, Max = 1374, NPC = "Ice Castle Quest Giver", Quest = "IceCastleQuest", Mob = "Arctic Warrior", Island = "Ice Castle", PartName = "QuestGiver"},
-    {Min = 1375, Max = 1424, NPC = "Ice Castle Quest Giver", Quest = "IceCastleQuest", Mob = "Snow Lurker", Island = "Ice Castle", PartName = "QuestGiver"},
-    {Min = 1425, Max = 1449, NPC = "Forgotten Quest Giver", Quest = "ForgottenQuest", Mob = "Sea Soldier", Island = "Forgotten Island", PartName = "QuestGiver"},
-    {Min = 1450, Max = 1499, NPC = "Forgotten Quest Giver", Quest = "ForgottenQuest", Mob = "Water Bandit", Island = "Forgotten Island", PartName = "QuestGiver"},
+    {Min = 700, Max = 724, NPC = "Area 1 Quest Giver", Quest = "Area1Quest", Index = 1, Mob = "Raider"},
+    {Min = 725, Max = 774, NPC = "Area 1 Quest Giver", Quest = "Area1Quest", Index = 2, Mob = "Mercenary"},
+    {Min = 775, Max = 799, NPC = "Area 2 Quest Giver", Quest = "Area2Quest", Index = 1, Mob = "Swan Pirate"},
+    {Min = 800, Max = 874, NPC = "Area 2 Quest Giver", Quest = "Area2Quest", Index = 2, Mob = "Factory Staff"},
+    {Min = 875, Max = 899, NPC = "Green Zone Quest Giver", Quest = "MarineQuest3", Index = 1, Mob = "Marine Lieutenant"},
+    {Min = 900, Max = 949, NPC = "Green Zone Quest Giver", Quest = "MarineQuest3", Index = 2, Mob = "Marine Captain"},
+    {Min = 950, Max = 974, NPC = "Graveyard Quest Giver", Quest = "GraveyardQuest", Index = 1, Mob = "Zombie Squire"},
+    {Min = 975, Max = 999, NPC = "Graveyard Quest Giver", Quest = "GraveyardQuest", Index = 2, Mob = "Zombie Demolisher"},
+    {Min = 1000, Max = 1049, NPC = "Snow Mountain Quest Giver", Quest = "SnowMountainQuest", Index = 1, Mob = "Snow Trooper"},
+    {Min = 1050, Max = 1099, NPC = "Snow Mountain Quest Giver", Quest = "SnowMountainQuest", Index = 2, Mob = "Winter Warrior"},
+    {Min = 1100, Max = 1124, NPC = "Quest Giver", Quest = "IceSideQuest", Index = 1, Mob = "Lab Subordinate"},
+    {Min = 1125, Max = 1174, NPC = "Quest Giver", Quest = "IceSideQuest", Index = 2, Mob = "Horned Warrior"},
+    {Min = 1175, Max = 1199, NPC = "Quest Giver 2", Quest = "FireSideQuest", Index = 1, Mob = "Magma Ninja"},
+    {Min = 1200, Max = 1249, NPC = "Quest Giver 2", Quest = "FireSideQuest", Index = 2, Mob = "Lava Pirate"},
+    {Min = 1250, Max = 1274, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest1", Index = 1, Mob = "Ship Deckhand"},
+    {Min = 1275, Max = 1299, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest1", Index = 2, Mob = "Ship Engineer"},
+    {Min = 1300, Max = 1324, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest2", Index = 1, Mob = "Ship Steward"},
+    {Min = 1325, Max = 1349, NPC = "Cursed Ship Quest Giver", Quest = "ShipQuest2", Index = 2, Mob = "Ship Officer"},
+    {Min = 1350, Max = 1374, NPC = "Ice Castle Quest Giver", Quest = "IceCastleQuest", Index = 1, Mob = "Arctic Warrior"},
+    {Min = 1375, Max = 1424, NPC = "Ice Castle Quest Giver", Quest = "IceCastleQuest", Index = 2, Mob = "Snow Lurker"},
+    {Min = 1425, Max = 1449, NPC = "Forgotten Quest Giver", Quest = "ForgottenQuest", Index = 1, Mob = "Sea Soldier"},
+    {Min = 1450, Max = 1500, NPC = "Forgotten Quest Giver", Quest = "ForgottenQuest", Index = 2, Mob = "Water Fighter"},
     -- Sea 3
-    {Min = 1500, Max = 1524, NPC = "Port Town Quest Giver", Quest = "PortTownQuest", Mob = "Pirate Millionaire", Island = "Port Town", PartName = "QuestGiver"},
-    {Min = 1525, Max = 1574, NPC = "Port Town Quest Giver", Quest = "PortTownQuest", Mob = "Pistol Billionaire", Island = "Port Town", PartName = "QuestGiver"},
-    {Min = 1575, Max = 1599, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Mob = "Dragon Crew Warrior", Island = "Hydra Island", PartName = "QuestGiver"},
-    {Min = 1600, Max = 1624, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Mob = "Dragon Crew Archer", Island = "Hydra Island", PartName = "QuestGiver"},
-    {Min = 1625, Max = 1649, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Mob = "Female Assassin", Island = "Hydra Island", PartName = "QuestGiver"},
-    {Min = 1650, Max = 1699, NPC = "Turtle Quest Giver 1", Quest = "TurtleQuest1", Mob = "Fishman Raider", Island = "Floating Turtle", PartName = "QuestGiver"},
-    {Min = 1700, Max = 1724, NPC = "Turtle Quest Giver 1", Quest = "TurtleQuest1", Mob = "Fishman Captain", Island = "Floating Turtle", PartName = "QuestGiver"},
-    {Min = 1725, Max = 1774, NPC = "Turtle Quest Giver 1", Quest = "TurtleQuest1", Mob = "Forest Pirate", Island = "Floating Turtle", PartName = "QuestGiver"},
-    {Min = 1775, Max = 1799, NPC = "Turtle Quest Giver 2", Quest = "TurtleQuest2", Mob = "Mythical Pirate", Island = "Floating Turtle", PartName = "QuestGiver"},
-    {Min = 1800, Max = 1849, NPC = "Turtle Quest Giver 2", Quest = "TurtleQuest2", Mob = "Jungle Pirate", Island = "Floating Turtle", PartName = "QuestGiver"},
-    {Min = 1850, Max = 1899, NPC = "Turtle Quest Giver 2", Quest = "TurtleQuest2", Mob = "Musketeer Pirate", Island = "Floating Turtle", PartName = "QuestGiver"},
-    {Min = 1900, Max = 1974, NPC = "Haunted Quest Giver", Quest = "HauntedQuest1", Mob = "Reborn Skeleton", Island = "Haunted Castle", PartName = "QuestGiver"},
-    {Min = 1975, Max = 1999, NPC = "Haunted Quest Giver", Quest = "HauntedQuest1", Mob = "Living Zombie", Island = "Haunted Castle", PartName = "QuestGiver"},
-    {Min = 2000, Max = 2024, NPC = "Haunted Quest Giver", Quest = "HauntedQuest2", Mob = "Demonic Soul", Island = "Haunted Castle", PartName = "QuestGiver"},
-    {Min = 2025, Max = 2074, NPC = "Haunted Quest Giver", Quest = "HauntedQuest2", Mob = "Posessed Mummy", Island = "Haunted Castle", PartName = "QuestGiver"},
-    {Min = 2075, Max = 2099, NPC = "Ice Cream Quest Giver", Quest = "IceCreamQuest1", Mob = "Cookie Crafter", Island = "Sea of Treats", PartName = "QuestGiver"},
-    {Min = 2100, Max = 2124, NPC = "Ice Cream Quest Giver", Quest = "IceCreamQuest1", Mob = "Cake Guard", Island = "Sea of Treats", PartName = "QuestGiver"},
-    {Min = 2125, Max = 2149, NPC = "Ice Cream Quest Giver", Quest = "IceCreamQuest1", Mob = "Baking Brute", Island = "Sea of Treats", PartName = "QuestGiver"},
-    {Min = 2150, Max = 2199, NPC = "Cake Quest Giver", Quest = "CakeQuest1", Mob = "Head Baker", Island = "Sea of Treats", PartName = "QuestGiver"},
-    {Min = 2200, Max = 2249, NPC = "Cake Quest Giver", Quest = "CakeQuest2", Mob = "Cocoa Warrior", Island = "Sea of Treats", PartName = "QuestGiver"},
-    {Min = 2250, Max = 2299, NPC = "Tiki Quest Giver", Quest = "TikiQuest1", Mob = "Sunken Pirate", Island = "Tiki Outpost", PartName = "QuestGiver"},
-    {Min = 2300, Max = 2399, NPC = "Tiki Quest Giver", Quest = "TikiQuest2", Mob = "Dragon Guard", Island = "Tiki Outpost", PartName = "QuestGiver"},
-    {Min = 2400, Max = 2499, NPC = "Tiki Quest Giver 2", Quest = "TikiQuest3", Mob = "Abyssal Cultist", Island = "Tiki Outpost", PartName = "QuestGiver"},
-    {Min = 2500, Max = 2599, NPC = "Tiki Quest Giver 2", Quest = "TikiQuest4", Mob = "Isle Defender", Island = "Tiki Outpost", PartName = "QuestGiver"},
-    {Min = 2600, Max = 2699, NPC = "Tiki Quest Giver 2", Quest = "TikiQuest5", Mob = "Tiki Shaman", Island = "Tiki Outpost", PartName = "QuestGiver"},
-    {Min = 2700, Max = 2800, NPC = "Tiki Quest Giver 3", Quest = "TikiQuest6", Mob = "Serpent Guardian", Island = "Tiki Outpost", PartName = "QuestGiver"},
+    {Min = 1500, Max = 1524, NPC = "Port Town Quest Giver", Quest = "PortTownQuest", Index = 1, Mob = "Pirate Millionaire"},
+    {Min = 1525, Max = 1574, NPC = "Port Town Quest Giver", Quest = "PortTownQuest", Index = 2, Mob = "Pistol Billionaire"},
+    {Min = 1575, Max = 1599, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Index = 1, Mob = "Dragon Crew Warrior"},
+    {Min = 1600, Max = 1624, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Index = 2, Mob = "Dragon Crew Archer"},
+    {Min = 1625, Max = 1699, NPC = "Hydra Island Quest Giver", Quest = "HydraIslandQuest", Index = 3, Mob = "Female Assassin"},
+    {Min = 1700, Max = 1724, NPC = "Quest Giver", Quest = "TurtleQuest1", Index = 1, Mob = "Fishman Raider"},
+    {Min = 1725, Max = 1774, NPC = "Quest Giver", Quest = "TurtleQuest1", Index = 2, Mob = "Fishman Captain"},
+    {Min = 1725, Max = 1774, NPC = "Quest Giver", Quest = "TurtleQuest1", Index = 3, Mob = "Forest Pirate"},
+    {Min = 1800, Max = 1849, NPC = "Quest Giver", Quest = "TurtleQuest2", Index = 1, Mob = "Mythical Pirate"},
+    {Min = 1850, Max = 1899, NPC = "Quest Giver", Quest = "TurtleQuest2", Index = 2, Mob = "Jungle Pirate"},
+    {Min = 1900, Max = 1974, NPC = "Quest Giver", Quest = "TurtleQuest2", Index = 3, Mob = "Musketeer Pirate"},
+    {Min = 1975, Max = 1999, NPC = "Haunted Quest Giver", Quest = "HauntedQuest1", Index = 1, Mob = "Reborn Skeleton"},
+    {Min = 2000, Max = 2024, NPC = "Haunted Quest Giver", Quest = "HauntedQuest1", Index = 2, Mob = "Living Zombie"},
+    {Min = 2025, Max = 2049, NPC = "Haunted Quest Giver", Quest = "HauntedQuest2", Index = 1, Mob = "Demonic Soul"},
+    {Min = 2050, Max = 2074, NPC = "Haunted Quest Giver", Quest = "HauntedQuest2", Index = 2, Mob = "Posessed Mummy"},
+    {Min = 2075, Max = 2099, NPC = "Quest Giver", Quest = "PeanutQuest", Index = 1, Mob = "Peanut Scout"},
+    {Min = 2100, Max = 2124, NPC = "Quest Giver", Quest = "PeanutQuest", Index = 2, Mob = "Peanut President"},
+    {Min = 2125, Max = 2149, NPC = "Quest Giver", Quest = "IceCreamQuest", Index = 1, Mob = "Ice Cream Chef"},
+    {Min = 2150, Max = 2199, NPC = "Quest Giver", Quest = "IceCreamQuest", Index = 2, Mob = "Ice Cream Commander"},
+    {Min = 2200, Max = 2224, NPC = "Quest Giver", Quest = "CakeQuest1", Index = 1, Mob = "Cookie Crafter"},
+    {Min = 2225, Max = 2249, NPC = "Quest Giver", Quest = "CakeQuest1", Index = 2, Mob = "Cake Guard"},
+    {Min = 2250, Max = 2274, NPC = "Quest Giver", Quest = "CakeQuest2", Index = 1, Mob = "Baking Staff"},
+    {Min = 2275, Max = 2299, NPC = "Quest Giver", Quest = "CakeQuest2", Index = 2, Mob = "Head Baker"},
+    {Min = 2300, Max = 2324, NPC = "Quest Giver", Quest = "ChocQuest1", Index = 1, Mob = "Cocoa Warrior"},
+    {Min = 2325, Max = 2349, NPC = "Quest Giver", Quest = "ChocQuest1", Index = 2, Mob = "Chocolate Bar Battler"},
+    {Min = 2350, Max = 2374, NPC = "Quest Giver", Quest = "ChocQuest2", Index = 1, Mob = "Sweet Thief"},
+    {Min = 2375, Max = 2399, NPC = "Quest Giver", Quest = "ChocQuest2", Index = 2, Mob = "Candy Rebel"},
+    {Min = 2400, Max = 2424, NPC = "Quest Giver", Quest = "CandyQuest1", Index = 1, Mob = "Candy Pirate"},
+    {Min = 2425, Max = 2449, NPC = "Quest Giver", Quest = "CandyQuest1", Index = 2, Mob = "Snow Demon"},
+    {Min = 2450, Max = 2474, NPC = "Quest Giver", Quest = "TikiQuest1", Index = 1, Mob = "Isle Outlaw"},
+    {Min = 2475, Max = 2800, NPC = "Quest Giver", Quest = "TikiQuest1", Index = 2, Mob = "Island Boy"}
 }
 
 -- FRUIT ICONS
@@ -208,9 +217,7 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
--- =============================================================
--- SERVER HOPPING (ADMIN PROTECT)
--- =============================================================
+-- SERVER HOP SYSTEM
 local function serverHop()
     local sf, servers = pcall(function()
         return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
@@ -226,8 +233,7 @@ local function serverHop()
 end
 
 local function checkAdminPresence(player)
-    -- Famous Admin IDs and group rankings verification
-    local adminIDs = {[410143093] = true, [1552391024] = true, [4424317] = true} -- rip_indra, uzoth, mygame43
+    local adminIDs = {[410143093] = true, [1552391024] = true, [4424317] = true}
     if adminIDs[player.UserId] or player:GetRankInGroup(11424103) >= 100 then
         task.spawn(function()
             game.StarterGui:SetCore("SendNotification", {
@@ -244,17 +250,13 @@ end
 for _, p in pairs(Players:GetPlayers()) do checkAdminPresence(p) end
 table.insert(Connections, Players.PlayerAdded:Connect(checkAdminPresence))
 
--- =============================================================
--- GUI ARCHITECTURE & SCREEN GUI
--- =============================================================
+-- SCREEN GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- -------------------------------------------------------------
--- 🔮 LOADING SCREEN
--- -------------------------------------------------------------
+-- LOADING BAR
 local LoadingFrame = Instance.new("Frame")
 LoadingFrame.Name = "LoadingFrame"
 LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -313,10 +315,8 @@ BarGlow.Color = Color3.fromRGB(200, 80, 255)
 BarGlow.Thickness = 2
 BarGlow.Parent = BarFill
 
--- Loading Animation Execution
 task.spawn(function()
-    local tweenInfo = TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(BarFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
+    local tween = TweenService:Create(BarFill, TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
     tween:Play()
     tween.Completed:Wait()
     
@@ -333,9 +333,7 @@ task.spawn(function()
     LoadingFrame:Destroy()
 end)
 
--- -------------------------------------------------------------
--- LOGO BUTTON
--- -------------------------------------------------------------
+-- LOGO TRIGGER BUTTON
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
@@ -357,9 +355,7 @@ LogoStroke.Color = Color3.fromRGB(170, 0, 255)
 LogoStroke.Thickness = 2
 LogoStroke.Parent = ToggleLogo
 
--- -------------------------------------------------------------
--- MAIN WINDOW (AMETHYST STYLE)
--- -------------------------------------------------------------
+-- MAIN INTERFACE FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 460, 0, 480)
@@ -384,7 +380,6 @@ ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 🔮 AMETHYST SIDE WINGS
 local function createSideAmethyst(isLeft)
     local amethyst = Instance.new("TextLabel")
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
@@ -420,7 +415,7 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- 🌐 DYNAMIC LANGUAGE BUTTON
+-- LANGUAGE INTERCHANGE
 local LangBtn = Instance.new("TextButton")
 LangBtn.Size = UDim2.new(0, 75, 0, 26)
 LangBtn.Position = UDim2.new(1, -115, 0, 8)
@@ -435,7 +430,7 @@ local LangCorner = Instance.new("UICorner")
 LangCorner.CornerRadius = UDim.new(0, 6)
 LangCorner.Parent = LangBtn
 
--- LUCK RATE BOOSTER GUI
+-- LUCK DISPLAY
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -491,7 +486,7 @@ local ChanceCorner = Instance.new("UICorner")
 ChanceCorner.CornerRadius = UDim.new(0, 6)
 ChanceCorner.Parent = ChanceDisplay
 
--- CONFIRM DESTROY FRAME
+-- CLOSE CONFIRMATION SYSTEM
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 18)
@@ -572,7 +567,6 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
 Layout.Parent = Container
 
--- SYSTEM REGISTER FOR UPDATES
 local UI_Elements = {}
 
 local function addToggle(key, defaultState, callback)
@@ -717,7 +711,6 @@ local function addSlider(key, min, max, default, callback)
     UI_Elements[key] = label
 end
 
--- UPDATE LANGUAGE TRANSLATION DIRECTLY
 local function changeLanguage(lang)
     Settings.Language = lang
     LangBtn.Text = Languages[lang].lang_btn
@@ -734,14 +727,9 @@ local function changeLanguage(lang)
 end
 
 LangBtn.MouseButton1Click:Connect(function()
-    if Settings.Language == "EN" then
-        changeLanguage("IT")
-    else
-        changeLanguage("EN")
-    end
+    if Settings.Language == "EN" then changeLanguage("IT") else changeLanguage("EN") end
 end)
 
--- MENU CARDS BINDING
 addToggle("luck_booster", Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
@@ -760,13 +748,25 @@ addToggle("player_esp", Settings.ESP, function(v) Settings.ESP = v end)
 addToggle("aimbot", Settings.Aimbot, function(v) Settings.Aimbot = v end)
 addToggle("auto_hunt", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
 
--- SETTINGS
 addSlider("fly_speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
 addSlider("farm_dist", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
--- =============================================================
--- AUTO STORE FRUIT ENGINE
--- =============================================================
+-- NOCLIP SERVICE
+local function checkNoClip()
+    if Settings.AutoFarm or Settings.AutoHunt then
+        local char = LocalPlayer.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end
+table.insert(Connections, RunService.Stepped:Connect(checkNoClip))
+
+-- AUTO STORE FRUIT
 local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
     if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
@@ -788,9 +788,7 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
     storeFruit(tool)
 end))
 
--- =============================================================
--- AUTO FARM ENGINE (QUEST & LEVEL CAP 2800 MAP)
--- =============================================================
+-- AUTO FARM UTILS
 local function getQuestNPCAndData()
     local myLevel = LocalPlayer.Data.Level.Value
     for _, data in ipairs(QuestMap) do
@@ -798,28 +796,46 @@ local function getQuestNPCAndData()
             return data
         end
     end
-    return QuestMap[#QuestMap] -- Fallback to highest level quest
+    return QuestMap[#QuestMap]
 end
 
-local function getEnemy(enemyName)
-    for _, enemy in pairs(Workspace:GetChildren()) do
-        if enemy:IsA("Model") and enemy.Name == enemyName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-            return enemy
+local function findNPC(npcName)
+    -- Direct exact find
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj.Name == npcName and obj:FindFirstChild("HumanoidRootPart") then
+            return obj
         end
     end
-    -- Also scan Enemies folder (Blox Fruits compatibility)
-    local enemiesFolder = Workspace:FindFirstChild("Enemies")
-    if enemiesFolder then
-        for _, enemy in pairs(enemiesFolder:GetChildren()) do
-            if enemy.Name == enemyName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                return enemy
+    -- Fallback proximity search for dynamic map updates
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and (obj.Name:find("Quest") or obj.Name:find("Adventurer") or obj.Name == "Villager" or obj.Name:find("Officer") or obj.Name:find("Keeper")) and obj:FindFirstChild("HumanoidRootPart") then
+            local dist = (obj.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if dist < 1200 then
+                return obj
             end
         end
     end
     return nil
 end
 
--- CRAZY MOB FARM (Grouping Engine)
+local function getEnemy(enemyName)
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, enemy in pairs(enemies:GetChildren()) do
+            if enemy.Name:find(enemyName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                return enemy
+            end
+        end
+    end
+    for _, enemy in pairs(Workspace:GetChildren()) do
+        if enemy:IsA("Model") and enemy.Name:find(enemyName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            return enemy
+        end
+    end
+    return nil
+end
+
+-- MOB BRING ENGINE
 local function aggregateMobs(enemyName, baseEnemy)
     if not baseEnemy or not baseEnemy:FindFirstChild("HumanoidRootPart") then return end
     local basePos = baseEnemy.HumanoidRootPart.Position
@@ -828,9 +844,10 @@ local function aggregateMobs(enemyName, baseEnemy)
     for _, folder in pairs(sourceFolders) do
         if folder then
             for _, enemy in pairs(folder:GetChildren()) do
-                if enemy.Name == enemyName and enemy ~= baseEnemy and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                if enemy.Name:find(enemyName) and enemy ~= baseEnemy and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
                     enemy.HumanoidRootPart.CFrame = CFrame.new(basePos)
                     enemy.Humanoid.PlatformStand = true
+                    enemy.HumanoidRootPart.Anchored = true
                     enemy.HumanoidRootPart.CanCollide = false
                     enemy.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
                 end
@@ -839,6 +856,18 @@ local function aggregateMobs(enemyName, baseEnemy)
     end
 end
 
+local function checkCorrectQuest(neededMob)
+    local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+    if mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible then
+        local titleText = mainGui.Quest.Container.QuestTitle.Title.Text:lower()
+        if titleText:find(neededMob:lower()) then
+            return true
+        end
+    end
+    return false
+end
+
+-- AUTO FARM CORE HEARTBEAT LOOP
 table.insert(Connections, RunService.Heartbeat:Connect(function()
     if not Settings.AutoFarm then return end
 
@@ -850,36 +879,28 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         local questData = getQuestNPCAndData()
         if not questData then return end
 
-        -- Check Quest State
-        local hasQuest = false
-        local questText = LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
-        if questText:find(questData.Mob) or questText ~= "" then
-            hasQuest = true
-        end
+        local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+        local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
 
-        if not hasQuest then
-            -- Find NPC in Workspace
-            local npcModel = Workspace:FindFirstChild(questData.NPC) or Workspace.NPCs:FindFirstChild(questData.NPC)
-            if npcModel and npcModel:FindFirstChild("HumanoidRootPart") then
-                -- Bypass Teleport directly to NPC
-                root.CFrame = npcModel.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                task.wait(0.2)
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, 1)
+        if hasQuest then
+            if not checkCorrectQuest(questData.Mob) then
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+                task.wait(0.5)
+                return
             end
-        else
+
             local enemy = getEnemy(questData.Mob)
             if enemy and enemy:FindFirstChild("HumanoidRootPart") then
                 myChar.Humanoid.PlatformStand = true
-
-                -- Aggregate mobs nearby (Crazy Mob Bring Module)
+                enemy.HumanoidRootPart.Anchored = true
                 aggregateMobs(questData.Mob, enemy)
 
-                -- Weapon Equipping
+                -- Fast Attack Weapon Equip
                 local tool = myChar:FindFirstChildOfClass("Tool")
                 if not tool then
                     local backpack = LocalPlayer:FindFirstChild("Backpack")
                     if backpack then
-                        local weapon = backpack:FindFirstChildOfClass("Tool")
+                        local weapon = backpack:FindFirstChildOfClass("Tool") or backpack:FindFirstChild("Combat")
                         if weapon then myChar.Humanoid:EquipTool(weapon) end
                     end
                 end
@@ -887,23 +908,32 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                 local targetPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
                 root.CFrame = CFrame.lookAt(targetPos, enemy.HumanoidRootPart.Position)
 
+                local activeTool = myChar:FindFirstChildOfClass("Tool")
+                if activeTool then activeTool:Activate() end
+
                 VirtualUser:CaptureController()
                 VirtualUser:ClickButton1(Vector2.new(500, 500))
             else
-                -- Fly to Mob Spawn Point if none are alive
-                local spawnPoint = Workspace:FindFirstChild(questData.Mob) or Workspace.Enemies:FindFirstChild(questData.Mob)
-                if spawnPoint and spawnPoint:FindFirstChild("HumanoidRootPart") then
-                    root.CFrame = spawnPoint.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0)
+                local mobSpawn = Workspace:FindFirstChild(questData.Mob) or Workspace.Enemies:FindFirstChild(questData.Mob)
+                if mobSpawn and mobSpawn:FindFirstChild("HumanoidRootPart") then
+                    root.CFrame = mobSpawn.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)
                 end
-                myChar.Humanoid.PlatformStand = false
+            end
+        else
+            local npc = findNPC(questData.NPC)
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                root.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                task.wait(0.2)
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, questData.Index)
+            else
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questData.Quest, questData.Index)
+                task.wait(0.5)
             end
         end
     end)
 end))
 
--- =============================================================
--- OPTIMIZED FRUIT ESP ENGINE
--- =============================================================
+-- FRUIT ESP SYSTEM
 local FruitBillboards = {}
 
 local function getFruitImage(fruitName)
@@ -978,166 +1008,124 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     end
 end))
 
--- =============================================================
--- UNIFIED PLAYER ESP (BOX, SKELETON & HP RENDERING SYSTEM)
--- =============================================================
-local function getJoints(character)
-    local joints = {}
-    local r15_joints = {
-        {"Head", "UpperTorso"},
-        {"UpperTorso", "LowerTorso"},
-        {"UpperTorso", "LeftUpperArm"},
-        {"LeftUpperArm", "LeftLowerArm"},
-        {"LeftLowerArm", "LeftHand"},
-        {"UpperTorso", "RightUpperArm"},
-        {"RightUpperArm", "RightLowerArm"},
-        {"RightLowerArm", "RightHand"},
-        {"LowerTorso", "LeftUpperLeg"},
-        {"LeftUpperLeg", "LeftLowerLeg"},
-        {"LeftLowerLeg", "LeftFoot"},
-        {"LowerTorso", "RightUpperLeg"},
-        {"RightUpperLeg", "RightLowerLeg"},
-        {"RightLowerLeg", "RightFoot"}
-    }
-    local r6_joints = {
-        {"Head", "Torso"},
-        {"Torso", "Left Arm"},
-        {"Torso", "Right Arm"},
-        {"Torso", "Left Leg"},
-        {"Torso", "Right Leg"}
-    }
+-- ROBOTIC-PRECISION PLAYER ESP (HIGHLIGHT + LIVE HP BILLBOARD)
+local function createPlayerESP(p)
+    if p == LocalPlayer or PlayerESPCache[p] then return end
 
-    local list = character:FindFirstChild("UpperTorso") and r15_joints or r6_joints
-    for _, pair in ipairs(list) do
-        local p1 = character:FindFirstChild(pair[1])
-        local p2 = character:FindFirstChild(pair[2])
-        if p1 and p2 then
-            table.insert(joints, {p1, p2})
-        end
-    end
-    return joints
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "PlayerESP_Premium"
+    bb.Size = UDim2.new(0, 150, 0, 55)
+    bb.AlwaysOnTop = true
+    bb.ExtentsOffset = Vector3.new(0, 3, 0)
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = bb
+
+    local txt = Instance.new("TextLabel")
+    txt.Size = UDim2.new(1, 0, 0.5, 0)
+    txt.BackgroundTransparency = 1
+    txt.TextColor3 = Color3.fromRGB(240, 220, 255)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 11
+    txt.TextStrokeTransparency = 0
+    txt.Parent = container
+
+    local hbBg = Instance.new("Frame")
+    hbBg.Size = UDim2.new(0.8, 0, 0, 6)
+    hbBg.Position = UDim2.new(0.1, 0, 0.6, 0)
+    hbBg.BackgroundColor3 = Color3.fromRGB(40, 30, 50)
+    hbBg.BorderSizePixel = 0
+    hbBg.Parent = container
+
+    local hbBgCorner = Instance.new("UICorner")
+    hbBgCorner.CornerRadius = UDim.new(1, 0)
+    hbBgCorner.Parent = hbBg
+
+    local hbFill = Instance.new("Frame")
+    hbFill.Size = UDim2.new(1, 0, 1, 0)
+    hbFill.BackgroundColor3 = Color3.fromRGB(160, 50, 255)
+    hbFill.BorderSizePixel = 0
+    hbFill.Parent = hbBg
+
+    local hbFillCorner = Instance.new("UICorner")
+    hbFillCorner.CornerRadius = UDim.new(1, 0)
+    hbFillCorner.Parent = hbFill
+
+    local hbTxt = Instance.new("TextLabel")
+    hbTxt.Size = UDim2.new(1, 0, 0.3, 0)
+    hbTxt.Position = UDim2.new(0, 0, 0.75, 0)
+    hbTxt.BackgroundTransparency = 1
+    hbTxt.TextColor3 = Color3.fromRGB(200, 170, 255)
+    hbTxt.Font = Enum.Font.GothamMedium
+    hbTxt.TextSize = 9
+    hbTxt.TextStrokeTransparency = 0
+    hbTxt.Parent = container
+
+    local hl = Instance.new("Highlight")
+    hl.Name = "PlayerESP_Highlight"
+    hl.FillColor = Color3.fromRGB(160, 50, 255)
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+    hl.FillTransparency = 0.6
+    hl.OutlineTransparency = 0
+
+    PlayerESPCache[p] = {Gui = bb, Text = txt, Fill = hbFill, HpText = hbTxt, Glow = hl}
 end
 
-local function drawSkeletonAndUI(p)
-    if p == LocalPlayer then return end
-
-    local cache = {
-        Lines = {},
-        Box = nil,
-        Label = nil,
-        Active = false
-    }
-
-    local function cleanup()
-        for _, line in pairs(cache.Lines) do line:Destroy() end
-        if cache.Box then cache.Box:Destroy() end
-        if cache.Label then cache.Label:Destroy() end
-        cache.Lines = {}
-        cache.Active = false
+local function removePlayerESP(p)
+    if PlayerESPCache[p] then
+        if PlayerESPCache[p].Gui then PlayerESPCache[p].Gui:Destroy() end
+        if PlayerESPCache[p].Glow then PlayerESPCache[p].Glow:Destroy() end
+        PlayerESPCache[p] = nil
     end
+end
 
-    local function render()
-        local char = p.Character
-        if not Settings.ESP or not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
-            cleanup()
-            return
-        end
+for _, p in pairs(Players:GetPlayers()) do createPlayerESP(p) end
+table.insert(Connections, Players.PlayerAdded:Connect(createPlayerESP))
+table.insert(Connections, Players.PlayerRemoving:Connect(removePlayerESP))
 
-        local root = char.HumanoidRootPart
-        local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    local myChar = LocalPlayer.Character
+    local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
 
-        if not onScreen then
-            cleanup()
-            return
-        end
+    for targetPlayer, esp in pairs(PlayerESPCache) do
+        local char = targetPlayer.Character
+        if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+            local root = char.HumanoidRootPart
+            local dist = math.floor((root.Position - myPos).Magnitude)
+            local hp = char.Humanoid.Health
+            local maxHp = char.Humanoid.MaxHealth
+            local percent = math.clamp(hp / maxHp, 0, 1)
 
-        cache.Active = true
+            esp.Gui.Adornee = root
+            esp.Gui.Parent = CoreGui
+            esp.Gui.Enabled = true
 
-        -- Project Box Outline
-        local topHeight = root.Position + Vector3.new(0, 3, 0)
-        local bottomHeight = root.Position - Vector3.new(0, 3.5, 0)
-        local topScreen = Camera:WorldToViewportPoint(topHeight)
-        local bottomScreen = Camera:WorldToViewportPoint(bottomHeight)
-        local boxHeight = math.abs(topScreen.Y - bottomScreen.Y)
-        local boxWidth = boxHeight * 0.65
+            esp.Glow.Adornee = char
+            esp.Glow.Parent = CoreGui
+            esp.Glow.Enabled = true
 
-        if not cache.Box then
-            local box = Instance.new("Frame")
-            box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
-            box.BackgroundTransparency = 1
-            box.BorderSizePixel = 0
-            box.Parent = ScreenGui
+            esp.Text.Text = targetPlayer.Name .. " [" .. dist .. "m]"
+            esp.Fill.Size = UDim2.new(percent, 0, 1, 0)
+            esp.HpText.Text = math.floor(hp) .. " / " .. math.floor(maxHp) .. " HP"
 
-            local stroke = Instance.new("UIStroke")
-            stroke.Color = Color3.fromRGB(160, 50, 255)
-            stroke.Thickness = 2
-            stroke.Parent = box
-
-            cache.Box = box
-        else
-            cache.Box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
-            cache.Box.Position = UDim2.new(0, screenPos.X - (boxWidth / 2), 0, screenPos.Y - (boxHeight / 2))
-        end
-
-        -- Project Skeleton Lines (Robust Fallback System for Engine draw limits)
-        local joints = getJoints(char)
-        for i, pair in ipairs(joints) do
-            local startPos, startVisible = Camera:WorldToViewportPoint(pair[1].Position)
-            local endPos, endVisible = Camera:WorldToViewportPoint(pair[2].Position)
-
-            if startVisible and endVisible then
-                local line = cache.Lines[i]
-                if not line then
-                    line = Instance.new("Frame")
-                    line.BackgroundColor3 = Color3.fromRGB(240, 220, 255)
-                    line.BorderSizePixel = 0
-                    line.AnchorPoint = Vector2.new(0.5, 0.5)
-                    line.Parent = ScreenGui
-                    cache.Lines[i] = line
-                end
-
-                local startV = Vector2.new(startPos.X, startPos.Y)
-                local endV = Vector2.new(endPos.X, endPos.Y)
-                local distance = (startV - endV).Magnitude
-                local angle = math.atan2(endV.Y - startV.Y, endV.X - startV.X)
-
-                line.Size = UDim2.new(0, distance, 0, 1.5)
-                line.Position = UDim2.new(0, (startV.X + endV.X) / 2, 0, (startV.Y + endV.Y) / 2)
-                line.Rotation = math.deg(angle)
+            -- Health color dynamics
+            if percent > 0.6 then
+                esp.Fill.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
+            elseif percent > 0.25 then
+                esp.Fill.BackgroundColor3 = Color3.fromRGB(220, 180, 60)
             else
-                if cache.Lines[i] then cache.Lines[i]:Destroy() cache.Lines[i] = nil end
+                esp.Fill.BackgroundColor3 = Color3.fromRGB(220, 60, 80)
             end
-        end
-
-        -- Render Health Bar & Info Tag
-        local dist = math.floor((root.Position - Camera.CFrame.Position).Magnitude)
-        local hpText = p.Name .. " [" .. math.floor(char.Humanoid.Health) .. " HP]\n" .. dist .. "m"
-
-        if not cache.Label then
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(0, 140, 0, 30)
-            label.BackgroundTransparency = 1
-            label.TextColor3 = Color3.fromRGB(255, 255, 255)
-            label.Font = Enum.Font.GothamBold
-            label.TextSize = 11
-            label.TextStrokeTransparency = 0.2
-            label.Parent = ScreenGui
-            cache.Label = label
         else
-            cache.Label.Position = UDim2.new(0, screenPos.X - 70, 0, screenPos.Y - (boxHeight / 2) - 35)
-            cache.Label.Text = hpText
+            if esp.Gui then esp.Gui.Enabled = false end
+            if esp.Glow then esp.Glow.Enabled = false end
         end
     end
+end))
 
-    table.insert(ESP_Objects, RunService.RenderStepped:Connect(render))
-end
-
-for _, p in pairs(Players:GetPlayers()) do drawSkeletonAndUI(p) end
-table.insert(Connections, Players.PlayerAdded:Connect(drawSkeletonAndUI))
-
--- =============================================================
--- AIMBOT & AUTO BOUNTY HUNT ENGINE
--- =============================================================
+-- AIMBOT & AUTO BOUNTY HUNT
 local function getClosestPlayer()
     local closest, minDistance = nil, math.huge
     local myChar = LocalPlayer.Character
@@ -1167,12 +1155,10 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             local targetRoot = target.Character.HumanoidRootPart
 
-            -- Smooth Tracking Aimbot
             if Settings.Aimbot then
                 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position + Vector3.new(0, 1.5, 0))
             end
 
-            -- Fast Auto Bounty Fly Hunter
             if Settings.AutoHunt then
                 myChar.Humanoid.PlatformStand = true
                 
@@ -1189,8 +1175,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                 local distance = (targetPos - root.Position).Magnitude
 
                 if distance > 5 then
-                    local targetCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
-                    root.CFrame = targetCFrame
+                    root.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
                 else
                     root.CFrame = CFrame.lookAt(root.Position, targetPos)
                     VirtualUser:CaptureController()
@@ -1207,7 +1192,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end)
 end))
 
--- DESTROY / SHUTDOWN HANDLER
+-- GUI CLEANUP HANDLER
 YesBtn.MouseButton1Click:Connect(function()
     Settings.AutoFarm = false
     Settings.AutoHunt = false
@@ -1221,8 +1206,10 @@ YesBtn.MouseButton1Click:Connect(function()
     end
 
     for _, conn in pairs(Connections) do conn:Disconnect() end
-    for _, conn in pairs(ESP_Objects) do conn:Disconnect() end
-    
+    for _, esp in pairs(PlayerESPCache) do
+        if esp.Gui then esp.Gui:Destroy() end
+        if esp.Glow then esp.Glow:Destroy() end
+    end
     for _, data in pairs(FruitBillboards) do
         if data.Gui then data.Gui:Destroy() end
     end
@@ -1230,7 +1217,6 @@ YesBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- SEND COMPLETION NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
     Title = Languages[Settings.Language].notif_title,
     Text = Languages[Settings.Language].notif_desc,
