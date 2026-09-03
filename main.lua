@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - ULTIMATE GUI & INTRO) 🔮
+-- 🔮 MORGAN HUB V5.0 (AMETHYST EDITION - ULTIMATE QUEST & SERVER HOP) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -12,6 +12,8 @@ local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -39,7 +41,48 @@ local Settings = {
     LuckMultiplier = false,
     LuckPower = 100,
     FlySpeed = 12,
-    FarmDistance = 8
+    FarmDistance = 8,
+    AdminHop = true
+}
+
+-- =============================================================
+-- BLOX FRUITS LEVEL & QUEST DATABASE (1 - 2800 LEVEL)
+-- =============================================================
+local QuestData = {
+    -- FIRST SEA
+    {MinLvl = 1, MaxLvl = 14, QuestName = "BanditQuest1", QuestLvl = 1, Mob = "Bandit", NPC = "Bandit Quest Giver", NPCPos = Vector3.new(1059, 16, 1549)},
+    {MinLvl = 15, MaxLvl = 29, QuestName = "JungleQuest", QuestLvl = 1, Mob = "Monkey", NPC = "Jungle Quest Giver", NPCPos = Vector3.new(-1598, 36, 153)},
+    {MinLvl = 30, MaxLvl = 59, QuestName = "PirateQuest", QuestLvl = 1, Mob = "Pirate", NPC = "Pirate Quest Giver", NPCPos = Vector3.new(-1140, 4, 3828)},
+    {MinLvl = 60, MaxLvl = 89, QuestName = "DesertQuest", QuestLvl = 1, Mob = "Desert Bandit", NPC = "Desert Quest Giver", NPCPos = Vector3.new(894, 6, 4388)},
+    {MinLvl = 90, MaxLvl = 119, QuestName = "SnowQuest", QuestLvl = 1, Mob = "Snow Bandit", NPC = "Snow Quest Giver", NPCPos = Vector3.new(1385, 87, -1298)},
+    {MinLvl = 120, MaxLvl = 149, QuestName = "MarineQuest2", QuestLvl = 1, Mob = "Chief Petty Officer", NPC = "Marine Quest Giver", NPCPos = Vector3.new(-5035, 20, 4324)},
+    {MinLvl = 150, MaxLvl = 189, QuestName = "SkyQuest", QuestLvl = 1, Mob = "Sky Bandit", NPC = "Sky Quest Giver", NPCPos = Vector3.new(-4839, 717, -2619)},
+    {MinLvl = 190, MaxLvl = 249, QuestName = "PrisonerQuest", QuestLvl = 1, Mob = "Prisoner", NPC = "Prison Quest Giver", NPCPos = Vector3.new(530, 1, 474)},
+    {MinLvl = 250, MaxLvl = 299, QuestName = "ColosseumQuest", QuestLvl = 1, Mob = "Toga Warrior", NPC = "Colosseum Quest Giver", NPCPos = Vector3.new(-1580, 7, -2982)},
+    {MinLvl = 300, MaxLvl = 374, QuestName = "MagmaQuest", QuestLvl = 1, Mob = "Military Soldier", NPC = "Magma Quest Giver", NPCPos = Vector3.new(-5313, 12, 8515)},
+    {MinLvl = 375, MaxLvl = 449, QuestName = "FishmanQuest", QuestLvl = 1, Mob = "Fishman Warrior", NPC = "Fishman Quest Giver", NPCPos = Vector3.new(61122, 18, 1569)},
+    {MinLvl = 450, MaxLvl = 524, QuestName = "Sky2Quest", QuestLvl = 1, Mob = "God's Guard", NPC = "Upper Sky Quest Giver", NPCPos = Vector3.new(-7906, 5611, -2280)},
+    {MinLvl = 525, MaxLvl = 624, QuestName = "FountainQuest", QuestLvl = 1, Mob = "Shandora Warrior", NPC = "Fountain Quest Giver", NPCPos = Vector3.new(5259, 38, 4050)},
+    {MinLvl = 625, MaxLvl = 699, QuestName = "GalleyQuest", QuestLvl = 1, Mob = "Galley Pirate", NPC = "Fountain Quest Giver", NPCPos = Vector3.new(5259, 38, 4050)},
+    
+    -- SECOND SEA
+    {MinLvl = 700, MaxLvl = 774, QuestName = "Area1Quest", QuestLvl = 1, Mob = "Raider", NPC = "Quest Giver", NPCPos = Vector3.new(-424, 73, 1836)},
+    {MinLvl = 775, MaxLvl = 874, QuestName = "Area2Quest", QuestLvl = 1, Mob = "Mercenary", NPC = "Quest Giver", NPCPos = Vector3.new(638, 73, 918)},
+    {MinLvl = 875, MaxLvl = 999, QuestName = "MarineQuest3", QuestLvl = 1, Mob = "Marine Lieutenant", NPC = "Quest Giver", NPCPos = Vector3.new(-2440, 73, -3216)},
+    {MinLvl = 1000, MaxLvl = 1174, QuestName = "SnowMountainQuest", QuestLvl = 1, Mob = "Snow Trooper", NPC = "Quest Giver", NPCPos = Vector3.new(609, 401, -5372)},
+    {MinLvl = 1175, MaxLvl = 1349, QuestName = "ShipQuest1", QuestLvl = 1, Mob = "Ship Deckhand", NPC = "Quest Giver", NPCPos = Vector3.new(920, 125, 32800)},
+    {MinLvl = 1350, MaxLvl = 1499, QuestName = "FrostQuest", QuestLvl = 1, Mob = "Arctic Warrior", NPC = "Quest Giver", NPCPos = Vector3.new(5667, 28, -6480)},
+
+    -- THIRD SEA & 2026 UPDATE (UP TO LEVEL 2800)
+    {MinLvl = 1500, MaxLvl = 1574, QuestName = "PiratePortQuest", QuestLvl = 1, Mob = "Pirate Millionaire", NPC = "Quest Giver", NPCPos = Vector3.new(-290, 44, 5580)},
+    {MinLvl = 1575, MaxLvl = 1699, QuestName = "AmazonQuest", QuestLvl = 1, Mob = "Dragon Crew Warrior", NPC = "Quest Giver", NPCPos = Vector3.new(5833, 52, -1105)},
+    {MinLvl = 1700, MaxLvl = 1824, QuestName = "MarineTreeQuest", QuestLvl = 1, Mob = "Marine Commodore", NPC = "Quest Giver", NPCPos = Vector3.new(2180, 29, -6740)},
+    {MinLvl = 1825, MaxLvl = 1974, QuestName = "DeepForestIslandQuest", QuestLvl = 1, Mob = "Fishman Raider", NPC = "Quest Giver", NPCPos = Vector3.new(-10500, 332, -8760)},
+    {MinLvl = 1975, MaxLvl = 2074, QuestName = "HauntedQuest1", QuestLvl = 1, Mob = "Reborn Skeleton", NPC = "Quest Giver", NPCPos = Vector3.new(-9515, 142, 5520)},
+    {MinLvl = 2075, MaxLvl = 2199, QuestName = "PeanutQuest", QuestLvl = 1, Mob = "Peanut Scout", NPC = "Quest Giver", NPCPos = Vector3.new(-2100, 38, -10190)},
+    {MinLvl = 2200, MaxLvl = 2449, QuestName = "IceCreamQuest1", QuestLvl = 1, Mob = "Ice Cream Chef", NPC = "Quest Giver", NPCPos = Vector3.new(-820, 65, -10960)},
+    {MinLvl = 2450, MaxLvl = 2599, QuestName = "TikiQuest1", QuestLvl = 1, Mob = "Sun-kissed Warrior", NPC = "Quest Giver", NPCPos = Vector3.new(-16533, 55, -172]},
+    {MinLvl = 2600, MaxLvl = 2800, QuestName = "TikiQuest2", QuestLvl = 2, Mob = "Isle Outlaw", NPC = "Quest Giver", NPCPos = Vector3.new(-16700, 70, 200)}
 }
 
 -- FRUIT ICONS
@@ -83,6 +126,51 @@ local FruitIcons = {
 local DefaultIcon = "rbxassetid://13886865768"
 
 -- =============================================================
+-- SERVER HOP & ADMIN DETECTOR ENGINE (UZOTH STYLE)
+-- =============================================================
+local function ServerHop()
+    local placeId = game.PlaceId
+    local servers = {}
+    local req = request or http_request or syn and syn.request
+    if req then
+        local res = req({Url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"})
+        local body = HttpService:JSONDecode(res.Body)
+        if body and body.data then
+            for _, s in pairs(body.data) do
+                if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    table.insert(servers, s.id)
+                end
+            end
+        end
+    end
+    if #servers > 0 then
+        TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+    else
+        TeleportService:Teleport(placeId, LocalPlayer)
+    end
+end
+
+local function CheckForAdmins()
+    if not Settings.AdminHop then return end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            if p:GetRankInGroup(2924100) and p:GetRankInGroup(2924100) >= 2 then -- Blox Fruits Official Group
+                ServerHop()
+            elseif p.Name:lower():find("admin") or p.Name:lower():find("mod") or p.Name:lower():find("uzoth") then
+                ServerHop()
+            end
+        end
+    end
+end
+
+table.insert(Connections, Players.PlayerAdded:Connect(function() CheckForAdmins() end))
+task.spawn(function()
+    while task.wait(5) do
+        CheckForAdmins()
+    end
+end)
+
+-- =============================================================
 -- GUI ARCHITECTURE & SCREEN GUI
 -- =============================================================
 local ScreenGui = Instance.new("ScreenGui")
@@ -90,9 +178,7 @@ ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- -------------------------------------------------------------
 -- 🔮 AÇILIŞ EKRANI (LOADING / INTRO SCREEN)
--- -------------------------------------------------------------
 local LoadingFrame = Instance.new("Frame")
 LoadingFrame.Name = "LoadingFrame"
 LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -151,7 +237,6 @@ BarGlow.Color = Color3.fromRGB(200, 80, 255)
 BarGlow.Thickness = 2
 BarGlow.Parent = BarFill
 
--- Loading Animation Execution
 task.spawn(function()
     local tweenInfo = TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     local tween = TweenService:Create(BarFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
@@ -171,9 +256,7 @@ task.spawn(function()
     LoadingFrame:Destroy()
 end)
 
--- -------------------------------------------------------------
--- LOGO BUTTON (YENİLENMİŞ & DÜZELTİLMİŞ)
--- -------------------------------------------------------------
+-- LOGO BUTTON
 local ToggleLogo = Instance.new("ImageButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 48, 0, 48)
@@ -198,7 +281,7 @@ local LogoImage = Instance.new("ImageLabel")
 LogoImage.Name = "LogoImage"
 LogoImage.Size = UDim2.new(1, 0, 1, 0)
 LogoImage.BackgroundTransparency = 1
-LogoImage.Image = "rbxassetid://15312061073" -- Varsayılan logo görsel kimliği
+LogoImage.Image = "rbxassetid://15312061073"
 LogoImage.ScaleType = Enum.ScaleType.Fit
 LogoImage.Parent = ToggleLogo
 
@@ -206,9 +289,7 @@ local LogoImageCorner = Instance.new("UICorner")
 LogoImageCorner.CornerRadius = UDim.new(0, 12)
 LogoImageCorner.Parent = LogoImage
 
--- -------------------------------------------------------------
--- MAIN WINDOW (AMETHYST STYLE)
--- -------------------------------------------------------------
+-- MAIN WINDOW
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 460, 0, 480)
@@ -229,7 +310,6 @@ MainStroke.Thickness = 2
 MainStroke.Transparency = 0.2
 MainStroke.Parent = MainFrame
 
--- Sürükleme ve Tıklama Mantığı Düzeltmesi
 local startPos
 ToggleLogo.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -241,19 +321,17 @@ ToggleLogo.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         if startPos then
             local delta = (input.Position - startPos).Magnitude
-            if delta < 10 then -- Eğer belirgin şekilde sürüklenmediyse tıklama kabul et
+            if delta < 10 then
                 MainFrame.Visible = not MainFrame.Visible
             end
         end
     end
 end)
 
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI (LEFT & RIGHT AMETHYSTS)
 local function createSideAmethyst(isLeft)
     local amethyst = Instance.new("TextLabel")
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
     amethyst.Size = UDim2.new(0, 40, 0, 40)
-    
     local posX = isLeft and UDim2.new(0, -35, 0.5, -20) or UDim2.new(1, -5, 0.5, -20)
     amethyst.Position = posX
     amethyst.BackgroundTransparency = 1
@@ -264,7 +342,6 @@ local function createSideAmethyst(isLeft)
 
     local upPos = posX + UDim2.new(0, 0, 0, -25)
     local downPos = posX + UDim2.new(0, 0, 0, 25)
-    
     amethyst.Position = upPos
     
     local tweenInfo = TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
@@ -272,8 +349,8 @@ local function createSideAmethyst(isLeft)
     floatTween:Play()
 end
 
-createSideAmethyst(true)  -- Sol Ametist
-createSideAmethyst(false) -- Sağ Ametist
+createSideAmethyst(true)
+createSideAmethyst(false)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -40, 0, 45)
@@ -286,7 +363,7 @@ Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- INTERACTIVE ADVANCED LUCK BOOSTER GUI
+-- LUCK BOOSTER GUI
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -573,7 +650,8 @@ addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
     ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
 end)
 
-addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("🌾 Auto Farm Level + Quest (1-2800)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("⚡ Admin Detect Auto Server Hop", Settings.AdminHop, function(v) Settings.AdminHop = v end)
 addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
 addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
 addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
@@ -591,11 +669,7 @@ local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
     if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
         pcall(function()
-            local args = {
-                [1] = "StoreFruit",
-                [2] = tool.Name,
-                [3] = tool
-            }
+            local args = {[1] = "StoreFruit", [2] = tool.Name, [3] = tool}
             ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
         end)
     end
@@ -604,9 +678,7 @@ end
 table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
     char.ChildAdded:Connect(storeFruit)
 end))
-if LocalPlayer.Character then
-    LocalPlayer.Character.ChildAdded:Connect(storeFruit)
-end
+if LocalPlayer.Character then LocalPlayer.Character.ChildAdded:Connect(storeFruit) end
 
 table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
     task.wait(0.5)
@@ -614,9 +686,46 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
 end))
 
 -- =============================================================
--- AUTO FARM ENGINE
+-- AUTO FARM LEVEL & QUEST ENGINE (BYPASSED CFRAME TELEPORT)
 -- =============================================================
-local function getClosestEnemy()
+local function getMyLevel()
+    local level = 1
+    pcall(function()
+        level = LocalPlayer.Data.Level.Value
+    end)
+    return level
+end
+
+local function getCurrentQuest()
+    local myLevel = getMyLevel()
+    for _, quest in pairs(QuestData) do
+        if myLevel >= quest.MinLvl and myLevel <= quest.MaxLvl then
+            return quest
+        end
+    end
+    return QuestData[#QuestData]
+end
+
+local function hasActiveQuest()
+    local mainFrame = LocalPlayer.PlayerGui:FindFirstChild("Main")
+    if mainFrame and mainFrame:FindFirstChild("Quest") and mainFrame.Quest.Visible then
+        return true
+    end
+    return false
+end
+
+local function takeQuest(quest)
+    pcall(function()
+        local args = {
+            [1] = "StartQuest",
+            [2] = quest.QuestName,
+            [3] = quest.QuestLvl
+        }
+        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
+    end)
+end
+
+local function getTargetEnemy(mobName)
     local closest, minDistance = nil, math.huge
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -624,13 +733,11 @@ local function getClosestEnemy()
 
     local enemies = Workspace:FindFirstChild("Enemies") or Workspace
     for _, enemy in pairs(enemies:GetChildren()) do
-        if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(enemy) then
-                local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
-                if dist < minDistance then
-                    minDistance = dist
-                    closest = enemy
-                end
+        if enemy:IsA("Model") and enemy.Name == mobName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            local dist = (enemy.HumanoidRootPart.Position - myPos).Magnitude
+            if dist < minDistance then
+                minDistance = dist
+                closest = enemy
             end
         end
     end
@@ -645,7 +752,22 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then return end
         local root = myChar.HumanoidRootPart
 
-        local enemy = getClosestEnemy()
+        local currentQuest = getCurrentQuest()
+
+        -- 1. QUEST KONTROL VE ALMA
+        if not hasActiveQuest() then
+            myChar.Humanoid.PlatformStand = true
+            local distToNPC = (root.Position - currentQuest.NPCPos).Magnitude
+            if distToNPC > 8 then
+                root.CFrame = CFrame.new(currentQuest.NPCPos + Vector3.new(0, 5, 0))
+            else
+                takeQuest(currentQuest)
+            end
+            return
+        end
+
+        -- 2. YARATIK KESME
+        local enemy = getTargetEnemy(currentQuest.Mob)
         if enemy and enemy:FindFirstChild("HumanoidRootPart") then
             myChar.Humanoid.PlatformStand = true
 
@@ -894,6 +1016,7 @@ YesBtn.MouseButton1Click:Connect(function()
     Settings.FruitESP = false
     Settings.AutoStore = false
     Settings.LuckMultiplier = false
+    Settings.AdminHop = false
 
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.PlatformStand = false
@@ -915,6 +1038,6 @@ end)
 -- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
     Title = "💎 MORGAN HUB V5.0",
-    Text = "Ametist temalı arayüz yüklendi!",
+    Text = "Oto Quest & Admin Hop Yüklendi!",
     Duration = 4
 })
