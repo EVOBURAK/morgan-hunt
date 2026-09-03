@@ -20,6 +20,7 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
 -- Wait for critical components to prevent runtime crashes (Safe for Emulators)
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 15)
@@ -66,56 +67,7 @@ local Settings = {
     LuckMultiplier = false,
     LuckPower = 100,
     FlySpeed = 12,
-    FarmDistance = 8,
-    Language = "EN"
-}
-
--- BILINGUAL SYSTEM DICTIONARY
-local Languages = {
-    EN = {
-        title = "💎 MORGAN HUB V5.0",
-        loading = "Amethyst Power Loading...",
-        ready = "Ready!",
-        confirm_destroy = "Are you sure you want to close and destroy the GUI?",
-        yes = "YES",
-        no = "NO",
-        luck_booster = "🔮 Luck Rate Booster GUI",
-        luck_power = "🔮 Luck Multiplier Power",
-        auto_farm = "🌾 Auto Farm Level (Mobs - Max 2800)",
-        auto_store = "📦 Auto Store Fruit (Inventory)",
-        fruit_esp = "🖼️ Fruit ESP (With Image Icons)",
-        player_esp = "👁️ Player ESP (Box, Glow & HP Bar)",
-        aimbot = "🎯 Aimbot (Nearest Player)",
-        auto_hunt = "⚡ Auto Bounty Hunt (Fast Fly)",
-        fly_speed = "⚙️ Fly / Hunt Speed",
-        farm_dist = "⚙️ Auto Farm Distance (Height)",
-        notif_title = "💎 MORGAN HUB V5.0",
-        notif_desc = "All Modules Successfully Optimized!",
-        lang_btn = "🌐 EN / IT",
-        admin_hop = "Admin detected! Performing safe Server Hop..."
-    },
-    IT = {
-        title = "💎 MORGAN HUB V5.0",
-        loading = "Caricamento Potere Ametista...",
-        ready = "Pronto!",
-        confirm_destroy = "Sei sicuro di voler chiudere ed eliminare la GUI?",
-        yes = "SÌ",
-        no = "NO",
-        luck_booster = "🔮 GUI Potenziatore di Fortuna",
-        luck_power = "🔮 Potenza Moltiplicatore Fortuna",
-        auto_farm = "🌾 Auto Farm Livello (Mostri - Max 2800)",
-        auto_store = "📦 Auto Conserva Frutti (Inventario)",
-        fruit_esp = "🖼️ ESP Frutti (Con Icone)",
-        player_esp = "👁️ ESP Giocatori (Box, Bagliore e Barra HP)",
-        aimbot = "🎯 Aimbot (Giocatore Più Vicino)",
-        auto_hunt = "⚡ Auto Caccia Taglie (Volo Rapido)",
-        fly_speed = "⚙️ Velocità di Volo / Caccia",
-        farm_dist = "⚙️ Distanza Auto Farm (Altezza)",
-        notif_title = "💎 MORGAN HUB V5.0",
-        notif_desc = "Tutti i moduli sono stati ottimizzati con successo!",
-        lang_btn = "🌐 EN / IT",
-        admin_hop = "Amministratore rilevato! Cambio server sicuro in corso..."
-    }
+    FarmDistance = 8
 }
 
 -- COMPREHENSIVE QUEST DATA (REAL DATABASE NAMES - LEVELS 1 TO 2800)
@@ -217,7 +169,7 @@ local FruitIcons = {
     ["Portal"] = "rbxassetid://13886869150",
     ["Rumble"] = "rbxassetid://13886869348",
     ["Buddha"] = "rbxassetid://13886865890",
-    ["Love"] = "rbxassetid://1388688018",
+    ["Love"] = "rbxassetid://13886868018",
     ["Spider"] = "rbxassetid://13886869976",
     ["Sound"] = "rbxassetid://14930200871",
     ["Magma"] = "rbxassetid://13886868420",
@@ -241,13 +193,48 @@ local FruitIcons = {
 }
 local DefaultIcon = "rbxassetid://13886865768"
 
+-- SERVER HOP SYSTEM
+local function serverHop()
+    local sf, servers = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+    end)
+    if sf and servers and servers.data then
+        for _, server in pairs(servers.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
+                break
+            end
+        end
+    end
+end
+
+local function checkAdminPresence(player)
+    local adminIDs = {[410143093] = true, [1552391024] = true, [4424317] = true}
+    if adminIDs[player.UserId] or player:GetRankInGroup(11424103) >= 100 then
+        task.spawn(function()
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "💎 MORGAN HUB V5.0",
+                Text = "Admin detected! Performing safe Server Hop...",
+                Duration = 5
+            })
+            task.wait(2)
+            serverHop()
+        end)
+    end
+end
+
+for _, p in pairs(Players:GetPlayers()) do checkAdminPresence(p) end
+table.insert(Connections, Players.PlayerAdded:Connect(checkAdminPresence))
+
 -- SCREEN GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MorganHubV5"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = ParentGui
 
--- LOADING BAR
+-- -------------------------------------------------------------
+-- 🔮 AÇILIŞ EKRANI (LOADING / INTRO SCREEN)
+-- -------------------------------------------------------------
 local LoadingFrame = Instance.new("Frame")
 LoadingFrame.Name = "LoadingFrame"
 LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -271,7 +258,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(1, 0, 0, 30)
 LoadingSub.Position = UDim2.new(0, 0, 0.45, 0)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = Languages[Settings.Language].loading
+LoadingSub.Text = "Ametist Gücü Yükleniyor..."
 LoadingSub.TextColor3 = Color3.fromRGB(200, 170, 255)
 LoadingSub.TextSize = 14
 LoadingSub.Font = Enum.Font.GothamMedium
@@ -306,12 +293,14 @@ BarGlow.Color = Color3.fromRGB(200, 80, 255)
 BarGlow.Thickness = 2
 BarGlow.Parent = BarFill
 
+-- Loading Animation Execution
 task.spawn(function()
-    local tween = TweenService:Create(BarFill, TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
+    local tweenInfo = TweenInfo.new(2.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(BarFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)})
     tween:Play()
     tween.Completed:Wait()
     
-    LoadingSub.Text = Languages[Settings.Language].ready
+    LoadingSub.Text = "Hazır!"
     task.wait(0.4)
     
     local fadeTween = TweenService:Create(LoadingFrame, TweenInfo.new(0.8), {BackgroundTransparency = 1})
@@ -324,7 +313,9 @@ task.spawn(function()
     LoadingFrame:Destroy()
 end)
 
--- LOGO TRIGGER BUTTON
+-- -------------------------------------------------------------
+-- LOGO BUTTON
+-- -------------------------------------------------------------
 local ToggleLogo = Instance.new("TextButton")
 ToggleLogo.Name = "ToggleLogo"
 ToggleLogo.Size = UDim2.new(0, 50, 0, 50)
@@ -346,7 +337,9 @@ LogoStroke.Color = Color3.fromRGB(170, 0, 255)
 LogoStroke.Thickness = 2
 LogoStroke.Parent = ToggleLogo
 
--- MAIN INTERFACE FRAME
+-- -------------------------------------------------------------
+-- MAIN WINDOW (AMETHYST STYLE)
+-- -------------------------------------------------------------
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 460, 0, 480)
@@ -371,7 +364,7 @@ ToggleLogo.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 🔮 AMETİST KANAT/YAN ANİMASYONLARI DEFINITION
+-- 🔮 AMETİST KANAT/YAN ANİMASYONLARI
 local function createSideAmethyst(isLeft)
     local amethyst = Instance.new("TextLabel")
     amethyst.Name = isLeft and "LeftAmethyst" or "RightAmethyst"
@@ -397,32 +390,17 @@ createSideAmethyst(true)
 createSideAmethyst(false)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -120, 0, 45)
+Title.Size = UDim2.new(1, -40, 0, 45)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = Languages[Settings.Language].title
+Title.Text = "💎 MORGAN HUB V5.0"
 Title.TextColor3 = Color3.fromRGB(200, 130, 255)
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- LANGUAGE INTERCHANGE
-local LangBtn = Instance.new("TextButton")
-LangBtn.Size = UDim2.new(0, 75, 0, 26)
-LangBtn.Position = UDim2.new(1, -115, 0, 8)
-LangBtn.BackgroundColor3 = Color3.fromRGB(40, 25, 60)
-LangBtn.Text = Languages[Settings.Language].lang_btn
-LangBtn.TextColor3 = Color3.fromRGB(240, 220, 255)
-LangBtn.Font = Enum.Font.GothamBold
-LangBtn.TextSize = 11
-LangBtn.Parent = MainFrame
-
-local LangCorner = Instance.new("UICorner")
-LangCorner.CornerRadius = UDim.new(0, 6)
-LangCorner.Parent = LangBtn
-
--- LUCK DISPLAY
+-- INTERACTIVE ADVANCED LUCK BOOSTER GUI
 local LuckFrame = Instance.new("Frame")
 LuckFrame.Name = "LuckFrame"
 LuckFrame.Size = UDim2.new(0, 260, 0, 140)
@@ -478,7 +456,7 @@ local ChanceCorner = Instance.new("UICorner")
 ChanceCorner.CornerRadius = UDim.new(0, 6)
 ChanceCorner.Parent = ChanceDisplay
 
--- CLOSE CONFIRMATION SYSTEM
+-- CONFIRM DESTROY FRAME
 local ConfirmFrame = Instance.new("Frame")
 ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
 ConfirmFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 18)
@@ -495,7 +473,7 @@ local ConfirmText = Instance.new("TextLabel")
 ConfirmText.Size = UDim2.new(1, 0, 0.4, 0)
 ConfirmText.Position = UDim2.new(0, 0, 0.2, 0)
 ConfirmText.BackgroundTransparency = 1
-ConfirmText.Text = Languages[Settings.Language].confirm_destroy
+ConfirmText.Text = "GUI'yi kapatıp silmek istediğinize emin misiniz?"
 ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ConfirmText.Font = Enum.Font.GothamBold
 ConfirmText.TextSize = 14
@@ -506,7 +484,7 @@ local YesBtn = Instance.new("TextButton")
 YesBtn.Size = UDim2.new(0, 100, 0, 35)
 YesBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
 YesBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
-YesBtn.Text = Languages[Settings.Language].yes
+YesBtn.Text = "EVET"
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.ZIndex = 11
@@ -520,7 +498,7 @@ local NoBtn = Instance.new("TextButton")
 NoBtn.Size = UDim2.new(0, 100, 0, 35)
 NoBtn.Position = UDim2.new(0.6, 0, 0.65, 0)
 NoBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 75)
-NoBtn.Text = Languages[Settings.Language].no
+NoBtn.Text = "HAYIR"
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.ZIndex = 11
@@ -563,9 +541,7 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
 Layout.Parent = Container
 
-local UI_Elements = {}
-
-local function addToggle(key, defaultState, callback)
+local function addToggle(text, defaultState, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 42)
     card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
@@ -580,7 +556,7 @@ local function addToggle(key, defaultState, callback)
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0.04, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = Languages[Settings.Language][key] or key
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(225, 215, 245)
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 13
@@ -617,11 +593,9 @@ local function addToggle(key, defaultState, callback)
         circle.Position = state and UDim2.new(0.54, 0, 0.13, 0) or UDim2.new(0.08, 0, 0.13, 0)
         pcall(callback, state)
     end)
-
-    UI_Elements[key] = label
 end
 
-local function addSlider(key, min, max, default, callback)
+local function addSlider(text, min, max, default, callback)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(0.98, 0, 0, 50)
     card.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
@@ -636,7 +610,7 @@ local function addSlider(key, min, max, default, callback)
     label.Size = UDim2.new(0.7, 0, 0.5, 0)
     label.Position = UDim2.new(0.04, 0, 0.08, 0)
     label.BackgroundTransparency = 1
-    label.Text = Languages[Settings.Language][key] or key
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(225, 215, 245)
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 13
@@ -703,50 +677,30 @@ local function addSlider(key, min, max, default, callback)
             update(input)
         end
     end)
-
-    UI_Elements[key] = label
 end
 
-local function changeLanguage(lang)
-    Settings.Language = lang
-    LangBtn.Text = Languages[lang].lang_btn
-    Title.Text = Languages[lang].title
-    ConfirmText.Text = Languages[lang].confirm_destroy
-    YesBtn.Text = Languages[lang].yes
-    NoBtn.Text = Languages[lang].no
-
-    for key, label in pairs(UI_Elements) do
-        if Languages[lang][key] then
-            label.Text = Languages[lang][key]
-        end
-    end
-end
-
-LangBtn.MouseButton1Click:Connect(function()
-    if Settings.Language == "EN" then changeLanguage("IT") else changeLanguage("EN") end
-end)
-
--- CALLING FUNCTIONS TO CONSTRUCT THE MENU CONTROLS
-addToggle("luck_booster", Settings.LuckMultiplier, function(v) 
+-- MENU ITEMS
+addToggle("🔮 Luck Rate Booster GUI", Settings.LuckMultiplier, function(v) 
     Settings.LuckMultiplier = v
     LuckFrame.Visible = v
 end)
-addSlider("luck_power", 1, 1000, Settings.LuckPower, function(v)
+addSlider("🔮 Luck Multiplier Power", 1, 1000, Settings.LuckPower, function(v)
     Settings.LuckPower = v
     LuckStatus.Text = "MULTIPLIER: " .. v .. "x"
     local simulatedRate = math.min(99.9, math.floor(v * 0.85 * 10) / 10)
     ChanceDisplay.Text = "Mythical Drop Rate: ~" .. simulatedRate .. "%"
 end)
 
-addToggle("auto_farm", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
-addToggle("auto_store", Settings.AutoStore, function(v) Settings.AutoStore = v end)
-addToggle("fruit_esp", Settings.FruitESP, function(v) Settings.FruitESP = v end)
-addToggle("player_esp", Settings.ESP, function(v) Settings.ESP = v end)
-addToggle("aimbot", Settings.Aimbot, function(v) Settings.Aimbot = v end)
-addToggle("auto_hunt", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
+addToggle("🌾 Auto Farm Level (Mobs)", Settings.AutoFarm, function(v) Settings.AutoFarm = v end)
+addToggle("📦 Auto Store Fruit (Inventory)", Settings.AutoStore, function(v) Settings.AutoStore = v end)
+addToggle("🖼️ Fruit ESP (With Image Icons)", Settings.FruitESP, function(v) Settings.FruitESP = v end)
+addToggle("👁️ Player ESP (Boxes & HP)", Settings.ESP, function(v) Settings.ESP = v end)
+addToggle("🎯 Aimbot (Nearest Player)", Settings.Aimbot, function(v) Settings.Aimbot = v end)
+addToggle("⚡ Auto Bounty Hunt (Fast Fly)", Settings.AutoHunt, function(v) Settings.AutoHunt = v end)
 
-addSlider("fly_speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
-addSlider("farm_dist", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
+-- SETTINGS SECTION
+addSlider("⚙️ Fly / Hunt Speed", 5, 30, Settings.FlySpeed, function(v) Settings.FlySpeed = v end)
+addSlider("⚙️ Auto Farm Distance (Height)", 3, 20, Settings.FarmDistance, function(v) Settings.FarmDistance = v end)
 
 -- NOCLIP SERVICE
 local function checkNoClip()
@@ -763,12 +717,19 @@ local function checkNoClip()
 end
 table.insert(Connections, RunService.Stepped:Connect(checkNoClip))
 
--- AUTO STORE FRUIT
+-- =============================================================
+-- AUTO STORE FRUIT ENGINE
+-- =============================================================
 local function storeFruit(tool)
     if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
     if tool.Name:find("Fruit") or tool.Name:find("Meyve") or FruitIcons[tool.Name:gsub(" Fruit", "")] then
         pcall(function()
-            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("StoreFruit", tool.Name, tool)
+            local args = {
+                [1] = "StoreFruit",
+                [2] = tool.Name,
+                [3] = tool
+            }
+            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer(unpack(args))
         end)
     end
 end
@@ -785,7 +746,9 @@ table.insert(Connections, LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
     storeFruit(tool)
 end))
 
--- AUTO FARM UTILS
+-- =============================================================
+-- AUTO FARM ENGINE (INTEGRATED & REFACTORED FOR LEVELS 1 - 2800)
+-- =============================================================
 local function getQuestNPCAndData()
     local myLevel = (Level and Level.Value) or 1
     for _, data in ipairs(QuestMap) do
@@ -864,7 +827,7 @@ local function checkCorrectQuest(neededMob)
     return false
 end
 
--- AUTO FARM CORE HEARTBEAT LOOP
+-- AUTO FARM ENGINE TRIGGER HOOK
 table.insert(Connections, RunService.Heartbeat:Connect(function()
     if not Settings.AutoFarm then return end
 
@@ -930,7 +893,9 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end)
 end))
 
--- FRUIT ESP SYSTEM
+-- =============================================================
+-- OPTIMIZED FRUIT ESP ENGINE
+-- =============================================================
 local FruitBillboards = {}
 
 local function getFruitImage(fruitName)
@@ -987,6 +952,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     local myChar = LocalPlayer.Character
     local myPos = myChar and myChar:FindFirstChild("HumanoidRootPart") and myChar.HumanoidRootPart.Position or Vector3.zero
 
+    -- Workspace Taraması
     for _, obj in pairs(Workspace:GetChildren()) do
         if (obj:IsA("Tool") or obj:IsA("Model")) and (obj.Name:find("Fruit") or obj.Name:find("Meyve") or obj.Name:find("Blox")) then
             createFruitESP(obj)
@@ -1005,69 +971,35 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     end
 end))
 
--- ROBOTIC-PRECISION PLAYER ESP (HIGHLIGHT + LIVE HP BILLBOARD)
+-- =============================================================
+-- OPTIMIZED PLAYER ESP ENGINE (HIGHLIGHT & BILLBOARD)
+-- =============================================================
 local function createPlayerESP(p)
     if p == LocalPlayer or PlayerESPCache[p] then return end
 
     local bb = Instance.new("BillboardGui")
-    bb.Name = "PlayerESP_Premium"
-    bb.Size = UDim2.new(0, 150, 0, 55)
+    bb.Name = "PlayerESP_Info"
+    bb.Size = UDim2.new(0, 160, 0, 40)
     bb.AlwaysOnTop = true
     bb.ExtentsOffset = Vector3.new(0, 3, 0)
 
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 1, 0)
-    container.BackgroundTransparency = 1
-    container.Parent = bb
-
     local txt = Instance.new("TextLabel")
-    txt.Size = UDim2.new(1, 0, 0.5, 0)
+    txt.Size = UDim2.new(1, 0, 1, 0)
     txt.BackgroundTransparency = 1
-    txt.TextColor3 = Color3.fromRGB(240, 220, 255)
+    txt.TextColor3 = Color3.fromRGB(200, 140, 255)
     txt.Font = Enum.Font.GothamBold
-    txt.TextSize = 11
-    txt.TextStrokeTransparency = 0
-    txt.Parent = container
+    txt.TextSize = 12
+    txt.TextStrokeTransparency = 0.2
+    txt.Parent = bb
 
-    local hbBg = Instance.new("Frame")
-    hbBg.Size = UDim2.new(0.8, 0, 0, 6)
-    hbBg.Position = UDim2.new(0.1, 0, 0.6, 0)
-    hbBg.BackgroundColor3 = Color3.fromRGB(40, 30, 50)
-    hbBg.BorderSizePixel = 0
-    hbBg.Parent = container
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "PlayerESP_Glow"
+    highlight.FillColor = Color3.fromRGB(150, 40, 255)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.6
+    highlight.OutlineTransparency = 0
 
-    local hbBgCorner = Instance.new("UICorner")
-    hbBgCorner.CornerRadius = UDim.new(1, 0)
-    hbBgCorner.Parent = hbBg
-
-    local hbFill = Instance.new("Frame")
-    hbFill.Size = UDim2.new(1, 0, 1, 0)
-    hbFill.BackgroundColor3 = Color3.fromRGB(160, 50, 255)
-    hbFill.BorderSizePixel = 0
-    hbFill.Parent = hbBg
-
-    local hbFillCorner = Instance.new("UICorner")
-    hbFillCorner.CornerRadius = UDim.new(1, 0)
-    hbFillCorner.Parent = hbFill
-
-    local hbTxt = Instance.new("TextLabel")
-    hbTxt.Size = UDim2.new(1, 0, 0.3, 0)
-    hbTxt.Position = UDim2.new(0, 0, 0.75, 0)
-    hbTxt.BackgroundTransparency = 1
-    hbTxt.TextColor3 = Color3.fromRGB(200, 170, 255)
-    hbTxt.Font = Enum.Font.GothamMedium
-    hbTxt.TextSize = 9
-    hbTxt.TextStrokeTransparency = 0
-    hbTxt.Parent = container
-
-    local hl = Instance.new("Highlight")
-    hl.Name = "PlayerESP_Highlight"
-    hl.FillColor = Color3.fromRGB(160, 50, 255)
-    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-    hl.FillTransparency = 0.6
-    hl.OutlineTransparency = 0
-
-    PlayerESPCache[p] = {Gui = bb, Text = txt, Fill = hbFill, HpText = hbTxt, Glow = hl}
+    PlayerESPCache[p] = {Gui = bb, Text = txt, Glow = highlight}
 end
 
 local function removePlayerESP(p)
@@ -1091,9 +1023,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
         if Settings.ESP and char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
             local root = char.HumanoidRootPart
             local dist = math.floor((root.Position - myPos).Magnitude)
-            local hp = char.Humanoid.Health
-            local maxHp = char.Humanoid.MaxHealth
-            local percent = math.clamp(hp / maxHp, 0, 1)
+            local hp = math.floor(char.Humanoid.Health)
 
             esp.Gui.Adornee = root
             esp.Gui.Parent = ParentGui
@@ -1103,18 +1033,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
             esp.Glow.Parent = ParentGui
             esp.Glow.Enabled = true
 
-            esp.Text.Text = targetPlayer.Name .. " [" .. dist .. "m]"
-            esp.Fill.Size = UDim2.new(percent, 0, 1, 0)
-            esp.HpText.Text = math.floor(hp) .. " / " .. math.floor(maxHp) .. " HP"
-
-            -- Health color dynamics
-            if percent > 0.6 then
-                esp.Fill.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
-            elseif percent > 0.25 then
-                esp.Fill.BackgroundColor3 = Color3.fromRGB(220, 180, 60)
-            else
-                esp.Fill.BackgroundColor3 = Color3.fromRGB(220, 60, 80)
-            end
+            esp.Text.Text = targetPlayer.Name .. " [" .. hp .. " HP]\n" .. dist .. "m"
         else
             if esp.Gui then esp.Gui.Enabled = false end
             if esp.Glow then esp.Glow.Enabled = false end
@@ -1122,25 +1041,9 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     end
 end))
 
--- AIMBOT & AUTO BOUNTY HUNT
-local function getClosestPlayer()
-    local closest, minDistance = nil, math.huge
-    local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = myChar.HumanoidRootPart.Position
-
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-            local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-            if dist < minDistance then
-                minDistance = dist
-                closest = p
-            end
-        end
-    end
-    return closest
-end
-
+-- =============================================================
+-- AIMBOT & AUTO BOUNTY HUNT ENGINE
+-- =============================================================
 table.insert(Connections, RunService.Heartbeat:Connect(function()
     pcall(function()
         local myChar = LocalPlayer.Character
@@ -1152,13 +1055,16 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             local targetRoot = target.Character.HumanoidRootPart
 
+            -- Aimbot (Kamera Yumuşatılmış Takip)
             if Settings.Aimbot then
                 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetRoot.Position + Vector3.new(0, 1.5, 0))
             end
 
+            -- Auto Bounty Hunt (Uçarak / Süzülerek Avlama)
             if Settings.AutoHunt then
                 myChar.Humanoid.PlatformStand = true
                 
+                -- Silah Kuşanma
                 local tool = myChar:FindFirstChildOfClass("Tool")
                 if not tool then
                     local bp = LocalPlayer:FindFirstChild("Backpack")
@@ -1172,7 +1078,8 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
                 local distance = (targetPos - root.Position).Magnitude
 
                 if distance > 5 then
-                    root.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
+                    local targetCFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -Settings.FlySpeed)
+                    root.CFrame = targetCFrame
                 else
                     root.CFrame = CFrame.lookAt(root.Position, targetPos)
                     VirtualUser:CaptureController()
@@ -1189,7 +1096,7 @@ table.insert(Connections, RunService.Heartbeat:Connect(function()
     end)
 end))
 
--- GUI CLEANUP HANDLER
+-- DESTROY FUNCTION
 YesBtn.MouseButton1Click:Connect(function()
     Settings.AutoFarm = false
     Settings.AutoHunt = false
@@ -1214,8 +1121,9 @@ YesBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
+-- NOTIFICATION
 game.StarterGui:SetCore("SendNotification", {
-    Title = Languages[Settings.Language].notif_title,
-    Text = Languages[Settings.Language].notif_desc,
+    Title = "💎 MORGAN HUB V5.0",
+    Text = "Tüm Modüller Başarıyla Optimize Edildi!",
     Duration = 4
 })
