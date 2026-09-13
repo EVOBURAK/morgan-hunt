@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V8.0 (UPDATE 30 MAGNET TOKEN & FULL AUTO RAID EDITION) 🔮
+-- 🔮 MORGAN HUB V10.0 (20x MEGA FUN & TWEEN FRUITS & UPDATE 30 EDITION) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -11,17 +11,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
 -- Orion Library
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/jensonhirst/Orion/main/source"))()
 local Window = OrionLib:MakeWindow({
-    Name = "💎 Morgan Hub V8.0 | Blox Fruits Update 30",
+    Name = "💎 Morgan Hub V10.0 | Blox Fruits Ultimate",
     HidePremium = false,
     SaveConfig = true,
-    ConfigFolder = "MorganHubV8"
+    ConfigFolder = "MorganHubV10"
 })
 
 -- Blox Fruits Uzak İletişimler
@@ -39,14 +42,44 @@ local Settings = {
     BringMobs = true,
     AutoBuso = true,
     WaitAtSpawn = true,
-    -- Update 30 Magnet Event
+    -- Meyve Avcısı
+    TweenFruits = false,
+    FruitTweenSpeed = 240,
+    -- Update 30 Magnet
     MagnetTokenFarm = false,
     -- Raids
     AutoRaid = false,
     SelectedRaid = "Flame",
     AutoNextIsland = true,
-    -- Pirate Raid
     AutoPirateRaid = false,
+    -- 20x FUN & TROLL AYARLARI
+    RainbowCharacter = false,
+    GhostMode = false,
+    FullBright = false,
+    MoonGravity = false,
+    AirSwim = false,
+    RagdollSelf = false,
+    CameraFOV = 70,
+    NoCameraShake = false,
+    SuperJump = false,
+    SoruSpam = false,
+    GiantHitbox = false,
+    PotatoFPS = false,
+    HeadSpasm = false,
+    ManualNoclip = false,
+    OrbitPlayer = false,
+    OrbitSpeed = 15,
+    RainbowHaki = false,
+    InfiniteDash = false,
+    Moonwalk = false,
+    TrailEffects = false,
+    -- Klasikler
+    InfiniteJump = false,
+    WaterWalk = false,
+    SpinBot = false,
+    SpinSpeed = 25,
+    ClickTP = false,
+    WalkSpeedBoost = 16,
     -- Misc
     AutoStore = true,
     AutoStats = false,
@@ -54,8 +87,7 @@ local Settings = {
     AutoChest = false,
     PlayerESP = false,
     FruitESP = false,
-    WebhookURL = "",
-    WebhookAutoSend = false
+    WebhookURL = ""
 }
 
 -- Anti-AFK
@@ -234,7 +266,7 @@ local function HasQuest()
 end
 
 -- =============================================================
--- 🚀 PÜRÜZSÜZ HAREKET & NOCLIP SİSTEMİ
+-- 🚀 PÜRÜZSÜZ DUVARLARDAN GEÇEN TWEEN HAREKET SİSTEMİ
 -- =============================================================
 local BodyVelocity = nil
 
@@ -255,7 +287,7 @@ local function TweenToPosition(targetPos, speed)
     local hum = char and char:FindFirstChild("Humanoid")
     if not root or not hum or hum.Health <= 0 then return end
 
-    speed = speed or 320
+    speed = speed or 240
     EnableNoclip()
     hum.PlatformStand = true
 
@@ -268,7 +300,7 @@ local function TweenToPosition(targetPos, speed)
     end
 
     local distance = (targetPos - root.Position).Magnitude
-    if distance < 12 then
+    if distance < 10 then
         root.CFrame = CFrame.new(targetPos)
         BodyVelocity.Velocity = Vector3.zero
         return
@@ -290,6 +322,59 @@ local function StopMovement()
         char.Humanoid.PlatformStand = false
     end
 end
+
+-- =============================================================
+-- 🍓 MEYVE AVCISI (TWEEN FRUITS & AUTO STORE)
+-- =============================================================
+local function GetSpawnedFruit()
+    for _, item in ipairs(Workspace:GetChildren()) do
+        if (item:IsA("Tool") or item:IsA("Model")) and (item.Name:find("Fruit") or item.Name:find("Meyve")) then
+            local handle = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
+            if handle then
+                return item, handle
+            end
+        end
+    end
+    return nil, nil
+end
+
+local function StoreFruit(tool)
+    if not tool or not tool:IsA("Tool") then return end
+    pcall(function()
+        if CommF_ then
+            CommF_:InvokeServer("StoreFruit", tool.Name, tool)
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if Settings.TweenFruits then
+            pcall(function()
+                local fruit, handle = GetSpawnedFruit()
+                local char = LocalPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+
+                if fruit and handle and root then
+                    TweenToPosition(handle.Position, Settings.FruitTweenSpeed)
+                    if (handle.Position - root.Position).Magnitude < 12 then
+                        firetouchinterest(root, handle, 0)
+                        firetouchinterest(root, handle, 1)
+                        task.wait(0.4)
+                        if Settings.AutoStore then
+                            StoreFruit(fruit)
+                        end
+                    end
+                else
+                    if not Settings.AutoFarm and not Settings.AutoRaid and not Settings.MagnetTokenFarm then
+                        StopMovement()
+                    end
+                end
+            end)
+        end
+    end
+end)
 
 -- =============================================================
 -- ⚡ FAST ATTACK & COMBAT PROTOKOLÜ
@@ -341,9 +426,6 @@ local function EquipBestWeapon()
     end
 end
 
--- =============================================================
--- 🧲 MOB MAGNET (YARATIKLARI YANINA ÇEKME)
--- =============================================================
 local function BringMobsTo(targetCFrame, mobName)
     if not Settings.BringMobs then return end
     local enemies = Workspace:FindFirstChild("Enemies")
@@ -362,23 +444,7 @@ local function BringMobsTo(targetCFrame, mobName)
 end
 
 -- =============================================================
--- 📍 SPAWN BEKLEME YERİNİ BULMA (SPAWN NOKTASINDA BEKLEME)
--- =============================================================
-local function GetMobSpawnCFrame(mobName)
-    local spawns = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("EnemySpawns")
-    if spawns and spawns:FindFirstChild(mobName) then
-        return spawns[mobName].CFrame
-    end
-    -- Yedek olarak Location veya harita içi arama
-    local locs = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
-    if locs and locs:FindFirstChild(mobName) then
-        return locs[mobName].CFrame
-    end
-    return nil
-end
-
--- =============================================================
--- 🌾 ANA AUTO FARM DÖNGÜSÜ
+-- 🌾 AUTO FARM ENGINE
 -- =============================================================
 local function GetQuestNPCModel(giverName)
     local npcsFolder = Workspace:FindFirstChild("NPCs")
@@ -405,10 +471,18 @@ local function FindQuestMob(mobName)
     return nil
 end
 
+local function GetMobSpawnCFrame(mobName)
+    local spawns = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("EnemySpawns")
+    if spawns and spawns:FindFirstChild(mobName) then
+        return spawns[mobName].CFrame
+    end
+    return nil
+end
+
 task.spawn(function()
     while true do
         task.wait()
-        if Settings.AutoFarm and not Settings.AutoRaid and not Settings.MagnetTokenFarm and not Settings.AutoPirateRaid then
+        if Settings.AutoFarm and not Settings.AutoRaid and not Settings.MagnetTokenFarm and not Settings.TweenFruits then
             pcall(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
@@ -418,7 +492,6 @@ task.spawn(function()
                 local quest = GetBestQuest()
                 local giverName = QuestGivers[quest.QuestName] or ""
 
-                -- Görev al
                 if not HasQuest() then
                     local npcModel = GetQuestNPCModel(giverName)
                     local npcRoot = npcModel and (npcModel:FindFirstChild("HumanoidRootPart") or npcModel:FindFirstChildWhichIsA("BasePart"))
@@ -436,7 +509,6 @@ task.spawn(function()
                         task.wait(0.5)
                     end
                 else
-                    -- Görev varsa yaratığı bul
                     local mob = FindQuestMob(quest.MobName)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                         local mobPos = mob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
@@ -446,7 +518,6 @@ task.spawn(function()
                         BringMobsTo(mob.HumanoidRootPart.CFrame, quest.MobName)
                         PerformFastAttack(mob.HumanoidRootPart)
                     else
-                        -- Yaratık yoksa doğma noktasına uç ve bekle!
                         if Settings.WaitAtSpawn then
                             local spawnCF = GetMobSpawnCFrame(quest.MobName)
                             if spawnCF then
@@ -456,198 +527,386 @@ task.spawn(function()
                     end
                 end
             end)
-        elseif not Settings.AutoRaid and not Settings.MagnetTokenFarm and not Settings.AutoPirateRaid then
+        elseif not Settings.AutoRaid and not Settings.MagnetTokenFarm and not Settings.TweenFruits then
             StopMovement()
         end
     end
 end)
 
 -- =============================================================
--- ⚡ UPDATE 30: MAGNET TOKEN FARM ENGINE
+-- 🎉 20x MEGA FUN & TROLL MOTORU
 -- =============================================================
--- Update 30'da saat başı XX:00'da gelen 10 dk'lık Magnet Night etkinliğinde
--- [Magnetized] düşmanları bulur, yanlarına uçar, magnet token toplar.
-local function FindMagnetizedEnemy()
-    local enemies = Workspace:FindFirstChild("Enemies")
-    if enemies then
-        for _, enemy in ipairs(enemies:GetChildren()) do
-            local isMag = enemy.Name:find("Magnetized") or enemy.Name:find("Overcharged") or enemy:GetAttribute("Magnetized") or enemy:GetAttribute("IsMagnetized")
-            if isMag and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                return enemy
+
+-- 1. Rainbow Karakter (RGB Avatar)
+task.spawn(function()
+    while true do
+        task.wait(0.08)
+        if Settings.RainbowCharacter then
+            local char = LocalPlayer.Character
+            if char then
+                local color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+                for _, part in ipairs(char:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.Color = color
+                    end
+                end
             end
         end
     end
-    return nil
+end)
+
+-- 2. Hayalet / Görünmezlik (Ghost Mode)
+local function SetGhostMode(enabled)
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = enabled and 0.75 or 0
+            end
+        end
+    end
 end
 
+-- 3. FullBright (Gece Görüşü)
+local DefaultBrightness = Lighting.Brightness
+local DefaultClock = Lighting.ClockTime
+local DefaultShadows = Lighting.GlobalShadows
+
 task.spawn(function()
     while true do
-        task.wait()
-        if Settings.MagnetTokenFarm then
-            pcall(function()
-                local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        task.wait(1)
+        if Settings.FullBright then
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 1e5
+            Lighting.GlobalShadows = false
+        end
+    end
+end)
 
-                local magMob = FindMagnetizedEnemy()
-                if magMob and magMob:FindFirstChild("HumanoidRootPart") then
-                    local targetPos = magMob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-                    TweenToPosition(targetPos, 350)
-                    CheckBuso()
-                    EquipBestWeapon()
-                    PerformFastAttack(magMob.HumanoidRootPart)
-                else
-                    -- Magnetized düşman kalmadıysa adaları tarayacak şekilde merkezde bekle
-                    local center = Vector3.new(-12463, 375, -7552)
-                    TweenToPosition(center + Vector3.new(0, 60, 0), 300)
-                end
+-- 4. Ay Yerçekimi (Moon Gravity)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Settings.MoonGravity then
+            Workspace.Gravity = 45
+        else
+            Workspace.Gravity = 196.2
+        end
+    end
+end)
+
+-- 5. Havada Yüzme (Air Swimming)
+RunService.Stepped:Connect(function()
+    if Settings.AirSwim then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Swimming)
+        end
+    end
+end)
+
+-- 6. Ölü Taklidi (Ragdoll / Play Dead)
+RunService.Heartbeat:Connect(function()
+    if Settings.RagdollSelf then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.PlatformStand = true
+        end
+    end
+end)
+
+-- 7. Kamera FOV
+RunService.RenderStepped:Connect(function()
+    if Settings.CameraFOV ~= 70 then
+        Camera.FieldOfView = Settings.CameraFOV
+    end
+end)
+
+-- 8. Ekran Sallantısı Kapatıcı (No Camera Shake)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if Settings.NoCameraShake then
+            pcall(function()
+                local shaker = require(ReplicatedStorage.Util.CameraShaker)
+                if shaker then shaker:Stop() end
             end)
         end
     end
 end)
 
--- =============================================================
--- ⚔️ AUTO RAID ENGINE (DUNGEON / CHIP / NEXT ISLAND)
--- =============================================================
-local RaidIslandNames = {"Island 1", "Island 2", "Island 3", "Island 4", "Island 5"}
+-- 9. Süper Zıplama (Super High Jump)
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.JumpPower = Settings.SuperJump and 220 or 50
+    end
+end)
 
-local function GetCurrentRaidIsland()
-    local locs = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
-    if not locs then return nil end
-    for i = 5, 1, -1 do
-        local isl = locs:FindFirstChild("Island " .. i)
-        if isl and (isl.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 3500 then
-            return isl
+-- 10. Soru / Flash Step Spam
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if Settings.SoruSpam and CommF_ then
+            pcall(function()
+                CommF_:InvokeServer("Soru")
+            end)
         end
     end
-    return nil
+end)
+
+-- 11. Dev Mob Hitbox (Giant Hitbox)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if Settings.GiantHitbox then
+            local enemies = Workspace:FindFirstChild("Enemies")
+            if enemies then
+                for _, enemy in ipairs(enemies:GetChildren()) do
+                    local root = enemy:FindFirstChild("HumanoidRootPart")
+                    if root and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        root.Size = Vector3.new(25, 25, 25)
+                        root.Transparency = 0.6
+                        root.CanCollide = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 12. Patates Grafik (Ultra FPS Boost)
+local function ActivatePotatoPC()
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.SmoothPlastic
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy()
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false
+        end
+    end
+    Lighting.GlobalShadows = false
+    OrionLib:MakeNotification({
+        Name = "FPS Boost",
+        Content = "Patates grafik modu devrede!",
+        Time = 3
+    })
 end
 
+-- 13. Klon Heykeli Bırakma (Decoy)
+local function SpawnCloneDecoy()
+    local char = LocalPlayer.Character
+    if char then
+        char.Archivable = true
+        local clone = char:Clone()
+        clone.Name = "MorganDecoy"
+        clone.Parent = Workspace
+        for _, part in ipairs(clone:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Anchored = true
+                part.Color = Color3.fromRGB(160, 60, 255)
+            end
+        end
+        char.Archivable = false
+        OrionLib:MakeNotification({
+            Name = "Klon Bırakıldı",
+            Content = "Taş gibi klon heykeliniz bırakıldı!",
+            Time = 3
+        })
+    end
+end
+
+-- 14. Kafa Spazmı (Head Shake / Glitch)
+RunService.RenderStepped:Connect(function()
+    if Settings.HeadSpasm then
+        local char = LocalPlayer.Character
+        local head = char and char:FindFirstChild("Head")
+        local neck = head and head:FindFirstChild("Neck")
+        if neck then
+            neck.C0 = neck.C0 * CFrame.Angles(math.random(-180, 180), math.random(-180, 180), math.random(-180, 180))
+        end
+    end
+end)
+
+-- 15. Manuel No-Clip
+RunService.Stepped:Connect(function()
+    if Settings.ManualNoclip then
+        EnableNoclip()
+    end
+end)
+
+-- 16. Oyuncu Yörüngesi (Orbit Player)
+local function GetClosestPlayerOrbit()
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return nil end
+    local closest, dist = nil, math.huge
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+            if d < dist then
+                dist = d
+                closest = p
+            end
+        end
+    end
+    return closest
+end
+
+local orbitAngle = 0
+RunService.Heartbeat:Connect(function()
+    if Settings.OrbitPlayer then
+        local target = GetClosestPlayerOrbit()
+        local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and myRoot then
+            orbitAngle += Settings.OrbitSpeed * 0.05
+            local targetPos = target.Character.HumanoidRootPart.Position
+            local x = targetPos.X + math.cos(orbitAngle) * 15
+            local z = targetPos.Z + math.sin(orbitAngle) * 15
+            myRoot.CFrame = CFrame.lookAt(Vector3.new(x, targetPos.Y + 4, z), targetPos)
+        end
+    end
+end)
+
+-- 17. Gökkuşağı Haki Işıltısı (Rainbow Haki Aura)
+local HakiHighlight = nil
 task.spawn(function()
     while true do
-        task.wait()
-        if Settings.AutoRaid then
+        task.wait(0.08)
+        if Settings.RainbowHaki then
+            local char = LocalPlayer.Character
+            if char then
+                if not HakiHighlight or HakiHighlight.Parent ~= char then
+                    if HakiHighlight then HakiHighlight:Destroy() end
+                    HakiHighlight = Instance.new("Highlight")
+                    HakiHighlight.FillTransparency = 0.5
+                    HakiHighlight.OutlineTransparency = 0
+                    HakiHighlight.Parent = char
+                end
+                local color = Color3.fromHSV(tick() % 4 / 4, 1, 1)
+                HakiHighlight.FillColor = color
+                HakiHighlight.OutlineColor = color
+            end
+        else
+            if HakiHighlight then
+                HakiHighlight:Destroy()
+                HakiHighlight = nil
+            end
+        end
+    end
+end)
+
+-- 18. Sınırsız Dash (Zero Dash CD)
+task.spawn(function()
+    while true do
+        task.wait(0.15)
+        if Settings.InfiniteDash then
             pcall(function()
                 local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-                -- Raid içinde miyiz kontrol et
-                local raidIsland = GetCurrentRaidIsland()
-                if raidIsland then
-                    -- Raid adasındaki yaratıkları bul ve kes
-                    local enemies = Workspace:FindFirstChild("Enemies")
-                    local foundEnemy = false
-                    if enemies then
-                        for _, enemy in ipairs(enemies:GetChildren()) do
-                            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                                foundEnemy = true
-                                local farmPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-                                TweenToPosition(farmPos, 340)
-                                CheckBuso()
-                                EquipBestWeapon()
-                                PerformFastAttack(enemy.HumanoidRootPart)
-                                break
-                            end
-                        end
-                    end
-                    -- Adadaki yaratıklar bittiyse sonraki adaya uç
-                    if not foundEnemy and Settings.AutoNextIsland then
-                        TweenToPosition(raidIsland.Position + Vector3.new(0, 70, 0), 320)
-                    end
-                else
-                    -- Raidde değilsek çip alıp raidi başlat
-                    if CommF_ then
-                        CommF_:InvokeServer("RaidsNpc", "Select", Settings.SelectedRaid)
-                        task.wait(0.5)
-                    end
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid:SetAttribute("DashCD", 0)
                 end
             end)
         end
     end
 end)
 
--- =============================================================
--- 🏴‍☠️ PIRATE RAID AUTO (CASTLE ON THE SEA)
--- =============================================================
-local CastlePosition = Vector3.new(-5556, 314, -2988)
+-- 19. Moonwalk (Ters Yürüme)
+RunService.RenderStepped:Connect(function()
+    if Settings.Moonwalk then
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if root and hum and hum.MoveDirection.Magnitude > 0 then
+            root.CFrame = CFrame.lookAt(root.Position, root.Position - hum.MoveDirection)
+        end
+    end
+end)
 
-task.spawn(function()
-    while true do
-        task.wait()
-        if Settings.AutoPirateRaid then
-            pcall(function()
-                local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-                local enemies = Workspace:FindFirstChild("Enemies")
-                local pirateMob = nil
-
-                if enemies then
-                    for _, enemy in ipairs(enemies:GetChildren()) do
-                        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                            local dist = (enemy.HumanoidRootPart.Position - CastlePosition).Magnitude
-                            if dist <= 750 then
-                                pirateMob = enemy
-                                break
-                            end
-                        end
-                    end
-                end
-
-                if pirateMob then
-                    local farmPos = pirateMob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-                    TweenToPosition(farmPos, 350)
-                    CheckBuso()
-                    EquipBestWeapon()
-                    PerformFastAttack(pirateMob.HumanoidRootPart)
-                else
-                    -- Kale etrafında hazır bekle
-                    local distToCastle = (char.HumanoidRootPart.Position - CastlePosition).Magnitude
-                    if distToCastle > 100 then
-                        TweenToPosition(CastlePosition + Vector3.new(0, 50, 0), 320)
-                    end
-                end
+-- 20. Adım İzi Işıltısı (Trail / Footstep FX)
+local stepPart = nil
+RunService.RenderStepped:Connect(function()
+    if Settings.TrailEffects then
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root then
+            local p = Instance.new("Part")
+            p.Size = Vector3.new(1.2, 0.2, 1.2)
+            p.Position = root.Position - Vector3.new(0, 2.8, 0)
+            p.Anchored = true
+            p.CanCollide = false
+            p.Material = Enum.Material.Neon
+            p.Color = Color3.fromHSV(tick() % 3 / 3, 1, 1)
+            p.Parent = Workspace
+            task.delay(0.8, function()
+                p:Destroy()
             end)
         end
     end
 end)
 
--- =============================================================
--- 🏝️ ADAYA IŞINLANMA LİSTESİ (ISLAND TELEPORT)
--- =============================================================
-local IslandLocations = {
-    -- Sea 1
-    ["Starter Pirate Island"] = Vector3.new(1060, 16, 1428),
-    ["Starter Marine Island"] = Vector3.new(-2570, 7, 2045),
-    ["Jungle"] = Vector3.new(-1612, 37, 149),
-    ["Pirate Village"] = Vector3.new(-1181, 4, 3847),
-    ["Desert"] = Vector3.new(894, 7, 4390),
-    ["Frozen Village"] = Vector3.new(1198, 27, -1211),
-    ["Marine Fortress"] = Vector3.new(-5035, 29, 4326),
-    ["Skylands"] = Vector3.new(-4839, 717, -2619),
-    ["Prison"] = Vector3.new(4875, 5, 734),
-    ["Colosseum"] = Vector3.new(-1427, 7, -2792),
-    ["Magma Village"] = Vector3.new(-5242, 8, 8466),
-    ["Underwater City"] = Vector3.new(61163, 18, 1569),
-    ["Fountain City"] = Vector3.new(5127, 4, 4038),
-    -- Sea 2
-    ["Kingdom of Rose"] = Vector3.new(-427, 73, 1835),
-    ["Green Zone"] = Vector3.new(-2441, 73, -3219),
-    ["Graveyard"] = Vector3.new(-5389, 8, -474),
-    ["Snow Mountain"] = Vector3.new(609, 401, -5372),
-    ["Cold & Hot"] = Vector3.new(-6061, 16, -4904),
-    ["Cursed Ship"] = Vector3.new(923, 126, 32852),
-    ["Ice Castle"] = Vector3.new(5668, 28, -6484),
-    ["Forgotten Island"] = Vector3.new(-3056, 240, -10145),
-    -- Sea 3
-    ["Port Town"] = Vector3.new(-290, 7, 5343),
-    ["Hydra Island"] = Vector3.new(5228, 1004, 340),
-    ["Great Tree"] = Vector3.new(2485, 74, -6788),
-    ["Floating Turtle"] = Vector3.new(-13233, 332, -7626),
-    ["Castle on the Sea"] = Vector3.new(-5085, 316, -3156),
-    ["Haunted Castle"] = Vector3.new(-9515, 142, 5535),
-    ["Sea of Treats"] = Vector3.new(-2087, 38, -10194),
-    ["Tiki Outpost"] = Vector3.new(-16234, 9, 442)
-}
+-- Klasik Fun: Sonsuz Zıplama & Su Üstü & SpinBot & TP
+UserInputService.JumpRequest:Connect(function()
+    if Settings.InfiniteJump then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+local WaterPlatform = Instance.new("Part")
+WaterPlatform.Name = "JesusPlatform"
+WaterPlatform.Size = Vector3.new(100, 1, 100)
+WaterPlatform.Transparency = 1
+WaterPlatform.Anchored = true
+WaterPlatform.CanCollide = true
+WaterPlatform.Parent = Workspace
+
+RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if Settings.WaterWalk and root then
+        WaterPlatform.Position = Vector3.new(root.Position.X, 0.5, root.Position.Z)
+        WaterPlatform.CanCollide = true
+    else
+        WaterPlatform.Position = Vector3.new(0, -500, 0)
+        WaterPlatform.CanCollide = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if Settings.SpinBot then
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Settings.SpinSpeed), 0)
+        end
+    end
+end)
+
+Mouse.Button1Down:Connect(function()
+    if Settings.ClickTP and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        if Mouse.Target then
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum and Settings.WalkSpeedBoost > 16 then
+        hum.WalkSpeed = Settings.WalkSpeedBoost
+    end
+end)
 
 -- =============================================================
 -- 🖥️ ORION ARAYÜZ SEKMELERİ
@@ -661,43 +920,33 @@ local FarmTab = Window:MakeTab({
 })
 
 FarmTab:AddToggle({
-    Name = "Auto Farm Level (Otomatik Seviye Kasma)",
+    Name = "Auto Farm Level (Otomatik Seviye)",
     Default = false,
-    Callback = function(v)
-        Settings.AutoFarm = v
-    end
+    Callback = function(v) Settings.AutoFarm = v end
 })
 
 FarmTab:AddToggle({
-    Name = "Spawn Bekleme Noktasına Git (Yaratık Yoksa)",
+    Name = "Spawn Bekleme Noktasına Git",
     Default = true,
-    Callback = function(v)
-        Settings.WaitAtSpawn = v
-    end
+    Callback = function(v) Settings.WaitAtSpawn = v end
 })
 
 FarmTab:AddToggle({
-    Name = "Mob Magnet (Yaratıkları Üst Üste Topla)",
+    Name = "Mob Magnet (Yaratıkları Yanına Çek)",
     Default = true,
-    Callback = function(v)
-        Settings.BringMobs = v
-    end
+    Callback = function(v) Settings.BringMobs = v end
 })
 
 FarmTab:AddToggle({
-    Name = "Ultra Fast Attack (Hızlı Vuruş)",
+    Name = "Ultra Fast Attack",
     Default = true,
-    Callback = function(v)
-        Settings.FastAttack = v
-    end
+    Callback = function(v) Settings.FastAttack = v end
 })
 
 FarmTab:AddToggle({
     Name = "Otomatik Buso Haki",
     Default = true,
-    Callback = function(v)
-        Settings.AutoBuso = v
-    end
+    Callback = function(v) Settings.AutoBuso = v end
 })
 
 FarmTab:AddSlider({
@@ -707,194 +956,258 @@ FarmTab:AddSlider({
     Default = 9,
     Increment = 1,
     ValueName = "Studs",
+    Callback = function(v) Settings.FarmDistance = v end
+})
+
+-- TAB 2: Meyve Avcısı
+local FruitTab = Window:MakeTab({
+    Name = "🍓 Meyve Avcısı & Tween",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+FruitTab:AddToggle({
+    Name = "Auto Tween Fruits (Meyvelere Duvarlardan Uç)",
+    Default = false,
     Callback = function(v)
-        Settings.FarmDistance = v
+        Settings.TweenFruits = v
+        if v then Settings.AutoFarm = false end
     end
 })
 
--- TAB 2: Update 30 - Magnet Event
+FruitTab:AddSlider({
+    Name = "Meyveye Uçuş Hızı (Orta Hız)",
+    Min = 150,
+    Max = 350,
+    Default = 240,
+    Increment = 10,
+    ValueName = "Speed",
+    Callback = function(v) Settings.FruitTweenSpeed = v end
+})
+
+FruitTab:AddToggle({
+    Name = "Bulunan Meyveyi Otomatik Sakla",
+    Default = true,
+    Callback = function(v) Settings.AutoStore = v end
+})
+
+-- TAB 3: 20x MEGA FUN & TROLL SEKMESİ
+local FunTab = Window:MakeTab({
+    Name = "🎉 20x Fun & Troll",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+FunTab:AddSection({ Name = "🕺 Karakter Görseli & Havalı Modlar" })
+
+FunTab:AddToggle({
+    Name = "1. Rainbow Karakter (RGB Avatar)",
+    Default = false,
+    Callback = function(v) Settings.RainbowCharacter = v end
+})
+
+FunTab:AddToggle({
+    Name = "2. Hayalet Görünmezlik (Ghost Mode)",
+    Default = false,
+    Callback = function(v)
+        Settings.GhostMode = v
+        SetGhostMode(v)
+    end
+})
+
+FunTab:AddToggle({
+    Name = "3. Gökkuşağı Haki Işıltısı (Rainbow Haki Glow)",
+    Default = false,
+    Callback = function(v) Settings.RainbowHaki = v end
+})
+
+FunTab:AddToggle({
+    Name = "4. Adım İzi Neon Baloncukları (Footstep FX)",
+    Default = false,
+    Callback = function(v) Settings.TrailEffects = v end
+})
+
+FunTab:AddButton({
+    Name = "5. Taş Klon Bırak (Decoy Statue)",
+    Callback = function() SpawnCloneDecoy() end
+})
+
+FunTab:AddSection({ Name = "🌍 Dünya & Ekran Hileleri" })
+
+FunTab:AddToggle({
+    Name = "6. FullBright (Gece Görüşü / Sıfır Sis)",
+    Default = false,
+    Callback = function(v)
+        Settings.FullBright = v
+        if not v then
+            Lighting.Brightness = DefaultBrightness
+            Lighting.ClockTime = DefaultClock
+            Lighting.GlobalShadows = DefaultShadows
+        end
+    end
+})
+
+FunTab:AddSlider({
+    Name = "7. Kamera Görüş Açısı (FOV Changer)",
+    Min = 70,
+    Max = 120,
+    Default = 70,
+    Increment = 2,
+    ValueName = "FOV",
+    Callback = function(v) Settings.CameraFOV = v end
+})
+
+FunTab:AddToggle({
+    Name = "8. Ekran Sallantısını Kapat (No Shake)",
+    Default = false,
+    Callback = function(v) Settings.NoCameraShake = v end
+})
+
+FunTab:AddButton({
+    Name = "9. Patates Grafik (Ultra FPS Boost)",
+    Callback = function() ActivatePotatoPC() end
+})
+
+FunTab:AddSection({ Name = "🤸 Fizik & Eğlenceli Hareketler" })
+
+FunTab:AddToggle({
+    Name = "10. Ay Yerçekimi (Moon Gravity)",
+    Default = false,
+    Callback = function(v) Settings.MoonGravity = v end
+})
+
+FunTab:AddToggle({
+    Name = "11. Havada Yüzme Modu (Air Swim)",
+    Default = false,
+    Callback = function(v) Settings.AirSwim = v end
+})
+
+FunTab:AddToggle({
+    Name = "12. Ölü Taklidi (Fake Ragdoll)",
+    Default = false,
+    Callback = function(v)
+        Settings.RagdollSelf = v
+        if not v and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character.Humanoid.PlatformStand = false
+        end
+    end
+})
+
+FunTab:AddToggle({
+    Name = "13. Süper Yüksek Zıplama (Super Jump)",
+    Default = false,
+    Callback = function(v) Settings.SuperJump = v end
+})
+
+FunTab:AddToggle({
+    Name = "14. Sonsuz Geppo / Zıplama (Infinite Jump)",
+    Default = false,
+    Callback = function(v) Settings.InfiniteJump = v end
+})
+
+FunTab:AddToggle({
+    Name = "15. Su Üstünde Yürüme (Jesus Mode)",
+    Default = false,
+    Callback = function(v) Settings.WaterWalk = v end
+})
+
+FunTab:AddToggle({
+    Name = "16. Moonwalk (Ters Yürüme)",
+    Default = false,
+    Callback = function(v) Settings.Moonwalk = v end
+})
+
+FunTab:AddSection({ Name = "🎯 Savaş & Trol Hileleri" })
+
+FunTab:AddToggle({
+    Name = "17. Dev Mob Hitbox (Kilometrelerce Vur)",
+    Default = false,
+    Callback = function(v) Settings.GiantHitbox = v end
+})
+
+FunTab:AddToggle({
+    Name = "18. Soru / Flash Step Spam",
+    Default = false,
+    Callback = function(v) Settings.SoruSpam = v end
+})
+
+FunTab:AddToggle({
+    Name = "19. Sınırsız Dash (Zero Cooldown)",
+    Default = false,
+    Callback = function(v) Settings.InfiniteDash = v end
+})
+
+FunTab:AddToggle({
+    Name = "20. Oyuncunun Etrafında Dön (Orbit Player)",
+    Default = false,
+    Callback = function(v) Settings.OrbitPlayer = v end
+})
+
+FunTab:AddSlider({
+    Name = "Orbit Dönüş Hızı",
+    Min = 5,
+    Max = 50,
+    Default = 15,
+    Increment = 5,
+    ValueName = "Speed",
+    Callback = function(v) Settings.OrbitSpeed = v end
+})
+
+FunTab:AddToggle({
+    Name = "SpinBot (Beyblade Modu)",
+    Default = false,
+    Callback = function(v) Settings.SpinBot = v end
+})
+
+FunTab:AddToggle({
+    Name = "Kafa Spazmı Glitch (Head Spasm)",
+    Default = false,
+    Callback = function(v) Settings.HeadSpasm = v end
+})
+
+FunTab:AddToggle({
+    Name = "Duvarlardan Geçme (Manuel No-Clip)",
+    Default = false,
+    Callback = function(v) Settings.ManualNoclip = v end
+})
+
+FunTab:AddToggle({
+    Name = "Ctrl + Sol Tık Işınlanma (Click TP)",
+    Default = false,
+    Callback = function(v) Settings.ClickTP = v end
+})
+
+-- TAB 4: Update 30 - Magnet Event
 local MagnetTab = Window:MakeTab({
     Name = "⚡ Update 30 Magnet",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
-MagnetTab:AddSection({
-    Name = "Magnet Event & Token Kasma"
-})
-
 MagnetTab:AddToggle({
     Name = "Auto Magnet Token Farm ([Magnetized] Yaratıklar)",
     Default = false,
-    Callback = function(v)
-        Settings.MagnetTokenFarm = v
-        if v then
-            Settings.AutoFarm = false
-            Settings.AutoRaid = false
-        end
-    end
+    Callback = function(v) Settings.MagnetTokenFarm = v end
 })
 
-MagnetTab:AddButton({
-    Name = "Middletown Zioles'e Git (Magnet Gacha Aç)",
-    Callback = function()
-        TweenToPosition(Vector3.new(-655, 15, 1582), 350)
-    end
-})
-
--- TAB 3: Auto Raid & Pirate Raid
+-- TAB 5: Auto Raid
 local RaidTab = Window:MakeTab({
-    Name = "⚔️ Raid & Pirate Raid",
+    Name = "⚔️ Auto Raid",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
-})
-
-RaidTab:AddSection({
-    Name = "Dungeon / Raid Sistemi"
 })
 
 RaidTab:AddDropdown({
     Name = "Yapılacak Raid Çipi",
     Default = "Flame",
     Options = {"Flame", "Ice", "Quake", "Light", "Dark", "Spider", "Rumble", "Magma", "Buddha", "Sand"},
-    Callback = function(v)
-        Settings.SelectedRaid = v
-    end
+    Callback = function(v) Settings.SelectedRaid = v end
 })
 
 RaidTab:AddToggle({
-    Name = "Auto Raid (Çip Al + Başlat + Adaları Temizle)",
+    Name = "Auto Raid (Çip Al + Başlat + Bitir)",
     Default = false,
-    Callback = function(v)
-        Settings.AutoRaid = v
-        if v then
-            Settings.AutoFarm = false
-            Settings.MagnetTokenFarm = false
-        end
-    end
-})
-
-RaidTab:AddToggle({
-    Name = "Otomatik Sonraki Adaya Uç (Auto Next Island)",
-    Default = true,
-    Callback = function(v)
-        Settings.AutoNextIsland = v
-    end
-})
-
-RaidTab:AddSection({
-    Name = "Castle Pirate Raid (3. Deniz)"
-})
-
-RaidTab:AddToggle({
-    Name = "Auto Pirate Raid (Kale Korsan Baskını)",
-    Default = false,
-    Callback = function(v)
-        Settings.AutoPirateRaid = v
-        if v then
-            Settings.AutoFarm = false
-            Settings.AutoRaid = false
-        end
-    end
-})
-
--- TAB 4: Ada Işınlanma & Portallar
-local TravelTab = Window:MakeTab({
-    Name = "🏝️ Adalar & Portallar",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local IslandNames = {}
-for name, _ in pairs(IslandLocations) do
-    table.insert(IslandNames, name)
-end
-table.sort(IslandNames)
-
-local SelectedIsland = IslandNames[1]
-
-TravelTab:AddDropdown({
-    Name = "Işınlanılacak Adayı Seç",
-    Default = SelectedIsland,
-    Options = IslandNames,
-    Callback = function(v)
-        SelectedIsland = v
-    end
-})
-
-TravelTab:AddButton({
-    Name = "Seçilen Adaya Uç (Tween Noclip)",
-    Callback = function()
-        local pos = IslandLocations[SelectedIsland]
-        if pos then
-            TweenToPosition(pos + Vector3.new(0, 30, 0), 350)
-        end
-    end
-})
-
-TravelTab:AddSection({
-    Name = "Deniz Geçişleri"
-})
-
-TravelTab:AddButton({
-    Name = "First Sea (Sea 1)",
-    Callback = function()
-        CommF_:InvokeServer("TravelMain")
-    end
-})
-
-TravelTab:AddButton({
-    Name = "Second Sea (Sea 2)",
-    Callback = function()
-        CommF_:InvokeServer("TravelDressrosa")
-    end
-})
-
-TravelTab:AddButton({
-    Name = "Third Sea (Sea 3)",
-    Callback = function()
-        CommF_:InvokeServer("TravelZou")
-    end
-})
-
--- TAB 5: Otomasyon & Kodlar
-local MiscTab = Window:MakeTab({
-    Name = "⚙️ Otomasyon",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-MiscTab:AddToggle({
-    Name = "Meyveyi Sakla (Auto Store Fruit)",
-    Default = true,
-    Callback = function(v)
-        Settings.AutoStore = v
-    end
-})
-
-MiscTab:AddToggle({
-    Name = "Otomatik Stat Ver",
-    Default = false,
-    Callback = function(v)
-        Settings.AutoStats = v
-    end
-})
-
-MiscTab:AddDropdown({
-    Name = "Hedef Stat",
-    Default = "Melee",
-    Options = {"Melee", "Defense", "Sword", "Gun", "Demon Fruit"},
-    Callback = function(v)
-        Settings.StatTarget = v
-    end
-})
-
-MiscTab:AddToggle({
-    Name = "Otomatik Sandık Topla (Para Kasma)",
-    Default = false,
-    Callback = function(v)
-        Settings.AutoChest = v
-    end
+    Callback = function(v) Settings.AutoRaid = v end
 })
 
 -- TAB 6: Discord Webhook
@@ -908,9 +1221,7 @@ WebhookTab:AddTextbox({
     Name = "Discord Webhook URL",
     Default = "",
     TextDisappear = false,
-    Callback = function(v)
-        Settings.WebhookURL = v
-    end
+    Callback = function(v) Settings.WebhookURL = v end
 })
 
 WebhookTab:AddButton({
@@ -925,7 +1236,7 @@ WebhookTab:AddButton({
         local payload = {
             ["username"] = "Morgan Hub Rapor",
             ["embeds"] = {{
-                ["title"] = "💎 Morgan Hub - Durum Bilgisi",
+                ["title"] = "💎 Morgan Hub - Durum Raporu",
                 ["color"] = 9371903,
                 ["fields"] = {
                     {["name"] = "Oyuncu", ["value"] = LocalPlayer.DisplayName, ["inline"] = true},
