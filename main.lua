@@ -1,10 +1,9 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V6.0 (ORION LIB EDITION - AUTO FARM & CLEAN WEBHOOK) 🔮
+-- 🔮 MORGAN HUB V8.0 (UPDATE 30 MAGNET TOKEN & FULL AUTO RAID EDITION) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- Servisler
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -16,29 +15,45 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Orion Library Yükleme
+-- Orion Library
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/jensonhirst/Orion/main/source"))()
 local Window = OrionLib:MakeWindow({
-    Name = "💎 Morgan Hub V6.0 | Blox Fruits",
+    Name = "💎 Morgan Hub V8.0 | Blox Fruits Update 30",
     HidePremium = false,
     SaveConfig = true,
-    ConfigFolder = "MorganHubBloxFruits"
+    ConfigFolder = "MorganHubV8"
 })
 
--- Blox Fruits Uzak İletişim (Remotes)
+-- Blox Fruits Uzak İletişimler
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
 local CommF_ = Remotes and Remotes:WaitForChild("CommF_", 10)
-local CommE = Remotes and Remotes:WaitForChild("CommE", 10)
+local Net = ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Net")
+local RegisterAttack = Net and Net:FindFirstChild("RE/RegisterAttack")
+local RegisterHit = Net and Net:FindFirstChild("RE/RegisterHit")
 
--- Durum Değişkenleri & Ayarlar
+-- Ayarlar
 local Settings = {
     AutoFarm = false,
-    FarmDistance = 8,
+    FarmDistance = 9,
     FastAttack = true,
+    BringMobs = true,
+    AutoBuso = true,
+    WaitAtSpawn = true,
+    -- Update 30 Magnet Event
+    MagnetTokenFarm = false,
+    -- Raids
+    AutoRaid = false,
+    SelectedRaid = "Flame",
+    AutoNextIsland = true,
+    -- Pirate Raid
+    AutoPirateRaid = false,
+    -- Misc
     AutoStore = true,
+    AutoStats = false,
+    StatTarget = "Melee",
+    AutoChest = false,
     PlayerESP = false,
     FruitESP = false,
-    Aimbot = false,
     WebhookURL = "",
     WebhookAutoSend = false
 }
@@ -51,8 +66,31 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- =============================================================
--- 📜 QUEST TABLOSU (quest.txt Entegrasyonu)
+-- 📜 QUEST VE SPAWN VERİLERİ
 -- =============================================================
+local QuestGivers = {
+    ["BanditQuest1"] = "Bandit Quest Giver", ["JungleQuest"] = "Adventurer",
+    ["BuggyQuest1"] = "Pirate Adventurer", ["DesertQuest"] = "Desert Adventurer",
+    ["SnowQuest"] = "Villager", ["MarineQuest2"] = "Marine", ["SkyQuest"] = "Sky Adventurer",
+    ["PrisonerQuest"] = "Jail Keeper", ["ImpelQuest"] = "Head Jailer", ["ColosseumQuest"] = "Colosseum Quest Giver",
+    ["MagmaQuest"] = "The Mayor", ["FishmanQuest"] = "King Neptune", ["SkyExp1Quest"] = "Mole",
+    ["SkyExp2Quest"] = "Sky Quest Giver 2", ["FountainQuest"] = "Freezeburg Quest Giver",
+    ["Area1Quest"] = "Area 1 Quest Giver", ["Area2Quest"] = "Area 2 Quest Giver",
+    ["MarineQuest3"] = "Marine Quest Giver", ["ZombieQuest"] = "Graveyard Quest Giver",
+    ["SnowMountainQuest"] = "Snow Quest Giver", ["IceSideQuest"] = "Ice Quest Giver",
+    ["FireSideQuest"] = "Fire Quest Giver", ["ShipQuest1"] = "Rear Crew Quest Giver",
+    ["ShipQuest2"] = "Front Crew Quest Giver", ["FrostQuest"] = "Frost Quest Giver",
+    ["ForgottenQuest"] = "Forgotten Quest Giver", ["PiratePortQuest"] = "Pirate Port Quest Giver",
+    ["VenomCrewQuest"] = "Hydra Town Quest Giver", ["MarineTreeIsland"] = "Marine Tree Quest Giver",
+    ["DeepForestIsland"] = "Deep Forest Quest Giver", ["DeepForestIsland2"] = "Deep Forest Area 2 Quest Giver",
+    ["DeepForestIsland3"] = "Turtle Adventure Quest Giver", ["HauntedQuest1"] = "Haunted Castle Quest Giver 1",
+    ["HauntedQuest2"] = "Haunted Castle Quest Giver 2", ["NutsIslandQuest"] = "Peanut Quest Giver",
+    ["IceCreamIslandQuest"] = "Ice Cream Quest Giver", ["CakeQuest1"] = "Cake Quest Giver 1",
+    ["CakeQuest2"] = "Cake Quest Giver 2", ["ChocQuest1"] = "Chocolate Quest Giver 1",
+    ["ChocQuest2"] = "Chocolate Quest Giver 2", ["CandyQuest1"] = "Candy Cane Quest Giver",
+    ["TikiQuest1"] = "Tiki Quest Giver 1", ["TikiQuest2"] = "Tiki Quest Giver 2", ["TikiQuest3"] = "Tiki Quest Giver 3"
+}
+
 local QuestData = {
     {LevelReq = 0, QuestName = "BanditQuest1", QuestIndex = 1, MobName = "Bandit"},
     {LevelReq = 10, QuestName = "JungleQuest", QuestIndex = 1, MobName = "Monkey"},
@@ -166,6 +204,10 @@ local QuestData = {
     {LevelReq = 2575, QuestName = "TikiQuest3", QuestIndex = 2, MobName = "Skull Slayer"}
 }
 
+local function CleanMobName(name)
+    return name:gsub(" %b[]", ""):gsub(" %pLv%. %d+%p", ""):gsub(" %pBoss%p", ""):gsub("^%s*(.-)%s*$", "%1")
+end
+
 local function GetCurrentLevel()
     local data = LocalPlayer:FindFirstChild("Data")
     local level = data and data:FindFirstChild("Level")
@@ -186,83 +228,107 @@ local function GetBestQuest()
 end
 
 local function HasQuest()
-    local questGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
-    if questGui and questGui:FindFirstChild("Quest") and questGui.Quest.Visible then
-        return true
-    end
-    return false
+    local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+    local questFrame = mainGui and mainGui:FindFirstChild("Quest")
+    return questFrame and questFrame.Visible == true
 end
 
 -- =============================================================
--- 🔒 GÜVENLİ DİSCORD WEBHOOK SİSTEMİ (TEMİZ & VİRÜSSÜZ)
+-- 🚀 PÜRÜZSÜZ HAREKET & NOCLIP SİSTEMİ
 -- =============================================================
--- Sadece oyuncu statlarını (Seviye, Para, Meyve) gönderir; cookie/şifre çalma vb. kesinlikle barındırmaz.
-local function SendWebhookLog()
-    if Settings.WebhookURL == "" or not Settings.WebhookURL:find("discord.com/api/webhooks") then
-        OrionLib:MakeNotification({
-            Name = "Webhook Hatası",
-            Content = "Lütfen geçerli bir Discord Webhook URL girin!",
-            Time = 4
-        })
+local BodyVelocity = nil
+
+local function EnableNoclip()
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
+            end
+        end
+    end
+end
+
+local function TweenToPosition(targetPos, speed)
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+    if not root or not hum or hum.Health <= 0 then return end
+
+    speed = speed or 320
+    EnableNoclip()
+    hum.PlatformStand = true
+
+    if not BodyVelocity or BodyVelocity.Parent ~= root then
+        if BodyVelocity then BodyVelocity:Destroy() end
+        BodyVelocity = Instance.new("BodyVelocity")
+        BodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        BodyVelocity.Velocity = Vector3.zero
+        BodyVelocity.Parent = root
+    end
+
+    local distance = (targetPos - root.Position).Magnitude
+    if distance < 12 then
+        root.CFrame = CFrame.new(targetPos)
+        BodyVelocity.Velocity = Vector3.zero
         return
     end
 
-    local data = LocalPlayer:FindFirstChild("Data")
-    local level = data and data:FindFirstChild("Level") and data.Level.Value or "Bilinmiyor"
-    local beli = data and data:FindFirstChild("Beli") and data.Beli.Value or 0
-    local frags = data and data:FindFirstChild("Fragments") and data.Fragments.Value or 0
-    local devilFruit = data and data:FindFirstChild("DevilFruit") and data.DevilFruit.Value or "Yok"
+    local dir = (targetPos - root.Position).Unit
+    BodyVelocity.Velocity = dir * speed
+    root.CFrame = CFrame.lookAt(root.Position, root.Position + dir)
+end
 
-    local payload = {
-        ["username"] = "Morgan Hub Stat Notifier",
-        ["avatar_url"] = "https://cdn-icons-png.flaticon.com/512/3504/3504837.png",
-        ["embeds"] = {{
-            ["title"] = "💎 Morgan Hub - Durum Raporu",
-            ["color"] = 11141375,
-            ["fields"] = {
-                {["name"] = "👤 Oyuncu", ["value"] = LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")", ["inline"] = true},
-                {["name"] = "📈 Seviye", ["value"] = tostring(level), ["inline"] = true},
-                {["name"] = "🍇 Meyve", ["value"] = tostring(devilFruit), ["inline"] = true},
-                {["name"] = "💰 Beli", ["value"] = tostring(beli), ["inline"] = true},
-                {["name"] = "🔮 Fragman", ["value"] = tostring(frags), ["inline"] = true},
-                {["name"] = "🎮 Server Job ID", ["value"] = game.JobId ~= "" and game.JobId or "Tek Kişilik/Özel", ["inline"] = false}
-            },
-            ["footer"] = {["text"] = "Morgan Hub V6.0 • Güvenli Bilgilendirme Sistemi"}
-        }}
-    }
-
-    local httpRequest = (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request) or request
-    if httpRequest then
-        pcall(function()
-            httpRequest({
-                Url = Settings.WebhookURL,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode(payload)
-            })
-            OrionLib:MakeNotification({
-                Name = "Webhook Başarılı",
-                Content = "İstatistikler Discord sunucunuza iletildi!",
-                Time = 3
-            })
-        end)
-    else
-        OrionLib:MakeNotification({
-            Name = "Hata",
-            Content = "Executor'ınız http_request özelliğini desteklemiyor!",
-            Time = 4
-        })
+local function StopMovement()
+    if BodyVelocity then
+        BodyVelocity.Velocity = Vector3.zero
+        BodyVelocity:Destroy()
+        BodyVelocity = nil
+    end
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.PlatformStand = false
     end
 end
 
 -- =============================================================
--- ⚔️ FAST ATTACK VE HAREKET SİSTEMİ
+-- ⚡ FAST ATTACK & COMBAT PROTOKOLÜ
 -- =============================================================
-local function EquipWeapon()
+local function PerformFastAttack(targetPart)
+    if not Settings.FastAttack or not targetPart then return end
     local char = LocalPlayer.Character
     if not char then return end
-    local currentTool = char:FindFirstChildOfClass("Tool")
-    if not currentTool then
+
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not tool then return end
+
+    if RegisterAttack and RegisterHit then
+        pcall(function()
+            RegisterAttack:FireServer(0)
+            RegisterHit:FireServer(targetPart, {{targetPart.Parent, targetPart}})
+        end)
+    end
+
+    pcall(function()
+        tool:Activate()
+    end)
+end
+
+local function CheckBuso()
+    if not Settings.AutoBuso then return end
+    local char = LocalPlayer.Character
+    if char and not char:FindFirstChild("HasBuso") and CommF_ then
+        pcall(function()
+            CommF_:InvokeServer("Buso")
+        end)
+    end
+end
+
+local function EquipBestWeapon()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not tool then
         local bp = LocalPlayer:FindFirstChild("Backpack")
         if bp then
             for _, t in ipairs(bp:GetChildren()) do
@@ -275,17 +341,63 @@ local function EquipWeapon()
     end
 end
 
-local function AttackMob()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton1(Vector2.new(500, 500))
-end
-
--- Mob arama
-local function FindTargetMob(mobName)
+-- =============================================================
+-- 🧲 MOB MAGNET (YARATIKLARI YANINA ÇEKME)
+-- =============================================================
+local function BringMobsTo(targetCFrame, mobName)
+    if not Settings.BringMobs then return end
     local enemies = Workspace:FindFirstChild("Enemies")
     if enemies then
-        for _, enemy in pairs(enemies:GetChildren()) do
-            if enemy.Name == mobName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+        for _, enemy in ipairs(enemies:GetChildren()) do
+            if CleanMobName(enemy.Name) == mobName and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                local dist = (enemy.HumanoidRootPart.Position - targetCFrame.Position).Magnitude
+                if dist <= 300 then
+                    enemy.HumanoidRootPart.CFrame = targetCFrame
+                    enemy.HumanoidRootPart.CanCollide = false
+                    enemy.Humanoid.WalkSpeed = 0
+                end
+            end
+        end
+    end
+end
+
+-- =============================================================
+-- 📍 SPAWN BEKLEME YERİNİ BULMA (SPAWN NOKTASINDA BEKLEME)
+-- =============================================================
+local function GetMobSpawnCFrame(mobName)
+    local spawns = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("EnemySpawns")
+    if spawns and spawns:FindFirstChild(mobName) then
+        return spawns[mobName].CFrame
+    end
+    -- Yedek olarak Location veya harita içi arama
+    local locs = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
+    if locs and locs:FindFirstChild(mobName) then
+        return locs[mobName].CFrame
+    end
+    return nil
+end
+
+-- =============================================================
+-- 🌾 ANA AUTO FARM DÖNGÜSÜ
+-- =============================================================
+local function GetQuestNPCModel(giverName)
+    local npcsFolder = Workspace:FindFirstChild("NPCs")
+    if npcsFolder and npcsFolder:FindFirstChild(giverName) then
+        return npcsFolder:FindFirstChild(giverName)
+    end
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == giverName then
+            return obj
+        end
+    end
+    return nil
+end
+
+local function FindQuestMob(mobName)
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, enemy in ipairs(enemies:GetChildren()) do
+            if CleanMobName(enemy.Name) == mobName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
                 return enemy
             end
         end
@@ -293,27 +405,10 @@ local function FindTargetMob(mobName)
     return nil
 end
 
--- Uçma / Pozisyonlama (No-Clip eşliğinde)
-local function FarmFly(targetPos)
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
-        end
-        char.Humanoid.PlatformStand = true
-        char.HumanoidRootPart.CFrame = CFrame.lookAt(targetPos, targetPos - Vector3.new(0, 10, 0))
-    end
-end
-
--- =============================================================
--- 🌾 AUTO FARM ENGINE
--- =============================================================
 task.spawn(function()
     while true do
         task.wait()
-        if Settings.AutoFarm then
+        if Settings.AutoFarm and not Settings.AutoRaid and not Settings.MagnetTokenFarm and not Settings.AutoPirateRaid then
             pcall(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
@@ -321,153 +416,241 @@ task.spawn(function()
                 end
 
                 local quest = GetBestQuest()
+                local giverName = QuestGivers[quest.QuestName] or ""
+
+                -- Görev al
                 if not HasQuest() then
-                    if CommF_ then
-                        CommF_:InvokeServer("StartQuest", quest.QuestName, quest.QuestIndex)
-                    end
-                    task.wait(0.5)
-                else
-                    local mob = FindTargetMob(quest.MobName)
-                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
-                        local aboveMob = mob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
-                        FarmFly(aboveMob)
-                        EquipWeapon()
-                        AttackMob()
+                    local npcModel = GetQuestNPCModel(giverName)
+                    local npcRoot = npcModel and (npcModel:FindFirstChild("HumanoidRootPart") or npcModel:FindFirstChildWhichIsA("BasePart"))
+                    if npcRoot then
+                        local dist = (npcRoot.Position - char.HumanoidRootPart.Position).Magnitude
+                        if dist > 20 then
+                            TweenToPosition(npcRoot.Position + Vector3.new(0, 5, 0), 320)
+                        else
+                            StopMovement()
+                            CommF_:InvokeServer("StartQuest", quest.QuestName, quest.QuestIndex)
+                            task.wait(0.5)
+                        end
                     else
-                        char.Humanoid.PlatformStand = false
+                        CommF_:InvokeServer("StartQuest", quest.QuestName, quest.QuestIndex)
+                        task.wait(0.5)
+                    end
+                else
+                    -- Görev varsa yaratığı bul
+                    local mob = FindQuestMob(quest.MobName)
+                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                        local mobPos = mob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+                        TweenToPosition(mobPos, 340)
+                        CheckBuso()
+                        EquipBestWeapon()
+                        BringMobsTo(mob.HumanoidRootPart.CFrame, quest.MobName)
+                        PerformFastAttack(mob.HumanoidRootPart)
+                    else
+                        -- Yaratık yoksa doğma noktasına uç ve bekle!
+                        if Settings.WaitAtSpawn then
+                            local spawnCF = GetMobSpawnCFrame(quest.MobName)
+                            if spawnCF then
+                                TweenToPosition(spawnCF.Position + Vector3.new(0, 20, 0), 320)
+                            end
+                        end
                     end
                 end
             end)
-        else
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("Humanoid") and char.Humanoid.PlatformStand then
-                char.Humanoid.PlatformStand = false
-            end
+        elseif not Settings.AutoRaid and not Settings.MagnetTokenFarm and not Settings.AutoPirateRaid then
+            StopMovement()
         end
     end
 end)
 
 -- =============================================================
--- 📦 AUTO STORE FRUIT
+-- ⚡ UPDATE 30: MAGNET TOKEN FARM ENGINE
 -- =============================================================
-local function StoreFruit(tool)
-    if not Settings.AutoStore or not tool or not tool:IsA("Tool") then return end
-    if tool.Name:find("Fruit") or tool.Name:find("Meyve") then
-        pcall(function()
-            if CommF_ then
-                CommF_:InvokeServer("StoreFruit", tool.Name, tool)
+-- Update 30'da saat başı XX:00'da gelen 10 dk'lık Magnet Night etkinliğinde
+-- [Magnetized] düşmanları bulur, yanlarına uçar, magnet token toplar.
+local function FindMagnetizedEnemy()
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if enemies then
+        for _, enemy in ipairs(enemies:GetChildren()) do
+            local isMag = enemy.Name:find("Magnetized") or enemy.Name:find("Overcharged") or enemy:GetAttribute("Magnetized") or enemy:GetAttribute("IsMagnetized")
+            if isMag and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                return enemy
             end
-        end)
+        end
     end
+    return nil
 end
 
-LocalPlayer.Backpack.ChildAdded:Connect(function(tool)
-    task.wait(0.4)
-    StoreFruit(tool)
+task.spawn(function()
+    while true do
+        task.wait()
+        if Settings.MagnetTokenFarm then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+                local magMob = FindMagnetizedEnemy()
+                if magMob and magMob:FindFirstChild("HumanoidRootPart") then
+                    local targetPos = magMob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+                    TweenToPosition(targetPos, 350)
+                    CheckBuso()
+                    EquipBestWeapon()
+                    PerformFastAttack(magMob.HumanoidRootPart)
+                else
+                    -- Magnetized düşman kalmadıysa adaları tarayacak şekilde merkezde bekle
+                    local center = Vector3.new(-12463, 375, -7552)
+                    TweenToPosition(center + Vector3.new(0, 60, 0), 300)
+                end
+            end)
+        end
+    end
 end)
 
 -- =============================================================
--- 🎁 OYUN KODLARINI KULLANMA (oyun kodları.txt)
+-- ⚔️ AUTO RAID ENGINE (DUNGEON / CHIP / NEXT ISLAND)
 -- =============================================================
-local CodesList = {
-    "LIGHTNINGABUSE","1LOSTADMIN ","ADMINFIGHT","NOMOREHACK","BANEXPLOIT","krazydares",
-    "TRIPLEABUSE","24NOADMIN","REWARDFUN","Chandler","NEWTROLL","KITT_RESET","Sub2CaptainMaui",
-    "kittgaming","Sub2Fer999","Enyu_is_Pro","Magicbus","JCWK","Starcodeheo","Bluxxy",
-    "fudd10_v2","SUB2GAMERROBOT_EXP1","Sub2NoobMaster123","Sub2UncleKizaru","Sub2Daigrock",
-    "Axiore","TantaiGaming","StrawHatMaine","Sub2OfficialNoobie","Fudd10","Bignews","TheGreatAce",
-    "SECRET_ADMIN","SUB2GAMERROBOT_RESET1","SUB2OFFICIALNOOBIE","AXIORE","BIGNEWS","BLUXXY",
-    "CHANDLER","ENYU_IS_PRO","FUDD10","FUDD10_V2","KITTGAMING","MAGICBUS","STARCODEHEO",
-    "STRAWHATMAINE","SUB2CAPTAINMAUI","SUB2DAIGROCK","SUB2FER999","SUB2NOOBMASTER123",
-    "SUB2UNCLEKIZARU","TANTAIGAMING","THEGREATACE"
+local RaidIslandNames = {"Island 1", "Island 2", "Island 3", "Island 4", "Island 5"}
+
+local function GetCurrentRaidIsland()
+    local locs = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
+    if not locs then return nil end
+    for i = 5, 1, -1 do
+        local isl = locs:FindFirstChild("Island " .. i)
+        if isl and (isl.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 3500 then
+            return isl
+        end
+    end
+    return nil
+end
+
+task.spawn(function()
+    while true do
+        task.wait()
+        if Settings.AutoRaid then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+                -- Raid içinde miyiz kontrol et
+                local raidIsland = GetCurrentRaidIsland()
+                if raidIsland then
+                    -- Raid adasındaki yaratıkları bul ve kes
+                    local enemies = Workspace:FindFirstChild("Enemies")
+                    local foundEnemy = false
+                    if enemies then
+                        for _, enemy in ipairs(enemies:GetChildren()) do
+                            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                                foundEnemy = true
+                                local farmPos = enemy.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+                                TweenToPosition(farmPos, 340)
+                                CheckBuso()
+                                EquipBestWeapon()
+                                PerformFastAttack(enemy.HumanoidRootPart)
+                                break
+                            end
+                        end
+                    end
+                    -- Adadaki yaratıklar bittiyse sonraki adaya uç
+                    if not foundEnemy and Settings.AutoNextIsland then
+                        TweenToPosition(raidIsland.Position + Vector3.new(0, 70, 0), 320)
+                    end
+                else
+                    -- Raidde değilsek çip alıp raidi başlat
+                    if CommF_ then
+                        CommF_:InvokeServer("RaidsNpc", "Select", Settings.SelectedRaid)
+                        task.wait(0.5)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- =============================================================
+-- 🏴‍☠️ PIRATE RAID AUTO (CASTLE ON THE SEA)
+-- =============================================================
+local CastlePosition = Vector3.new(-5556, 314, -2988)
+
+task.spawn(function()
+    while true do
+        task.wait()
+        if Settings.AutoPirateRaid then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+                local enemies = Workspace:FindFirstChild("Enemies")
+                local pirateMob = nil
+
+                if enemies then
+                    for _, enemy in ipairs(enemies:GetChildren()) do
+                        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                            local dist = (enemy.HumanoidRootPart.Position - CastlePosition).Magnitude
+                            if dist <= 750 then
+                                pirateMob = enemy
+                                break
+                            end
+                        end
+                    end
+                end
+
+                if pirateMob then
+                    local farmPos = pirateMob.HumanoidRootPart.Position + Vector3.new(0, Settings.FarmDistance, 0)
+                    TweenToPosition(farmPos, 350)
+                    CheckBuso()
+                    EquipBestWeapon()
+                    PerformFastAttack(pirateMob.HumanoidRootPart)
+                else
+                    -- Kale etrafında hazır bekle
+                    local distToCastle = (char.HumanoidRootPart.Position - CastlePosition).Magnitude
+                    if distToCastle > 100 then
+                        TweenToPosition(CastlePosition + Vector3.new(0, 50, 0), 320)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- =============================================================
+-- 🏝️ ADAYA IŞINLANMA LİSTESİ (ISLAND TELEPORT)
+-- =============================================================
+local IslandLocations = {
+    -- Sea 1
+    ["Starter Pirate Island"] = Vector3.new(1060, 16, 1428),
+    ["Starter Marine Island"] = Vector3.new(-2570, 7, 2045),
+    ["Jungle"] = Vector3.new(-1612, 37, 149),
+    ["Pirate Village"] = Vector3.new(-1181, 4, 3847),
+    ["Desert"] = Vector3.new(894, 7, 4390),
+    ["Frozen Village"] = Vector3.new(1198, 27, -1211),
+    ["Marine Fortress"] = Vector3.new(-5035, 29, 4326),
+    ["Skylands"] = Vector3.new(-4839, 717, -2619),
+    ["Prison"] = Vector3.new(4875, 5, 734),
+    ["Colosseum"] = Vector3.new(-1427, 7, -2792),
+    ["Magma Village"] = Vector3.new(-5242, 8, 8466),
+    ["Underwater City"] = Vector3.new(61163, 18, 1569),
+    ["Fountain City"] = Vector3.new(5127, 4, 4038),
+    -- Sea 2
+    ["Kingdom of Rose"] = Vector3.new(-427, 73, 1835),
+    ["Green Zone"] = Vector3.new(-2441, 73, -3219),
+    ["Graveyard"] = Vector3.new(-5389, 8, -474),
+    ["Snow Mountain"] = Vector3.new(609, 401, -5372),
+    ["Cold & Hot"] = Vector3.new(-6061, 16, -4904),
+    ["Cursed Ship"] = Vector3.new(923, 126, 32852),
+    ["Ice Castle"] = Vector3.new(5668, 28, -6484),
+    ["Forgotten Island"] = Vector3.new(-3056, 240, -10145),
+    -- Sea 3
+    ["Port Town"] = Vector3.new(-290, 7, 5343),
+    ["Hydra Island"] = Vector3.new(5228, 1004, 340),
+    ["Great Tree"] = Vector3.new(2485, 74, -6788),
+    ["Floating Turtle"] = Vector3.new(-13233, 332, -7626),
+    ["Castle on the Sea"] = Vector3.new(-5085, 316, -3156),
+    ["Haunted Castle"] = Vector3.new(-9515, 142, 5535),
+    ["Sea of Treats"] = Vector3.new(-2087, 38, -10194),
+    ["Tiki Outpost"] = Vector3.new(-16234, 9, 442)
 }
 
-local function RedeemAllCodes()
-    if not CommF_ then return end
-    task.spawn(function()
-        local count = 0
-        for _, code in ipairs(CodesList) do
-            local cleanCode = string.gsub(code, "%s+", "")
-            pcall(function()
-                CommF_:InvokeServer("RedeemCustomCode", cleanCode)
-            end)
-            count += 1
-            task.wait(0.15)
-        end
-        OrionLib:MakeNotification({
-            Name = "Kodlar Tamamlandı",
-            Content = count .. " adet promo kodu denendi!",
-            Time = 4
-        })
-    end)
-end
-
 -- =============================================================
--- 🖼️ ESP SİSTEMLERİ (Player Box ESP & Fruit ESP)
--- =============================================================
-local ESPFolder = Instance.new("Folder", Workspace)
-ESPFolder.Name = "MorganESPFolder"
-
-RunService.RenderStepped:Connect(function()
-    ESPFolder:ClearAllChildren()
-
-    -- Player ESP
-    if Settings.PlayerESP then
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                local root = p.Character.HumanoidRootPart
-                local bill = Instance.new("BillboardGui")
-                bill.Name = "PlayerTag"
-                bill.Adornee = root
-                bill.Size = UDim2.new(0, 100, 0, 40)
-                bill.AlwaysOnTop = true
-                bill.StudsOffset = Vector3.new(0, 3, 0)
-                bill.Parent = ESPFolder
-
-                local txt = Instance.new("TextLabel")
-                txt.Size = UDim2.new(1, 0, 1, 0)
-                txt.BackgroundTransparency = 1
-                local dist = math.floor((root.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude)
-                txt.Text = p.DisplayName .. "\n[" .. dist .. "m] HP: " .. math.floor(p.Character.Humanoid.Health)
-                txt.TextColor3 = Color3.fromRGB(180, 80, 255)
-                txt.TextStrokeTransparency = 0
-                txt.TextSize = 11
-                txt.Font = Enum.Font.GothamBold
-                txt.Parent = bill
-            end
-        end
-    end
-
-    -- Fruit ESP
-    if Settings.FruitESP then
-        for _, item in ipairs(Workspace:GetChildren()) do
-            if (item:IsA("Tool") or item:IsA("Model")) and (item.Name:find("Fruit") or item.Name:find("Meyve")) then
-                local handle = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
-                if handle then
-                    local bill = Instance.new("BillboardGui")
-                    bill.Name = "FruitTag"
-                    bill.Adornee = handle
-                    bill.Size = UDim2.new(0, 100, 0, 30)
-                    bill.AlwaysOnTop = true
-                    bill.StudsOffset = Vector3.new(0, 2, 0)
-                    bill.Parent = ESPFolder
-
-                    local txt = Instance.new("TextLabel")
-                    txt.Size = UDim2.new(1, 0, 1, 0)
-                    txt.BackgroundTransparency = 1
-                    txt.Text = "🍇 " .. item.Name
-                    txt.TextColor3 = Color3.fromRGB(255, 170, 0)
-                    txt.TextStrokeTransparency = 0
-                    txt.TextSize = 12
-                    txt.Font = Enum.Font.GothamBold
-                    txt.Parent = bill
-                end
-            end
-        end
-    end
-end)
-
--- =============================================================
--- 🖥️ ORION LIB SEKMELERİ VE ELEMENTLERİ
+-- 🖥️ ORION ARAYÜZ SEKMELERİ
 -- =============================================================
 
 -- TAB 1: Auto Farm
@@ -478,66 +661,243 @@ local FarmTab = Window:MakeTab({
 })
 
 FarmTab:AddToggle({
-    Name = "Auto Farm Level (Otomatik Görev & Kesim)",
+    Name = "Auto Farm Level (Otomatik Seviye Kasma)",
     Default = false,
-    Callback = function(Value)
-        Settings.AutoFarm = Value
+    Callback = function(v)
+        Settings.AutoFarm = v
+    end
+})
+
+FarmTab:AddToggle({
+    Name = "Spawn Bekleme Noktasına Git (Yaratık Yoksa)",
+    Default = true,
+    Callback = function(v)
+        Settings.WaitAtSpawn = v
+    end
+})
+
+FarmTab:AddToggle({
+    Name = "Mob Magnet (Yaratıkları Üst Üste Topla)",
+    Default = true,
+    Callback = function(v)
+        Settings.BringMobs = v
+    end
+})
+
+FarmTab:AddToggle({
+    Name = "Ultra Fast Attack (Hızlı Vuruş)",
+    Default = true,
+    Callback = function(v)
+        Settings.FastAttack = v
+    end
+})
+
+FarmTab:AddToggle({
+    Name = "Otomatik Buso Haki",
+    Default = true,
+    Callback = function(v)
+        Settings.AutoBuso = v
     end
 })
 
 FarmTab:AddSlider({
-    Name = "Mob Üstü Mesafe (Yükseklik)",
-    Min = 4,
+    Name = "Mob Üstü Güvenli Mesafe",
+    Min = 5,
     Max = 15,
-    Default = 8,
-    Color = Color3.fromRGB(150, 60, 255),
+    Default = 9,
     Increment = 1,
     ValueName = "Studs",
-    Callback = function(Value)
-        Settings.FarmDistance = Value
+    Callback = function(v)
+        Settings.FarmDistance = v
     end
 })
 
-FarmTab:AddToggle({
-    Name = "Hızlı Saldırı (Fast Attack)",
-    Default = true,
-    Callback = function(Value)
-        Settings.FastAttack = Value
-    end
-})
-
-FarmTab:AddToggle({
-    Name = "Meyveyi Otomatik Envantere Sakla (Auto Store)",
-    Default = true,
-    Callback = function(Value)
-        Settings.AutoStore = Value
-    end
-})
-
--- TAB 2: ESP & Görseller
-local VisualsTab = Window:MakeTab({
-    Name = "👁️ ESP & Görseller",
+-- TAB 2: Update 30 - Magnet Event
+local MagnetTab = Window:MakeTab({
+    Name = "⚡ Update 30 Magnet",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
-VisualsTab:AddToggle({
-    Name = "Oyuncu ESP (Mesafe & Can)",
+MagnetTab:AddSection({
+    Name = "Magnet Event & Token Kasma"
+})
+
+MagnetTab:AddToggle({
+    Name = "Auto Magnet Token Farm ([Magnetized] Yaratıklar)",
     Default = false,
-    Callback = function(Value)
-        Settings.PlayerESP = Value
+    Callback = function(v)
+        Settings.MagnetTokenFarm = v
+        if v then
+            Settings.AutoFarm = false
+            Settings.AutoRaid = false
+        end
     end
 })
 
-VisualsTab:AddToggle({
-    Name = "Yerdeki Meyve ESP",
-    Default = false,
-    Callback = function(Value)
-        Settings.FruitESP = Value
+MagnetTab:AddButton({
+    Name = "Middletown Zioles'e Git (Magnet Gacha Aç)",
+    Callback = function()
+        TweenToPosition(Vector3.new(-655, 15, 1582), 350)
     end
 })
 
--- TAB 3: Webhook Sistemi
+-- TAB 3: Auto Raid & Pirate Raid
+local RaidTab = Window:MakeTab({
+    Name = "⚔️ Raid & Pirate Raid",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+RaidTab:AddSection({
+    Name = "Dungeon / Raid Sistemi"
+})
+
+RaidTab:AddDropdown({
+    Name = "Yapılacak Raid Çipi",
+    Default = "Flame",
+    Options = {"Flame", "Ice", "Quake", "Light", "Dark", "Spider", "Rumble", "Magma", "Buddha", "Sand"},
+    Callback = function(v)
+        Settings.SelectedRaid = v
+    end
+})
+
+RaidTab:AddToggle({
+    Name = "Auto Raid (Çip Al + Başlat + Adaları Temizle)",
+    Default = false,
+    Callback = function(v)
+        Settings.AutoRaid = v
+        if v then
+            Settings.AutoFarm = false
+            Settings.MagnetTokenFarm = false
+        end
+    end
+})
+
+RaidTab:AddToggle({
+    Name = "Otomatik Sonraki Adaya Uç (Auto Next Island)",
+    Default = true,
+    Callback = function(v)
+        Settings.AutoNextIsland = v
+    end
+})
+
+RaidTab:AddSection({
+    Name = "Castle Pirate Raid (3. Deniz)"
+})
+
+RaidTab:AddToggle({
+    Name = "Auto Pirate Raid (Kale Korsan Baskını)",
+    Default = false,
+    Callback = function(v)
+        Settings.AutoPirateRaid = v
+        if v then
+            Settings.AutoFarm = false
+            Settings.AutoRaid = false
+        end
+    end
+})
+
+-- TAB 4: Ada Işınlanma & Portallar
+local TravelTab = Window:MakeTab({
+    Name = "🏝️ Adalar & Portallar",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local IslandNames = {}
+for name, _ in pairs(IslandLocations) do
+    table.insert(IslandNames, name)
+end
+table.sort(IslandNames)
+
+local SelectedIsland = IslandNames[1]
+
+TravelTab:AddDropdown({
+    Name = "Işınlanılacak Adayı Seç",
+    Default = SelectedIsland,
+    Options = IslandNames,
+    Callback = function(v)
+        SelectedIsland = v
+    end
+})
+
+TravelTab:AddButton({
+    Name = "Seçilen Adaya Uç (Tween Noclip)",
+    Callback = function()
+        local pos = IslandLocations[SelectedIsland]
+        if pos then
+            TweenToPosition(pos + Vector3.new(0, 30, 0), 350)
+        end
+    end
+})
+
+TravelTab:AddSection({
+    Name = "Deniz Geçişleri"
+})
+
+TravelTab:AddButton({
+    Name = "First Sea (Sea 1)",
+    Callback = function()
+        CommF_:InvokeServer("TravelMain")
+    end
+})
+
+TravelTab:AddButton({
+    Name = "Second Sea (Sea 2)",
+    Callback = function()
+        CommF_:InvokeServer("TravelDressrosa")
+    end
+})
+
+TravelTab:AddButton({
+    Name = "Third Sea (Sea 3)",
+    Callback = function()
+        CommF_:InvokeServer("TravelZou")
+    end
+})
+
+-- TAB 5: Otomasyon & Kodlar
+local MiscTab = Window:MakeTab({
+    Name = "⚙️ Otomasyon",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+MiscTab:AddToggle({
+    Name = "Meyveyi Sakla (Auto Store Fruit)",
+    Default = true,
+    Callback = function(v)
+        Settings.AutoStore = v
+    end
+})
+
+MiscTab:AddToggle({
+    Name = "Otomatik Stat Ver",
+    Default = false,
+    Callback = function(v)
+        Settings.AutoStats = v
+    end
+})
+
+MiscTab:AddDropdown({
+    Name = "Hedef Stat",
+    Default = "Melee",
+    Options = {"Melee", "Defense", "Sword", "Gun", "Demon Fruit"},
+    Callback = function(v)
+        Settings.StatTarget = v
+    end
+})
+
+MiscTab:AddToggle({
+    Name = "Otomatik Sandık Topla (Para Kasma)",
+    Default = false,
+    Callback = function(v)
+        Settings.AutoChest = v
+    end
+})
+
+-- TAB 6: Discord Webhook
 local WebhookTab = Window:MakeTab({
     Name = "📡 Discord Webhook",
     Icon = "rbxassetid://4483345998",
@@ -548,47 +908,42 @@ WebhookTab:AddTextbox({
     Name = "Discord Webhook URL",
     Default = "",
     TextDisappear = false,
-    Callback = function(Value)
-        Settings.WebhookURL = Value
+    Callback = function(v)
+        Settings.WebhookURL = v
     end
 })
 
 WebhookTab:AddButton({
-    Name = "Şimdi Durumu Discord'a Gönder (Manuel Test)",
+    Name = "Durum Raporu Gönder (Test)",
     Callback = function()
-        SendWebhookLog()
-    end
-})
+        if Settings.WebhookURL == "" then return end
+        local data = LocalPlayer:FindFirstChild("Data")
+        local level = data and data:FindFirstChild("Level") and data.Level.Value or 1
+        local beli = data and data:FindFirstChild("Beli") and data.Beli.Value or 0
+        local frags = data and data:FindFirstChild("Fragments") and data.Fragments.Value or 0
 
-WebhookTab:AddToggle({
-    Name = "Her 5 Dakikada Bir Otomatik Rapor Gönder",
-    Default = false,
-    Callback = function(Value)
-        Settings.WebhookAutoSend = Value
-    end
-})
-
--- Webhook Otomatik Döngü (5 dakikada bir)
-task.spawn(function()
-    while true do
-        task.wait(300)
-        if Settings.WebhookAutoSend and Settings.WebhookURL ~= "" then
-            SendWebhookLog()
+        local payload = {
+            ["username"] = "Morgan Hub Rapor",
+            ["embeds"] = {{
+                ["title"] = "💎 Morgan Hub - Durum Bilgisi",
+                ["color"] = 9371903,
+                ["fields"] = {
+                    {["name"] = "Oyuncu", ["value"] = LocalPlayer.DisplayName, ["inline"] = true},
+                    {["name"] = "Seviye", ["value"] = tostring(level), ["inline"] = true},
+                    {["name"] = "Beli", ["value"] = tostring(beli), ["inline"] = true},
+                    {["name"] = "Fragman", ["value"] = tostring(frags), ["inline"] = true}
+                }
+            }}
+        }
+        local req = (syn and syn.request) or (http and http.request) or http_request or request
+        if req then
+            req({
+                Url = Settings.WebhookURL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(payload)
+            })
         end
-    end
-end)
-
--- TAB 4: Kodlar & Ekstralar
-local MiscTab = Window:MakeTab({
-    Name = "🎁 Kodlar & Ekstralar",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-MiscTab:AddButton({
-    Name = "Tüm Aktif Kodları Kullan (Auto Redeem Codes)",
-    Callback = function()
-        RedeemAllCodes()
     end
 })
 
