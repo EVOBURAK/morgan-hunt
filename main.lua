@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V17.0 (ULTIMATE EXPANDED EDITION - SKILLS, DOUGH KING & WAYPOINTS) 🔮
+-- 🔮 MORGAN HUB V19.0 (STAFF GUARD, MOON TRACKER, FRUIT STOCK & 100 SPEED CHEST) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -10,7 +10,6 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local HttpService = game:GetService("HttpService")
 local CollectionService = game:GetService("CollectionService")
 local TeleportService = game:GetService("TeleportService")
@@ -19,18 +18,16 @@ local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
 
--- Eski GUI'yi temizle
+-- Varsa eski GUI'yi temizle
 local CoreGuiContainer = (gethui and gethui()) or game:GetService("CoreGui")
-if CoreGuiContainer:FindFirstChild("MorganHubV17UI") then
-    CoreGuiContainer.MorganHubV17UI:Destroy()
+if CoreGuiContainer:FindFirstChild("MorganHubV19UI") then
+    CoreGuiContainer.MorganHubV19UI:Destroy()
 end
 
--- Blox Fruits Remotes
+-- Blox Fruits Ağ Paketleri
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
 local CommF_ = Remotes and Remotes:WaitForChild("CommF_", 10)
-local CommE = Remotes and Remotes:WaitForChild("CommE", 10)
 local Net = ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Net")
 local RegisterAttack = Net and Net:FindFirstChild("RE/RegisterAttack")
 local RegisterHit = Net and Net:FindFirstChild("RE/RegisterHit")
@@ -41,57 +38,33 @@ local RegisterHit = Net and Net:FindFirstChild("RE/RegisterHit")
 local Config = {
     -- Auto Farm
     AutoFarm = false,
-    AutoFarmNearest = false,
+    FarmWeapon = "Melee", -- "Melee" / "Sword" / "Blox Fruit"
     FarmDistance = 9,
     FarmSpeed = 260,
     FastAttack = true,
     BringMobs = true,
     AutoBuso = true,
-    AutoKen = false,
     WaitAtSpawn = true,
-    -- Skills Spammer
-    AutoSkillZ = false,
-    AutoSkillX = false,
-    AutoSkillC = false,
-    AutoSkillV = false,
-    -- Mastery & Bosses
-    AutoMastery = false,
-    MasteryWeapon = "Sword",
-    AutoEliteHunter = false,
-    AutoBoneFarm = false,
-    AutoRollBones = false,
-    AutoCakePrince = false, -- 500 Mob Farm for Dough King
-    -- Chest Collector
+    -- Staff Detection (Anti-Admin)
+    StaffDetector = true,
+    -- Chest Collector (100 Speed Support)
     ChestCollector = false,
-    ChestSpeed = 20,
-    -- Sea Events
-    AutoSeaEvent = false,
-    SeaEventSpeed = 280,
-    DangerZone = "Danger 5",
-    KillSeaBeasts = true,
-    KillTerrorShark = true,
+    ChestSpeed = 100, -- 100 Hız Talebi
+    -- Trackers
+    MirageNotifier = true,
     -- Fruits
     TweenFruits = false,
     FruitSpeed = 240,
     AutoStore = true,
-    -- Raids
-    AutoRaid = false,
-    SelectedRaid = "Flame",
-    AutoNextIsland = true,
-    AutoPirateRaid = false,
     -- ESP
     PlayerESP = false,
     FruitESP = false,
     BerryESP = false,
     ChestESP = false,
-    EliteESP = false,
     -- Player Mods
     InfiniteJump = false,
     WaterWalk = false,
-    ManualNoclip = false,
-    SpinBot = false,
-    SpinSpeed = 25,
-    FullBright = false
+    ManualNoclip = false
 }
 
 -- Anti-AFK
@@ -102,7 +75,104 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- =============================================================
--- 📍 QUEST VE KOORDİNAT VERİTABANI
+-- 🛡️ STAFF & ADMIN DETECTOR (AUTO SERVER HOP)
+-- =============================================================
+local StaffList = {
+    ["rip_indra"] = true,
+    ["mygame43"] = true,
+    ["Uzoth"] = true,
+    ["Axiore"] = true,
+    ["Jokurei"] = true
+}
+
+local StaffUserIds = {
+    [3095250] = true,  -- rip_indra
+    [17884881] = true, -- mygame43
+    [6079649301] = true -- Uzoth
+}
+
+local function ServerHop()
+    local servers = {}
+    pcall(function()
+        local raw = game:HttpGetAsync("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        local decoded = HttpService:JSONDecode(raw)
+        for _, s in ipairs(decoded.data) do
+            if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                table.insert(servers, s.id)
+            end
+        end
+    end)
+    if #servers > 0 then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+    else
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end
+end
+
+local function CheckPlayerStaff(player)
+    if not Config.StaffDetector then return end
+    if StaffList[player.Name] or StaffUserIds[player.UserId] or player:GetRankInGroup(4372130) >= 100 then
+        warn("⚠️ STAFF DETECTED: " .. player.Name .. "! Server Hopping...")
+        ServerHop()
+    end
+end
+
+Players.PlayerAdded:Connect(CheckPlayerStaff)
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then CheckPlayerStaff(p) end
+end
+
+-- =============================================================
+-- 🌕 MOON PHASES & MIRAGE DETECTOR
+-- =============================================================
+local function GetMoonPhase()
+    local sky = Lighting:FindFirstChildWhichIsA("Sky")
+    if not sky then return "Standard Sky" end
+    local texture = sky.MoonTextureId
+    if texture:find("9709149431") or texture:find("9709149052") then
+        return "🌕 FULL MOON (100%)"
+    elseif texture:find("9709149724") then
+        return "🌖 Waning Gibbous (~80%)"
+    elseif texture:find("9709148733") then
+        return "🌓 Third Quarter (50%)"
+    elseif texture:find("9709150123") then
+        return "🌑 New Moon (0%)"
+    end
+    return "🌔 Moon Visible"
+end
+
+local function CheckMirageIsland()
+    local locs = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
+    if locs and locs:FindFirstChild("Mirage Island") then
+        return true
+    end
+    if Workspace:FindFirstChild("Mirage Island") then
+        return true
+    end
+    return false
+end
+
+-- =============================================================
+-- 🍇 FRUIT STOCK RETRIEVER
+-- =============================================================
+local function FetchFruitStock()
+    if not CommF_ then return {"Stock unavailable"} end
+    local success, res = pcall(function()
+        return CommF_:InvokeServer("GetFruits")
+    end)
+    local inStock = {}
+    if success and type(res) == "table" then
+        for _, fruit in ipairs(res) do
+            if fruit.OnSale then
+                table.insert(inStock, fruit.Name .. " ($" .. (fruit.Price or 0) .. ")")
+            end
+        end
+    end
+    return #inStock > 0 and inStock or {"No fruits currently on stock"}
+end
+
+-- =============================================================
+-- 📍 QUEST VE KOORDİNAT SİSTEMİ
 -- =============================================================
 local RealQuests = {
     {Level = 1, Quest = "BanditQuest1", Index = 1, Mob = "Bandit", Pos = Vector3.new(1060, 16, 1548), NpcPos = Vector3.new(1060, 16, 1548)},
@@ -160,7 +230,7 @@ local function CleanMobName(name)
 end
 
 -- =============================================================
--- 🚀 FİZİK SABİTLEYİCİ UÇUŞ & NOCLIP
+-- 🚀 FİZİK VE GLIDE MOTORU
 -- =============================================================
 local function ApplyNoclip()
     local char = LocalPlayer.Character
@@ -174,7 +244,7 @@ local function ApplyNoclip()
 end
 
 RunService.Stepped:Connect(function()
-    if Config.AutoFarm or Config.ChestCollector or Config.TweenFruits or Config.AutoSeaEvent or Config.AutoEliteHunter or Config.AutoBoneFarm or Config.AutoCakePrince or Config.ManualNoclip then
+    if Config.AutoFarm or Config.ChestCollector or Config.TweenFruits or Config.ManualNoclip then
         ApplyNoclip()
     end
 end)
@@ -200,8 +270,8 @@ local function StableGlideTo(targetPos, speed)
     local currentPos = root.Position
     local dist = (targetPos - currentPos).Magnitude
 
-    if dist < 6 then
-        root.CFrame = CFrame.new(targetPos)
+    if dist < 5 then
+        root.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(-90), 0, 0)
         bv.Velocity = Vector3.zero
         return true
     end
@@ -225,32 +295,30 @@ local function StopGlide()
 end
 
 -- =============================================================
--- ⚡ COMBAT, SKILLS & FAST ATTACK
+-- ⚔️ SİLAH KUŞANMA VE FAST ATTACK (GÜVENLİ LİMİTLERLE)
 -- =============================================================
-local function EquipWeaponByToolTip(toolTipName)
+local function EquipSelectedWeapon()
     local char = LocalPlayer.Character
     if not char then return end
+
     local currentTool = char:FindFirstChildOfClass("Tool")
-    if currentTool and currentTool.ToolTip == toolTipName then return end
+    if currentTool and currentTool.ToolTip == Config.FarmWeapon then return end
 
     local bp = LocalPlayer:FindFirstChild("Backpack")
     if bp then
-        for _, t in ipairs(bp:GetChildren()) do
-            if t:IsA("Tool") and (t.ToolTip == toolTipName or toolTipName == "Any") then
-                char.Humanoid:EquipTool(t)
+        for _, tool in ipairs(bp:GetChildren()) do
+            if tool:IsA("Tool") and tool.ToolTip == Config.FarmWeapon then
+                char.Humanoid:EquipTool(tool)
+                return
+            end
+        end
+        for _, tool in ipairs(bp:GetChildren()) do
+            if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.ToolTip == "Blox Fruit") then
+                char.Humanoid:EquipTool(tool)
                 break
             end
         end
     end
-end
-
-local lastSkillTime = 0
-local function TriggerSkill(key)
-    pcall(function()
-        VirtualInputManager:SendKeyEvent(true, key, false, game)
-        task.wait(0.04)
-        VirtualInputManager:SendKeyEvent(false, key, false, game)
-    end)
 end
 
 local function ExecuteFastAttack(targetPart)
@@ -267,15 +335,6 @@ local function ExecuteFastAttack(targetPart)
         if tool then tool:Activate() end
         VirtualUser:CaptureController()
         VirtualUser:ClickButton1(Vector2.new(500, 500))
-
-        -- Kombo Yetenek Basma
-        if tick() - lastSkillTime > 0.8 then
-            lastSkillTime = tick()
-            if Config.AutoSkillZ then TriggerSkill("Z") end
-            if Config.AutoSkillX then TriggerSkill("X") end
-            if Config.AutoSkillC then TriggerSkill("C") end
-            if Config.AutoSkillV then TriggerSkill("V") end
-        end
     end)
 end
 
@@ -287,21 +346,13 @@ local function EnsureBuso()
     end
 end
 
-local function EnsureKen()
-    if not Config.AutoKen then return end
-    local char = LocalPlayer.Character
-    if char and not char:FindFirstChild("VisionActive") and CommE then
-        pcall(function() CommE:FireServer("Ken", true) end)
-    end
-end
-
 -- =============================================================
 -- 🌾 AUTO FARM ENGINE
 -- =============================================================
 task.spawn(function()
     while true do
         task.wait()
-        if Config.AutoFarm and not Config.ChestCollector and not Config.TweenFruits and not Config.AutoSeaEvent and not Config.AutoEliteHunter and not Config.AutoBoneFarm and not Config.AutoCakePrince then
+        if Config.AutoFarm and not Config.ChestCollector and not Config.TweenFruits then
             pcall(function()
                 local char = LocalPlayer.Character
                 local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -334,25 +385,20 @@ task.spawn(function()
                     end
 
                     if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
-                        local mobPos = targetMob.HumanoidRootPart.Position + Vector3.new(0, Config.FarmDistance, 0)
-                        StableGlideTo(mobPos, Config.FarmSpeed)
+                        local mobRoot = targetMob.HumanoidRootPart
+                        local targetPosition = mobRoot.Position + Vector3.new(0, Config.FarmDistance, 0)
+                        StableGlideTo(targetPosition, Config.FarmSpeed)
 
-                        if Config.AutoMastery then
-                            local hpPercent = targetMob.Humanoid.Health / targetMob.Humanoid.MaxHealth
-                            EquipWeaponByToolTip(hpPercent <= 0.25 and Config.MasteryWeapon or "Melee")
-                        else
-                            EquipWeaponByToolTip("Melee")
-                        end
-
+                        root.CFrame = CFrame.lookAt(root.Position, mobRoot.Position)
+                        EquipSelectedWeapon()
                         EnsureBuso()
-                        EnsureKen()
-                        ExecuteFastAttack(targetMob.HumanoidRootPart)
+                        ExecuteFastAttack(mobRoot)
 
                         if Config.BringMobs and enemies then
                             for _, other in ipairs(enemies:GetChildren()) do
                                 if other ~= targetMob and CleanMobName(other.Name) == questData.Mob and other:FindFirstChild("HumanoidRootPart") and other.Humanoid.Health > 0 then
-                                    if (other.HumanoidRootPart.Position - targetMob.HumanoidRootPart.Position).Magnitude < 280 then
-                                        other.HumanoidRootPart.CFrame = targetMob.HumanoidRootPart.CFrame
+                                    if (other.HumanoidRootPart.Position - mobRoot.Position).Magnitude < 280 then
+                                        other.HumanoidRootPart.CFrame = mobRoot.CFrame
                                         other.HumanoidRootPart.CanCollide = false
                                         other.Humanoid.WalkSpeed = 0
                                     end
@@ -366,101 +412,18 @@ task.spawn(function()
                     end
                 end
             end)
-        elseif not Config.ChestCollector and not Config.TweenFruits and not Config.AutoSeaEvent and not Config.AutoEliteHunter and not Config.AutoBoneFarm and not Config.AutoCakePrince then
+        elseif not Config.ChestCollector and not Config.TweenFruits then
             StopGlide()
         end
     end
 end)
 
 -- =============================================================
--- 🎂 AUTO CAKE PRINCE & DOUGH KING (500 MOBS AUTO SPAWN)
--- =============================================================
-local CakeIslandCenter = Vector3.new(-2087, 38, -10194)
-
-task.spawn(function()
-    while true do
-        task.wait()
-        if Config.AutoCakePrince then
-            pcall(function()
-                local enemies = Workspace:FindFirstChild("Enemies")
-                local cakeBoss = nil
-                local normalMob = nil
-
-                if enemies then
-                    for _, enemy in ipairs(enemies:GetChildren()) do
-                        local n = enemy.Name
-                        if (n:find("Cake Prince") or n:find("Dough King")) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                            cakeBoss = enemy
-                            break
-                        elseif (n:find("Baker") or n:find("Baking") or n:find("Cake Guard") or n:find("Cookie")) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                            normalMob = enemy
-                        end
-                    end
-                end
-
-                local target = cakeBoss or normalMob
-                if target and target:FindFirstChild("HumanoidRootPart") then
-                    local targetPos = target.HumanoidRootPart.Position + Vector3.new(0, Config.FarmDistance, 0)
-                    StableGlideTo(targetPos, Config.FarmSpeed)
-                    EnsureBuso()
-                    EquipWeaponByToolTip("Melee")
-                    ExecuteFastAttack(target.HumanoidRootPart)
-                else
-                    StableGlideTo(CakeIslandCenter + Vector3.new(0, 40, 0), Config.FarmSpeed)
-                end
-            end)
-        end
-    end
-end)
-
--- =============================================================
--- ☠️ AUTO ELITE HUNTER & BONES
--- =============================================================
-local EliteBossNames = {"Urban", "Deandre", "Diablo"}
-
-local function GetSpawnedElite()
-    local enemies = Workspace:FindFirstChild("Enemies")
-    if enemies then
-        for _, enemy in ipairs(enemies:GetChildren()) do
-            for _, eliteName in ipairs(EliteBossNames) do
-                if enemy.Name:find(eliteName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                    return enemy
-                end
-            end
-        end
-    end
-    return nil
-end
-
-task.spawn(function()
-    while true do
-        task.wait()
-        if Config.AutoEliteHunter then
-            pcall(function()
-                local eliteMob = GetSpawnedElite()
-                if eliteMob and eliteMob:FindFirstChild("HumanoidRootPart") then
-                    local targetPos = eliteMob.HumanoidRootPart.Position + Vector3.new(0, Config.FarmDistance, 0)
-                    StableGlideTo(targetPos, Config.FarmSpeed)
-                    EnsureBuso()
-                    EquipWeaponByToolTip("Melee")
-                    ExecuteFastAttack(eliteMob.HumanoidRootPart)
-                else
-                    if CommF_ then
-                        CommF_:InvokeServer("EliteHunter")
-                        task.wait(1.5)
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- =============================================================
--- 💰 CHEST COLLECTOR (20 SPEED / NOCLIP)
+-- 💰 CHEST COLLECTOR (100 HIZ DESTEKLİ)
 -- =============================================================
 task.spawn(function()
     while true do
-        task.wait(0.1)
+        task.wait(0.05)
         if Config.ChestCollector and not Config.AutoFarm then
             pcall(function()
                 local char = LocalPlayer.Character
@@ -493,7 +456,7 @@ task.spawn(function()
                         if arrived then
                             firetouchinterest(root, closestChest, 0)
                             firetouchinterest(root, closestChest, 1)
-                            task.wait(0.3)
+                            task.wait(0.2)
                         end
                     end
                 else
@@ -505,60 +468,8 @@ task.spawn(function()
 end)
 
 -- =============================================================
--- 🌊 AUTO SEA EVENT & FRUIT TWEEN
+-- 🍓 MEYVE TOPLAYICI & AUTO STORE
 -- =============================================================
-local DangerZones = {
-    ["Danger 1"] = Vector3.new(-16500, 35, 2500),
-    ["Danger 2"] = Vector3.new(-16500, 35, 5500),
-    ["Danger 3"] = Vector3.new(-16500, 35, 8500),
-    ["Danger 4"] = Vector3.new(-16500, 35, 11500),
-    ["Danger 5"] = Vector3.new(-16500, 35, 14500),
-    ["Danger 6"] = Vector3.new(-16500, 35, 18500)
-}
-
-local function LocateSeaBeastOrShark()
-    local seaBeasts = Workspace:FindFirstChild("SeaBeasts")
-    if seaBeasts then
-        for _, sb in ipairs(seaBeasts:GetChildren()) do
-            if sb:FindFirstChild("HumanoidRootPart") and sb:FindFirstChild("Humanoid") and sb.Humanoid.Health > 0 then
-                return sb
-            end
-        end
-    end
-    local enemies = Workspace:FindFirstChild("Enemies")
-    if enemies then
-        for _, enemy in ipairs(enemies:GetChildren()) do
-            local name = enemy.Name
-            if (name:find("Terror") or name:find("Shark") or name:find("Piranha") or name:find("Ship")) and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                return enemy
-            end
-        end
-    end
-    return nil
-end
-
-task.spawn(function()
-    while true do
-        task.wait()
-        if Config.AutoSeaEvent then
-            pcall(function()
-                local monster = LocateSeaBeastOrShark()
-                if monster and monster:FindFirstChild("HumanoidRootPart") then
-                    local targetPos = monster.HumanoidRootPart.Position + Vector3.new(0, 35, 0)
-                    StableGlideTo(targetPos, Config.SeaEventSpeed)
-                    EnsureBuso()
-                    EquipWeaponByToolTip("Melee")
-                    ExecuteFastAttack(monster.HumanoidRootPart)
-                else
-                    local zone = DangerZones[Config.DangerZone] or DangerZones["Danger 5"]
-                    StableGlideTo(zone, Config.SeaEventSpeed)
-                end
-            end)
-        end
-    end
-end)
-
--- Fruit Tween
 local function FindWorldFruit()
     for _, item in ipairs(Workspace:GetChildren()) do
         if (item:IsA("Tool") or item:IsA("Model")) and (item.Name:find("Fruit") or item.Name:find("Meyve")) then
@@ -599,17 +510,17 @@ task.spawn(function()
 end)
 
 -- =============================================================
--- 👁️ 0-LAG PERSISTENT ESP
+-- 👁️ MOBİL UYUMLU ESP
 -- =============================================================
 local ESPFolder = Instance.new("Folder", Workspace)
-ESPFolder.Name = "MorganESP_V17"
+ESPFolder.Name = "MorganESP_V19"
 
-local function AddESPBillboard(part, text, color)
+local function AddSimpleTag(part, text, color)
     local b = Instance.new("BillboardGui")
-    b.Size = UDim2.new(0, 110, 0, 30)
+    b.Size = UDim2.new(0, 100, 0, 24)
     b.AlwaysOnTop = true
     b.Adornee = part
-    b.StudsOffset = Vector3.new(0, 3, 0)
+    b.StudsOffset = Vector3.new(0, 2.5, 0)
     b.Parent = ESPFolder
 
     local l = Instance.new("TextLabel", b)
@@ -618,13 +529,13 @@ local function AddESPBillboard(part, text, color)
     l.Text = text
     l.TextColor3 = color
     l.TextStrokeTransparency = 0
-    l.TextSize = 11
+    l.TextSize = 10
     l.Font = Enum.Font.GothamBold
 end
 
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(0.8)
         pcall(function()
             ESPFolder:ClearAllChildren()
             local char = LocalPlayer.Character
@@ -634,7 +545,7 @@ task.spawn(function()
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                         local d = math.floor((p.Character.HumanoidRootPart.Position - myPos).Magnitude)
-                        AddESPBillboard(p.Character.HumanoidRootPart, p.DisplayName .. " [" .. d .. "m]\nHP: " .. math.floor(p.Character.Humanoid.Health), Color3.fromRGB(180, 100, 255))
+                        AddSimpleTag(p.Character.HumanoidRootPart, p.DisplayName .. " [" .. d .. "m]", Color3.fromRGB(180, 100, 255))
                     end
                 end
             end
@@ -645,7 +556,7 @@ task.spawn(function()
                         local h = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
                         if h then
                             local d = math.floor((h.Position - myPos).Magnitude)
-                            AddESPBillboard(h, "🍇 " .. item.Name .. " [" .. d .. "m]", Color3.fromRGB(255, 170, 0))
+                            AddSimpleTag(h, "🍇 " .. item.Name .. " [" .. d .. "m]", Color3.fromRGB(255, 170, 0))
                         end
                     end
                 end
@@ -656,7 +567,9 @@ task.spawn(function()
                     local p = bush:IsA("BasePart") and bush or bush:FindFirstChildWhichIsA("BasePart")
                     if p then
                         local d = math.floor((p.Position - myPos).Magnitude)
-                        AddESPBillboard(p, "🍒 Berry Bush [" .. d .. "m]", Color3.fromRGB(255, 60, 100))
+                        if d <= 1500 then
+                            AddSimpleTag(p, "🍒 Berry [" .. d .. "m]", Color3.fromRGB(255, 75, 120))
+                        end
                     end
                 end
             end
@@ -666,16 +579,10 @@ task.spawn(function()
                 for _, c in ipairs(chests:GetChildren()) do
                     if c.Name:find("Chest") and c:IsA("BasePart") then
                         local d = math.floor((c.Position - myPos).Magnitude)
-                        AddESPBillboard(c, "💰 Chest [" .. d .. "m]", Color3.fromRGB(255, 220, 50))
+                        if d <= 1200 then
+                            AddSimpleTag(c, "💰 Chest [" .. d .. "m]", Color3.fromRGB(255, 220, 50))
+                        end
                     end
-                end
-            end
-
-            if Config.EliteESP then
-                local elite = GetSpawnedElite()
-                if elite and elite:FindFirstChild("HumanoidRootPart") then
-                    local d = math.floor((elite.HumanoidRootPart.Position - myPos).Magnitude)
-                    AddESPBillboard(elite.HumanoidRootPart, "👑 " .. elite.Name .. " [" .. d .. "m]", Color3.fromRGB(255, 40, 40))
                 end
             end
         end)
@@ -686,7 +593,7 @@ end)
 -- 🎨 PURPLE DASHBOARD UI TASARIMI
 -- =============================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MorganHubV17UI"
+ScreenGui.Name = "MorganHubV19UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGuiContainer
 
@@ -706,7 +613,7 @@ local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color = Color3.fromRGB(45, 40, 68)
 MainStroke.Thickness = 1.2
 
--- Top Right Controls
+-- Üst Butonlar
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(0, 110, 0, 35)
 TopBar.Position = UDim2.new(1, -115, 0, 8)
@@ -773,20 +680,15 @@ end
 
 local MainPage = RegisterPage("Main")
 local FarmPage = RegisterPage("Farm")
-local CombatPage = RegisterPage("Combat")
-local CakePage = RegisterPage("DoughKing")
-local SeaPage = RegisterPage("SeaEvents")
+local TrackerPage = RegisterPage("Trackers")
 local FruitPage = RegisterPage("Fruits")
-local WaypointPage = RegisterPage("Waypoints")
-local ShopPage = RegisterPage("Shop")
-local PlayerPage = RegisterPage("Player")
 local ESPPage = RegisterPage("Visuals")
 
 -- Tab Switcher
 local firstTab = true
 local function AddNavTab(name, icon, targetPage)
     local btn = Instance.new("TextButton", Sidebar)
-    btn.Size = UDim2.new(1, 0, 0, 34)
+    btn.Size = UDim2.new(1, 0, 0, 36)
     btn.BackgroundColor3 = Color3.fromRGB(25, 22, 38)
     btn.BackgroundTransparency = 1
     btn.Text = "  " .. icon .. "  " .. name
@@ -833,16 +735,11 @@ end
 
 AddNavTab("Dashboard", "🏠", MainPage)
 AddNavTab("Auto Farm", "🌾", FarmPage)
-AddNavTab("Auto Skills", "⚡", CombatPage)
-AddNavTab("Dough King", "🎂", CakePage)
-AddNavTab("Sea Events", "🌊", SeaPage)
+AddNavTab("Moon & Stock", "🌕", TrackerPage)
 AddNavTab("Fruits & Chest", "🍓", FruitPage)
-AddNavTab("Waypoints", "📍", WaypointPage)
-AddNavTab("Abilities & Shop", "🛒", ShopPage)
-AddNavTab("Player & Fun", "👤", PlayerPage)
-AddNavTab("ESP Visuals", "👁️", ESPPage)
+AddNavTab("Visuals / ESP", "👁️", ESPPage)
 
--- Card Generator
+-- Card Builder
 local function CreateToggleCard(parent, title, desc, defaultState, callback)
     local card = Instance.new("Frame", parent)
     card.Size = UDim2.new(1, -6, 0, 52)
@@ -903,20 +800,6 @@ local function CreateToggleCard(parent, title, desc, defaultState, callback)
     end)
 end
 
-local function CreateActionBtn(parent, text, callback)
-    local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(1, -6, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 28, 55)
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(245, 240, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 12
-    local c = Instance.new("UICorner", btn)
-    c.CornerRadius = UDim.new(0, 8)
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
 -- =============================================================
 -- 🏠 TAB 1: DASHBOARD
 -- =============================================================
@@ -941,38 +824,21 @@ local bTitle = Instance.new("TextLabel", Banner)
 bTitle.Size = UDim2.new(1, -20, 0, 22)
 bTitle.Position = UDim2.fromOffset(15, 20)
 bTitle.BackgroundTransparency = 1
-bTitle.Text = "Morgan Hub V17 Pro"
+bTitle.Text = "Morgan Hub V19 Pro"
 bTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 bTitle.Font = Enum.Font.GothamBold
 bTitle.TextSize = 16
 bTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-local MoonStatusLbl = Instance.new("TextLabel", Banner)
-MoonStatusLbl.Size = UDim2.new(1, -20, 0, 20)
-MoonStatusLbl.Position = UDim2.fromOffset(15, 46)
-MoonStatusLbl.BackgroundTransparency = 1
-MoonStatusLbl.Text = "🌕 Moon Status: Checking..."
-MoonStatusLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
-MoonStatusLbl.Font = Enum.Font.GothamMedium
-MoonStatusLbl.TextSize = 12
-MoonStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-
--- Full Moon Tracker
-task.spawn(function()
-    while true do
-        task.wait(2)
-        pcall(function()
-            local sky = Lighting:FindFirstChildWhichIsA("Sky")
-            if sky and sky.MoonTextureId:find("9709149431") then
-                MoonStatusLbl.Text = "🌕 FULL MOON IS ACTIVE!"
-                MoonStatusLbl.TextColor3 = Color3.fromRGB(255, 220, 50)
-            else
-                MoonStatusLbl.Text = "🌑 Regular Moon Phase"
-                MoonStatusLbl.TextColor3 = Color3.fromRGB(180, 170, 210)
-            end
-        end)
-    end
-end)
+local AdminStatus = Instance.new("TextLabel", Banner)
+AdminStatus.Size = UDim2.new(1, -20, 0, 20)
+AdminStatus.Position = UDim2.fromOffset(15, 46)
+AdminStatus.BackgroundTransparency = 1
+AdminStatus.Text = "🛡️ Staff Guard: ACTIVE (Auto-Hop)"
+AdminStatus.TextColor3 = Color3.fromRGB(140, 255, 140)
+AdminStatus.Font = Enum.Font.GothamBold
+AdminStatus.TextSize = 12
+AdminStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 local UserCard = Instance.new("Frame", CardsRow)
 UserCard.Size = UDim2.new(0.35, 0, 1, 0)
@@ -1009,125 +875,143 @@ LevelLabel.Font = Enum.Font.GothamMedium
 LevelLabel.TextSize = 11
 LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-CreateToggleCard(MainPage, "Auto Farm Level", "Start quest farming with stabilized CFrame flight", Config.AutoFarm, function(v) Config.AutoFarm = v end)
-CreateToggleCard(MainPage, "Chest Collector", "Fly through walls and collect all server chests", Config.ChestCollector, function(v) Config.ChestCollector = v end)
-CreateToggleCard(MainPage, "Auto Elite Hunter", "Tracks and defeats Sea 3 Elite Bosses", Config.AutoEliteHunter, function(v) Config.AutoEliteHunter = v end)
+CreateToggleCard(MainPage, "Staff & Admin Detector", "Auto server hop if rip_indra, mygame43 or staff joins", Config.StaffDetector, function(v) Config.StaffDetector = v end)
+CreateToggleCard(MainPage, "Chest Collector (100 Speed)", "Fly through walls at speed 100", Config.ChestCollector, function(v) Config.ChestCollector = v end)
+CreateToggleCard(MainPage, "Auto Farm Level", "Stable quest farming above mob heads", Config.AutoFarm, function(v) Config.AutoFarm = v end)
 
 -- =============================================================
 -- 🌾 TAB 2: AUTO FARM
 -- =============================================================
+local WeaponCard = Instance.new("Frame", FarmPage)
+WeaponCard.Size = UDim2.new(1, -6, 0, 64)
+WeaponCard.BackgroundColor3 = Color3.fromRGB(25, 22, 38)
+local wCorner = Instance.new("UICorner", WeaponCard)
+wCorner.CornerRadius = UDim.new(0, 8)
+
+local wTitle = Instance.new("TextLabel", WeaponCard)
+wTitle.Size = UDim2.new(1, -20, 0, 18)
+wTitle.Position = UDim2.fromOffset(12, 6)
+wTitle.BackgroundTransparency = 1
+wTitle.Text = "Farming Weapon Selector"
+wTitle.TextColor3 = Color3.fromRGB(240, 235, 255)
+wTitle.Font = Enum.Font.GothamBold
+wTitle.TextSize = 11
+wTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local BtnCont = Instance.new("Frame", WeaponCard)
+BtnCont.Size = UDim2.new(1, -24, 0, 28)
+BtnCont.Position = UDim2.fromOffset(12, 28)
+BtnCont.BackgroundTransparency = 1
+local bLayout = Instance.new("UIListLayout", BtnCont)
+bLayout.FillDirection = Enum.FillDirection.Horizontal
+bLayout.Padding = UDim.new(0, 6)
+
+local wButtons = {}
+local function AddWBtn(wType, name)
+    local btn = Instance.new("TextButton", BtnCont)
+    btn.Size = UDim2.new(0.31, 0, 1, 0)
+    btn.BackgroundColor3 = Config.FarmWeapon == wType and Color3.fromRGB(150, 80, 255) or Color3.fromRGB(35, 28, 55)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    local c = Instance.new("UICorner", btn)
+    c.CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(function()
+        Config.FarmWeapon = wType
+        for wt, b in pairs(wButtons) do
+            b.BackgroundColor3 = wt == wType and Color3.fromRGB(150, 80, 255) or Color3.fromRGB(35, 28, 55)
+        end
+    end)
+    wButtons[wType] = btn
+end
+AddWBtn("Melee", "👊 Melee")
+AddWBtn("Sword", "⚔️ Sword")
+AddWBtn("Blox Fruit", "🍇 Fruit")
+
 CreateToggleCard(FarmPage, "Auto Farm Level", "Coordinates-based quest farming engine", Config.AutoFarm, function(v) Config.AutoFarm = v end)
-CreateToggleCard(FarmPage, "Auto Farm Nearest", "Attacks closest enemies without quests", Config.AutoFarmNearest, function(v) Config.AutoFarmNearest = v end)
-CreateToggleCard(FarmPage, "Auto Mastery Farm", "Finishes mobs with sword/fruit at low HP", Config.AutoMastery, function(v) Config.AutoMastery = v end)
-CreateToggleCard(FarmPage, "Mob Magnet", "Pulls all quest mobs together", Config.BringMobs, function(v) Config.BringMobs = v end)
-CreateToggleCard(FarmPage, "Ultra Fast Attack", "High-speed network remote attack", Config.FastAttack, function(v) Config.FastAttack = v end)
+CreateToggleCard(FarmPage, "Ultra Fast Attack", "Network remote combat acceleration", Config.FastAttack, function(v) Config.FastAttack = v end)
+CreateToggleCard(FarmPage, "Mob Magnet", "Clusters all mobs underneath character", Config.BringMobs, function(v) Config.BringMobs = v end)
 CreateToggleCard(FarmPage, "Auto Buso Haki", "Hardens armament haki automatically", Config.AutoBuso, function(v) Config.AutoBuso = v end)
 
 -- =============================================================
--- ⚡ TAB 3: AUTO SKILLS SPAMMER (NEW)
+-- 🌕 TAB 3: MOON TRACKER & FRUIT STOCK (NEW)
 -- =============================================================
-CreateToggleCard(CombatPage, "Auto Use Skill [Z]", "Casts Z skill during attacks", Config.AutoSkillZ, function(v) Config.AutoSkillZ = v end)
-CreateToggleCard(CombatPage, "Auto Use Skill [X]", "Casts X skill during attacks", Config.AutoSkillX, function(v) Config.AutoSkillX = v end)
-CreateToggleCard(CombatPage, "Auto Use Skill [C]", "Casts C skill during attacks", Config.AutoSkillC, function(v) Config.AutoSkillC = v end)
-CreateToggleCard(CombatPage, "Auto Use Skill [V]", "Casts V skill during attacks", Config.AutoSkillV, function(v) Config.AutoSkillV = v end)
+local MoonCard = Instance.new("Frame", TrackerPage)
+MoonCard.Size = UDim2.new(1, -6, 0, 75)
+MoonCard.BackgroundColor3 = Color3.fromRGB(25, 22, 38)
+Instance.new("UICorner", MoonCard).CornerRadius = UDim.new(0, 8)
 
--- =============================================================
--- 🎂 TAB 4: DOUGH KING & BONES (NEW)
--- =============================================================
-CreateToggleCard(CakePage, "Auto 500 Mobs (Dough King / Cake Prince)", "Farms 500 mobs at Sea of Treats to spawn boss", Config.AutoCakePrince, function(v)
-    Config.AutoCakePrince = v
-    if v then Config.AutoFarm = false end
+local MoonLbl = Instance.new("TextLabel", MoonCard)
+MoonLbl.Size = UDim2.new(1, -20, 0, 25)
+MoonLbl.Position = UDim2.fromOffset(14, 10)
+MoonLbl.BackgroundTransparency = 1
+MoonLbl.Text = "Current Phase: " .. GetMoonPhase()
+MoonLbl.TextColor3 = Color3.fromRGB(255, 220, 100)
+MoonLbl.Font = Enum.Font.GothamBold
+MoonLbl.TextSize = 13
+MoonLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local MirageLbl = Instance.new("TextLabel", MoonCard)
+MirageLbl.Size = UDim2.new(1, -20, 0, 20)
+MirageLbl.Position = UDim2.fromOffset(14, 40)
+MirageLbl.BackgroundTransparency = 1
+MirageLbl.Text = "🏝️ Mirage Island: Searching..."
+MirageLbl.TextColor3 = Color3.fromRGB(170, 160, 210)
+MirageLbl.Font = Enum.Font.GothamMedium
+MirageLbl.TextSize = 12
+MirageLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+task.spawn(function()
+    while true do
+        task.wait(2)
+        pcall(function()
+            MoonLbl.Text = "Current Phase: " .. GetMoonPhase()
+            if CheckMirageIsland() then
+                MirageLbl.Text = "🏝️ MIRAGE ISLAND HAS SPAWNED!"
+                MirageLbl.TextColor3 = Color3.fromRGB(100, 255, 100)
+            else
+                MirageLbl.Text = "🏝️ Mirage Island: Not Spawned"
+                MirageLbl.TextColor3 = Color3.fromRGB(170, 160, 210)
+            end
+        end)
+    end
 end)
-CreateToggleCard(CakePage, "Auto Bone Farm (Haunted Castle)", "Kills skeletons & zombies for bones", Config.AutoBoneFarm, function(v)
-    Config.AutoBoneFarm = v
-    if v then Config.AutoFarm = false end
-end)
-CreateToggleCard(CakePage, "Auto Roll Bones (Death King)", "Spends 50 Bones every 5s for random surprises", Config.AutoRollBones, function(v) Config.AutoRollBones = v end)
+
+-- Fruit Stock List Viewer
+local StockTitle = Instance.new("TextLabel", TrackerPage)
+StockTitle.Size = UDim2.new(1, 0, 0, 20)
+StockTitle.BackgroundTransparency = 1
+StockTitle.Text = "Current Devil Fruit Stock:"
+StockTitle.TextColor3 = Color3.fromRGB(240, 235, 255)
+StockTitle.Font = Enum.Font.GothamBold
+StockTitle.TextSize = 12
+StockTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local StockBox = Instance.new("TextLabel", TrackerPage)
+StockBox.Size = UDim2.new(1, -6, 0, 90)
+StockBox.BackgroundColor3 = Color3.fromRGB(25, 22, 38)
+StockBox.Text = table.concat(FetchFruitStock(), "\n")
+StockBox.TextColor3 = Color3.fromRGB(200, 185, 235)
+StockBox.Font = Enum.Font.Gotham
+StockBox.TextSize = 11
+StockBox.TextXAlignment = Enum.TextXAlignment.Left
+StockBox.TextYAlignment = Enum.TextYAlignment.Top
+Instance.new("UICorner", StockBox).CornerRadius = UDim.new(0, 8)
+Instance.new("UIPadding", StockBox).PaddingLeft = UDim.new(0, 10)
+StockBox.UIPadding.PaddingTop = UDim.new(0, 8)
 
 -- =============================================================
--- 📍 TAB 5: WAYPOINTS & TELEPORTS (NEW)
+-- 🍓 TAB 4: FRUITS & CHESTS
 -- =============================================================
-local Waypoints = {
-    ["Cafe (Sea 2)"] = Vector3.new(-380, 73, 298),
-    ["Mansion (Sea 3)"] = Vector3.new(-12463, 375, -7552),
-    ["Castle on Sea (Sea 3)"] = Vector3.new(-5085, 316, -3156),
-    ["Hydra Island (Sea 3)"] = Vector3.new(5228, 1004, 340),
-    ["Floating Turtle (Sea 3)"] = Vector3.new(-13233, 332, -7626),
-    ["Haunted Castle (Sea 3)"] = Vector3.new(-9515, 142, 5535),
-    ["Port Town (Sea 3)"] = Vector3.new(-290, 7, 5343)
-}
-
-for name, pos in pairs(Waypoints) do
-    CreateActionBtn(WaypointPage, "Teleport to " .. name, function()
-        StableGlideTo(pos + Vector3.new(0, 15, 0), 320)
-    end)
-end
+CreateToggleCard(FruitPage, "Auto Chest Collector (100 Speed)", "Duvarlardan ve dağlardan geçerek sandıkları toplar", Config.ChestCollector, function(v) Config.ChestCollector = v end)
+CreateToggleCard(FruitPage, "Tween to Spawned Fruits", "Haritada doğan meyvelere uçar", Config.TweenFruits, function(v) Config.TweenFruits = v end)
+CreateToggleCard(FruitPage, "Auto Store Fruits", "Toplanan meyveleri çantaya saklar", Config.AutoStore, function(v) Config.AutoStore = v end)
 
 -- =============================================================
--- 🌊 TAB 6: SEA EVENTS
+-- 👁️ TAB 5: VISUALS & ESP
 -- =============================================================
-CreateToggleCard(SeaPage, "Auto Sea Event Patrol", "Flies through deep ocean to summon events", Config.AutoSeaEvent, function(v)
-    Config.AutoSeaEvent = v
-    if v then Config.AutoFarm = false end
-end)
-CreateToggleCard(SeaPage, "Hunt Sea Beasts", "Attacks and destroys Sea Beasts", Config.KillSeaBeasts, function(v) Config.KillSeaBeasts = v end)
-CreateToggleCard(SeaPage, "Hunt Terror Sharks & Piranhas", "Targets oceanic predators", Config.KillTerrorShark, function(v) Config.KillTerrorShark = v end)
-
--- =============================================================
--- 🍓 TAB 7: FRUITS & CHESTS
--- =============================================================
-CreateToggleCard(FruitPage, "Chest Collector (20 Speed / Noclip)", "Glides through all walls to collect map chests", Config.ChestCollector, function(v) Config.ChestCollector = v end)
-CreateToggleCard(FruitPage, "Tween to Spawned Fruits", "Flies directly to uncollected fruits", Config.TweenFruits, function(v) Config.TweenFruits = v end)
-CreateToggleCard(FruitPage, "Auto Store Fruits", "Stores retrieved fruits in fruit bag", Config.AutoStore, function(v) Config.AutoStore = v end)
-
--- =============================================================
--- 🛒 TAB 8: REMOTE SHOP & ABILITIES
--- =============================================================
-CreateActionBtn(ShopPage, "Buy Geppo (Skyjump - $10,000)", function() CommF_:InvokeServer("BuyHaki", "Geppo") end)
-CreateActionBtn(ShopPage, "Buy Buso (Buso Haki - $25,000)", function() CommF_:InvokeServer("BuyHaki", "Buso") end)
-CreateActionBtn(ShopPage, "Buy Soru (Flash Step - $100,000)", function() CommF_:InvokeServer("BuyHaki", "Soru") end)
-CreateActionBtn(ShopPage, "Buy Ken Haki (Observation - $750,000)", function() CommF_:InvokeServer("KenTalk", "Buy") end)
-CreateActionBtn(ShopPage, "Reset Stats (Refund - 2,500 Frags)", function() CommF_:InvokeServer("BlackbeardReward", "Refund", "2") end)
-CreateActionBtn(ShopPage, "Race Reroll (3,000 Frags)", function() CommF_:InvokeServer("BlackbeardReward", "Reroll", "2") end)
-
--- =============================================================
--- 👤 TAB 9: PLAYER & FUN
--- =============================================================
-CreateToggleCard(PlayerPage, "Infinite Jump", "Jump continuously in the air", Config.InfiniteJump, function(v) Config.InfiniteJump = v end)
-CreateToggleCard(PlayerPage, "Jesus Mode (Walk on Water)", "Walk on ocean without taking damage", Config.WaterWalk, function(v) Config.WaterWalk = v end)
-CreateToggleCard(PlayerPage, "Manual Noclip", "Pass through any wall or obstacle", Config.ManualNoclip, function(v) Config.ManualNoclip = v end)
-
--- =============================================================
--- 👁️ TAB 10: 0-LAG PERSISTENT ESP
--- =============================================================
-CreateToggleCard(ESPPage, "Player ESP", "Shows player name, distance and HP", Config.PlayerESP, function(v) Config.PlayerESP = v end)
-CreateToggleCard(ESPPage, "Fruit ESP", "Displays spawned fruit locations", Config.FruitESP, function(v) Config.FruitESP = v end)
-CreateToggleCard(ESPPage, "Berry Bush ESP (Sea 3)", "Locates berry bushes across islands", Config.BerryESP, function(v) Config.BerryESP = v end)
+CreateToggleCard(ESPPage, "Player ESP", "Shows player distance and HP", Config.PlayerESP, function(v) Config.PlayerESP = v end)
+CreateToggleCard(ESPPage, "Fruit ESP", "Locates spawned devil fruits", Config.FruitESP, function(v) Config.FruitESP = v end)
+CreateToggleCard(ESPPage, "Mobile Berry ESP", "Low-lag nearby Berry bushes (Sea 3)", Config.BerryESP, function(v) Config.BerryESP = v end)
 CreateToggleCard(ESPPage, "Chest ESP", "Marks chests on the map", Config.ChestESP, function(v) Config.ChestESP = v end)
-
--- Runtime Hooks
-UserInputService.JumpRequest:Connect(function()
-    if Config.InfiniteJump then
-        local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
-
-local WaterPlatform = Instance.new("Part", Workspace)
-WaterPlatform.Name = "JesusPlatform_V17"
-WaterPlatform.Size = Vector3.new(100, 1, 100)
-WaterPlatform.Transparency = 1
-WaterPlatform.Anchored = true
-WaterPlatform.CanCollide = false
-
-RunService.Heartbeat:Connect(function()
-    local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if Config.WaterWalk and root then
-        WaterPlatform.Position = Vector3.new(root.Position.X, 0.5, root.Position.Z)
-        WaterPlatform.CanCollide = true
-    else
-        WaterPlatform.CanCollide = false
-    end
-end)
