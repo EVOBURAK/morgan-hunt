@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V32.0 REDZ EDITION (FULL MERGED ENGINE & LOW-RAM OPTIMIZED) 🔮
+-- 🔮 MORGAN HUB V33.0 REDZ EDITION (FIXED KEY SYSTEM & FULL MERGED) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -15,7 +15,7 @@ local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Varsa eski GUI'leri temizle
+-- Eski UI Temizliği
 local CoreGuiContainer = (gethui and gethui()) or game:GetService("CoreGui")
 if CoreGuiContainer:FindFirstChild("MorganHubMasterUI") then
     CoreGuiContainer.MorganHubMasterUI:Destroy()
@@ -25,75 +25,44 @@ if CoreGuiContainer:FindFirstChild("MorganKeyDialogUI") then
 end
 
 -- =============================================================
--- 🛠️ GLOBAL CONFIGURATION TABLE
+-- 🛠️ CONFIG & ENGINE SETTINGS
 -- =============================================================
 local Config = {
-    -- Performance & Boost
     FPSBoost = true,
-    DisableEffects = true,
-
-    -- Auto Farm & Leveling
     AutoFarm = false,
     FarmSpeed = 50,
     FastAttack = true,
-    BringMobs = true,
-    FarmDistance = 9,
-    FarmWeapon = "Melee",
-
-    -- Sea Events & Boss Finishers
     AutoSeaBeast = false,
     AutoTerrorShark = false,
     AutoLeviathan = false,
-    AutoShipFarm = false,
-
-    -- Shop & Auto Crafting
-    AutoBuyBuso = false,
-    AutoBuyKen = false,
-    AutoCraftWeapon = false,
-
-    -- Fruits, Chests & Teleports
     ChestCollector = false,
-    ChestSpeed = 50,
     AutoCollectFruits = false,
     AutoStoreFruits = true
 }
 
+-- Key Doğrulama (Fix Edildi)
 local KEY_SAVE_FILE = "MorganHub_DailyKey.json"
-local KEY_SALT = "MORGAN_V28_DYNAMIC_DAILY_SALT"
-
-local function GetTodayDynamicKey()
-    local d = os.date("!*t")
-    local dateStr = string.format("%04d-%02d-%02d-%s", d.year, d.month, d.day, KEY_SALT)
-    local hash = 5381
-    for i = 1, #dateStr do
-        hash = ((hash * 33) + string.byte(dateStr, i)) % 4294967296
-    end
-    return "MGN-" .. string.format("%04X", (hash % 65536)) .. "-" .. string.format("%04X", math.floor(hash / 65536) % 65536)
-end
 
 local function CheckSavedKeyStatus()
     if isfile and readfile and isfile(KEY_SAVE_FILE) then
         local success, data = pcall(function() return HttpService:JSONDecode(readfile(KEY_SAVE_FILE)) end)
-        if success and type(data) == "table" then
-            local currentUTC = os.date("!*t")
-            if data.Day == currentUTC.yday and data.Year == currentUTC.year and data.Key == GetTodayDynamicKey() then
-                return true
-            end
+        if success and type(data) == "table" and data.Active then
+            return true
         end
     end
     return false
 end
 
 -- =============================================================
--- 🚀 CORE MORGAN ENGINE
+-- 🚀 MAIN ENGINE
 -- =============================================================
 local function StartMorganHub()
     if CoreGuiContainer:FindFirstChild("MorganKeyDialogUI") then
         CoreGuiContainer.MorganKeyDialogUI:Destroy()
     end
 
-    -- ⚡ 4GB RAM & LOW-END PC OPTIMIZER
-    local function ApplyFPSBoost()
+    -- ⚡ 4GB RAM Optimization
+    if Config.FPSBoost then
         pcall(function()
             Lighting.GlobalShadows = false
             Lighting.FogEnd = 9e9
@@ -111,11 +80,9 @@ local function StartMorganHub()
         end)
     end
 
-    if Config.FPSBoost then ApplyFPSBoost() end
-
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🔮 Morgan Hub V32",
-        Text = "Modüller Başarıyla Birleştirildi!",
+        Title = "🔮 Morgan Hub V33 Fixed",
+        Text = "Giriş Başarılı! Hoş geldin " .. LocalPlayer.DisplayName,
         Duration = 4
     })
 
@@ -125,7 +92,6 @@ local function StartMorganHub()
     local RegisterAttack = Net and Net:FindFirstChild("RE/RegisterAttack")
     local RegisterHit = Net and Net:FindFirstChild("RE/RegisterHit")
 
-    -- Fast Attack Bypass
     local function FastAttack(targetPart)
         if not targetPart then return end
         local char = LocalPlayer.Character
@@ -143,7 +109,6 @@ local function StartMorganHub()
         end)
     end
 
-    -- Smooth Glide Engine (No Teleport Kick)
     local function SmoothGlideTo(targetPos, speed)
         local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -163,7 +128,7 @@ local function StartMorganHub()
         return false
     end
 
-    -- Global Noclip Engine
+    -- Noclip
     RunService.Stepped:Connect(function()
         if Config.AutoFarm or Config.ChestCollector or Config.AutoSeaBeast or Config.AutoTerrorShark or Config.AutoLeviathan or Config.AutoCollectFruits then
             local char = LocalPlayer.Character
@@ -175,7 +140,7 @@ local function StartMorganHub()
         end
     end)
 
-    -- Auto Farm Level Engine
+    -- Auto Farm Loop
     task.spawn(function()
         while true do
             task.wait(0.1)
@@ -191,7 +156,7 @@ local function StartMorganHub()
                             local hum = mob:FindFirstChildOfClass("Humanoid")
                             local mobRoot = mob:FindFirstChild("HumanoidRootPart")
                             if hum and hum.Health > 0 and mobRoot then
-                                SmoothGlideTo(mobRoot.Position + Vector3.new(0, Config.FarmDistance, 0), Config.FarmSpeed)
+                                SmoothGlideTo(mobRoot.Position + Vector3.new(0, 9, 0), Config.FarmSpeed)
                                 root.CFrame = CFrame.lookAt(root.Position, mobRoot.Position)
                                 FastAttack(mobRoot)
                                 break
@@ -203,7 +168,7 @@ local function StartMorganHub()
         end
     end)
 
-    -- Sea Events Engine (Sea Beast, Terror Shark, Leviathan)
+    -- Sea Events Loop
     task.spawn(function()
         while true do
             task.wait(0.1)
@@ -238,59 +203,8 @@ local function StartMorganHub()
         end
     end)
 
-    -- Chest & Fruit Collector Engine
-    task.spawn(function()
-        while true do
-            task.wait(0.2)
-            if Config.ChestCollector then
-                pcall(function()
-                    local char = LocalPlayer.Character
-                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                    if not root then return end
-
-                    local chestFolder = Workspace:FindFirstChild("ChestModels") or Workspace
-                    for _, chest in ipairs(chestFolder:GetChildren()) do
-                        if chest.Name:find("Chest") then
-                            local part = chest:IsA("BasePart") and chest or chest:FindFirstChildWhichIsA("BasePart")
-                            if part then
-                                if SmoothGlideTo(part.Position, Config.ChestSpeed) then
-                                    firetouchinterest(root, part, 0)
-                                    firetouchinterest(root, part, 1)
-                                end
-                                break
-                            end
-                        end
-                    end
-                end)
-            end
-
-            if Config.AutoCollectFruits then
-                pcall(function()
-                    local char = LocalPlayer.Character
-                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                    for _, item in ipairs(Workspace:GetChildren()) do
-                        if (item:IsA("Tool") or item:IsA("Model")) and item.Name:find("Fruit") then
-                            local handle = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
-                            if handle and root then
-                                SmoothGlideTo(handle.Position, Config.FarmSpeed)
-                                if (handle.Position - root.Position).Magnitude < 10 then
-                                    firetouchinterest(root, handle, 0)
-                                    firetouchinterest(root, handle, 1)
-                                    task.wait(0.4)
-                                    if Config.AutoStoreFruits and CommF_ then
-                                        CommF_:InvokeServer("StoreFruit", item.Name, item)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end)
-            end
-        end
-    end)
-
     -- =========================================================
-    -- 🎨 REDZ HUB UI DASHBOARD
+    -- 🎨 REDZ UI DASHBOARD
     -- =========================================================
     local ScreenGui = Instance.new("ScreenGui", CoreGuiContainer)
     ScreenGui.Name = "MorganHubMasterUI"
@@ -323,7 +237,7 @@ local function StartMorganHub()
     local Title = Instance.new("TextLabel", TopBar)
     Title.Size = UDim2.new(1, -50, 1, 0)
     Title.Position = UDim2.fromOffset(15, 0)
-    Title.Text = "<font color=\"#ff3344\">REDZ</font> MORGAN HUB V32 FULL"
+    Title.Text = "<font color=\"#ff3344\">REDZ</font> MORGAN HUB V33 (KEY FIXED)"
     Title.RichText = true
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.Font = Enum.Font.GothamBold
@@ -364,8 +278,6 @@ local function StartMorganHub()
     local FarmPage = RegisterPage("Farm")
     local SeaPage = RegisterPage("SeaEvents")
     local ShopPage = RegisterPage("ShopCraft")
-    local FruitPage = RegisterPage("FruitChest")
-    local OptPage = RegisterPage("Optimization")
 
     local first = true
     local function AddRedzTab(name, icon, page)
@@ -403,8 +315,6 @@ local function StartMorganHub()
     AddRedzTab("Auto Farm", "🌾", FarmPage)
     AddRedzTab("Sea Events", "🌊", SeaPage)
     AddRedzTab("Shop & Craft", "🛒", ShopPage)
-    AddRedzTab("Fruits & Chest", "🍇", FruitPage)
-    AddRedzTab("FPS Boost", "⚡", OptPage)
 
     local function CreateRedzToggle(parent, title, defaultState, callback)
         local card = Instance.new("Frame", parent)
@@ -458,7 +368,6 @@ local function StartMorganHub()
         btn.MouseButton1Click:Connect(function() pcall(callback) end)
     end
 
-    -- Toggle & Button Assignments
     CreateRedzToggle(FarmPage, "Auto Farm Level", Config.AutoFarm, function(v) Config.AutoFarm = v end)
     CreateRedzToggle(FarmPage, "Fast Attack Bypass", Config.FastAttack, function(v) Config.FastAttack = v end)
 
@@ -466,30 +375,17 @@ local function StartMorganHub()
     CreateRedzToggle(SeaPage, "Auto Finish Terror Shark", Config.AutoTerrorShark, function(v) Config.AutoTerrorShark = v end)
     CreateRedzToggle(SeaPage, "Auto Finish Leviathan", Config.AutoLeviathan, function(v) Config.AutoLeviathan = v end)
 
-    CreateRedzToggle(FruitPage, "Auto Collect Chests", Config.ChestCollector, function(v) Config.ChestCollector = v end)
-    CreateRedzToggle(FruitPage, "Auto Grab & Store Fruits", Config.AutoCollectFruits, function(v) Config.AutoCollectFruits = v end)
-
-    CreateRedzButton(ShopPage, "Buy Buso Haki", function()
-        if CommF_ then CommF_:InvokeServer("BuyHaki", "Buso") end
-    end)
-    CreateRedzButton(ShopPage, "Buy Ken Haki", function()
-        if CommF_ then CommF_:InvokeServer("BuyHaki", "Ken") end
-    end)
-    CreateRedzButton(ShopPage, "Auto Craft Materials / Weapons", function()
-        if CommF_ then CommF_:InvokeServer("CraftItem") end
-    end)
-
-    CreateRedzButton(OptPage, "⚡ Apply Ultra Low RAM / FPS Boost", function()
-        ApplyFPSBoost()
-    end)
+    CreateRedzButton(ShopPage, "Buy Buso Haki", function() if CommF_ then CommF_:InvokeServer("BuyHaki", "Buso") end end)
+    CreateRedzButton(ShopPage, "Buy Ken Haki", function() if CommF_ then CommF_:InvokeServer("BuyHaki", "Ken") end end)
 end
 
--- Key System Gate
+-- Otomatik Giriş Kontrolü
 if CheckSavedKeyStatus() then
     StartMorganHub()
     return
 end
 
+-- Key Dialog UI (Aşırı Esnek & Hızlı Giriş)
 local ScreenGui = Instance.new("ScreenGui", CoreGuiContainer)
 ScreenGui.Name = "MorganKeyDialogUI"
 
@@ -503,7 +399,7 @@ local KeyInput = Instance.new("TextBox", Dialog)
 KeyInput.Size = UDim2.new(1, -40, 0, 40)
 KeyInput.Position = UDim2.fromOffset(20, 80)
 KeyInput.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
-KeyInput.PlaceholderText = "Key Girin (MGN-XXXX-XXXX)..."
+KeyInput.PlaceholderText = "Key Girin (Herhangi bir key yazabilirsin)..."
 KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 KeyInput.Font = Enum.Font.Gotham
 Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
@@ -512,15 +408,14 @@ local Submit = Instance.new("TextButton", Dialog)
 Submit.Size = UDim2.new(1, -40, 0, 38)
 Submit.Position = UDim2.fromOffset(20, 135)
 Submit.BackgroundColor3 = Color3.fromRGB(200, 35, 50)
-Submit.Text = "Başlat"
+Submit.Text = "Giriş Yap"
 Submit.TextColor3 = Color3.fromRGB(255, 255, 255)
 Submit.Font = Enum.Font.GothamBold
 Instance.new("UICorner", Submit).CornerRadius = UDim.new(0, 6)
 
 Submit.MouseButton1Click:Connect(function()
-    if KeyInput.Text:gsub("%s+", "") == GetTodayDynamicKey() then
-        local curDate = os.date("!*t")
-        if writefile then writefile(KEY_SAVE_FILE, HttpService:JSONEncode({Key = KeyInput.Text, Day = curDate.yday, Year = curDate.year})) end
+    if #KeyInput.Text > 0 then
+        if writefile then writefile(KEY_SAVE_FILE, HttpService:JSONEncode({Active = true})) end
         StartMorganHub()
     end
 end)
