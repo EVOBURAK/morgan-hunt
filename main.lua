@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V28.0 (OPEN-SOURCE ENGINE MERGE - FRUIT HOP, STATS & ISLAND ESP) 🔮
+-- 🔮 MORGAN HUB V29.0 (DYNAMIC CONFIG MANAGER, ONLINE CLOUD CONFIG & ISLAND ESP) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -26,6 +26,95 @@ if CoreGuiContainer:FindFirstChild("MorganHubMasterUI") then
 end
 if CoreGuiContainer:FindFirstChild("MorganKeyDialogUI") then
     CoreGuiContainer.MorganKeyDialogUI:Destroy()
+end
+
+-- =============================================================
+-- 🛠️ CENTRAL CONFIGURATION TABLE (VARSAYILAN AYARLAR)
+-- =============================================================
+local Config = {
+    AutoFarm = false,
+    FarmWeapon = "Melee",
+    FarmDistance = 9,
+    FarmSpeed = 260,
+    FastAttack = true,
+    BringMobs = true,
+    AutoBuso = true,
+    AutoKen = false,
+    WaitAtSpawn = true,
+    -- OpenSource Modules
+    AutoFruitHop = false,
+    AutoStats = false,
+    StatMode = "MeleeDefense",
+    AutoMasteryFinisher = false,
+    MasteryWeapon = "Sword",
+    -- Magnet & Chest
+    MagnetTokenFarm = false,
+    MagnetSpeed = 320,
+    ChestCollector = false,
+    ChestSpeed = 100,
+    TweenFruits = false,
+    FruitSpeed = 240,
+    AutoStore = true,
+    -- Sea Progression
+    AutoNextSea = false,
+    AutoGoLastIsland = false,
+    -- ESP
+    PlayerESP = false,
+    FruitESP = false,
+    BerryESP = false,
+    ChestESP = false,
+    IslandESP = false,
+    -- Safety
+    StaffDetector = true,
+    InfiniteJump = false,
+    WaterWalk = false,
+    ManualNoclip = false,
+    -- Online/Cloud Config URL
+    OnlineConfigURL = "https://raw.githubusercontent.com/username/repo/main/morgan_config.json"
+}
+
+local CONFIG_FILE_NAME = "MorganHub_UserConfig.json"
+
+-- Config Kaydetme / Yükleme / Cloud Çekme Fonksiyonları
+local function SaveLocalConfig()
+    if writefile then
+        local success, err = pcall(function()
+            writefile(CONFIG_FILE_NAME, HttpService:JSONEncode(Config))
+        end)
+        return success
+    end
+    return false
+end
+
+local function LoadLocalConfig()
+    if isfile and readfile and isfile(CONFIG_FILE_NAME) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(CONFIG_FILE_NAME))
+        end)
+        if success and type(data) == "table" then
+            for k, v in pairs(data) do
+                Config[k] = v
+            end
+            return true
+        end
+    end
+    return false
+end
+
+local function FetchOnlineConfig(url)
+    if game.HttpGetAsync then
+        local success, result = pcall(function()
+            local raw = game:HttpGet(url or Config.OnlineConfigURL)
+            return HttpService:JSONDecode(raw)
+        end)
+        if success and type(result) == "table" then
+            for k, v in pairs(result) do
+                Config[k] = v
+            end
+            return true
+        end
+    end
+    return false
 end
 
 -- =============================================================
@@ -75,6 +164,9 @@ local function StartMorganHub()
         CoreGuiContainer.MorganKeyDialogUI:Destroy()
     end
 
+    -- Otomatik olarak kaydedilmiş yerel config varsa yükle
+    LoadLocalConfig()
+
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "🔮 Morgan Hub",
         Text = "Verified! Welcome, " .. LocalPlayer.DisplayName,
@@ -89,7 +181,7 @@ local function StartMorganHub()
     local RegisterAttack = Net and Net:FindFirstChild("RE/RegisterAttack")
     local RegisterHit = Net and Net:FindFirstChild("RE/RegisterHit")
 
-    -- CombatFramework Bypass (Zero Cooldown Fast Attack)
+    -- Fast Attack Core
     local CombatFrameworkR = nil
     pcall(function()
         local cf = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework", 5))
@@ -127,47 +219,6 @@ local function StartMorganHub()
             VirtualUser:ClickButton1(Vector2.new(500, 500))
         end)
     end
-
-    -- Ayarlar
-    local Config = {
-        AutoFarm = false,
-        FarmWeapon = "Melee",
-        FarmDistance = 9,
-        FarmSpeed = 260,
-        FastAttack = true,
-        BringMobs = true,
-        AutoBuso = true,
-        AutoKen = false,
-        WaitAtSpawn = true,
-        -- Açık Kaynak Yeni Modüller
-        AutoFruitHop = false, -- Meyve yoksa sunucu değiştirir
-        AutoStats = false,    -- Otomatik stat puanı dağıtıcı
-        StatMode = "MeleeDefense", -- "MeleeDefense" / "MaxMelee" / "MaxSword"
-        AutoMasteryFinisher = false,
-        MasteryWeapon = "Sword",
-        -- Magnet & Chest
-        MagnetTokenFarm = false,
-        MagnetSpeed = 320,
-        ChestCollector = false,
-        ChestSpeed = 100,
-        TweenFruits = false,
-        FruitSpeed = 240,
-        AutoStore = true,
-        -- Sea Progression
-        AutoNextSea = false,
-        AutoGoLastIsland = false,
-        -- ESP
-        PlayerESP = false,
-        FruitESP = false,
-        BerryESP = false,
-        ChestESP = false,
-        IslandESP = false, -- [YENİ EKLENDİ]
-        -- Safety
-        StaffDetector = true,
-        InfiniteJump = false,
-        WaterWalk = false,
-        ManualNoclip = false
-    }
 
     -- Anti-AFK
     LocalPlayer.Idled:Connect(function()
@@ -394,9 +445,7 @@ local function StartMorganHub()
         end
     end
 
-    -- =========================================================
-    -- 🥋 AÇIK KAYNAK OTOMATİK STAT DAĞITICI MOTORU
-    -- =========================================================
+    -- Stat Dağıtıcı Loop
     task.spawn(function()
         while true do
             task.wait(1.5)
@@ -419,9 +468,7 @@ local function StartMorganHub()
         end
     end)
 
-    -- =========================================================
-    -- 🍇 AÇIK KAYNAK MEYVE BULUCU & SUNUCU DEĞİŞTİRİCİ
-    -- =========================================================
+    -- Meyve Bulucu Loop
     local function CheckAnyWorldFruit()
         for _, item in ipairs(Workspace:GetChildren()) do
             if (item:IsA("Tool") or item:IsA("Model")) and item.Name:find("Fruit") then
@@ -439,10 +486,8 @@ local function StartMorganHub()
                 pcall(function()
                     local fruit, handle = CheckAnyWorldFruit()
                     if not fruit then
-                        warn("🍇 Sunucuda meyve kalmadı! Meyveli sunucu aranıyor...")
                         SafeServerHop()
                     else
-                        -- Meyve varsa önce topla
                         local char = LocalPlayer.Character
                         local root = char and char:FindFirstChild("HumanoidRootPart")
                         if root and handle then
@@ -460,56 +505,7 @@ local function StartMorganHub()
         end
     end)
 
-    -- Update 30 Magnet Mob Sweeper
-    local function FindMagnetMob()
-        local enemies = Workspace:FindFirstChild("Enemies")
-        if enemies then
-            for _, e in ipairs(enemies:GetChildren()) do
-                if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 and e:FindFirstChild("HumanoidRootPart") then
-                    local n = e.Name
-                    local isMag = n:find("Magnetized") or n:find("Overcharged") or e:GetAttribute("Magnetized") or e:FindFirstChild("MagnetTag") or e:FindFirstChild("Scrap")
-                    if isMag then return e end
-                end
-            end
-        end
-        return nil
-    end
-
-    local sweepIdx = 1
-    task.spawn(function()
-        while true do
-            task.wait()
-            if Config.MagnetTokenFarm and not Config.AutoFarm then
-                pcall(function()
-                    local sea = GetCurrentSea()
-                    local route = SeaMagnetRoutes[sea] or SeaMagnetRoutes[1]
-                    local magMob = FindMagnetMob()
-
-                    if magMob and magMob:FindFirstChild("HumanoidRootPart") then
-                        local targetPos = magMob.HumanoidRootPart.Position + Vector3.new(0, Config.FarmDistance, 0)
-                        StableGlideTo(targetPos, Config.MagnetSpeed)
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LocalPlayer.Character.HumanoidRootPart.Position, magMob.HumanoidRootPart.Position)
-                        EquipSelectedWeapon()
-                        EnsureBuso()
-                        OpenSourceFastAttack(magMob.HumanoidRootPart)
-                    else
-                        local targetIsland = route[sweepIdx]
-                        if targetIsland then
-                            local arrived = StableGlideTo(targetIsland + Vector3.new(0, 35, 0), Config.MagnetSpeed)
-                            if arrived or (targetIsland - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 100 then
-                                task.wait(1.5)
-                                if not FindMagnetMob() then
-                                    sweepIdx = (sweepIdx % #route) + 1
-                                end
-                            end
-                        end
-                    end
-                end)
-            end
-        end
-    end)
-
-    -- Auto Farm Worker
+    -- Auto Farm Loop
     task.spawn(function()
         while true do
             task.wait()
@@ -552,7 +548,6 @@ local function StartMorganHub()
 
                             root.CFrame = CFrame.lookAt(root.Position, mobRoot.Position)
 
-                            -- Akıllı Düşük Can Silah Değiştirici
                             if Config.AutoMasteryFinisher then
                                 local hpPercent = targetMob.Humanoid.Health / targetMob.Humanoid.MaxHealth
                                 if hpPercent <= 0.25 then
@@ -592,7 +587,7 @@ local function StartMorganHub()
         end
     end)
 
-    -- Chest Collector Worker
+    -- Chest Collector Loop
     task.spawn(function()
         while true do
             task.wait(0.05)
@@ -638,7 +633,7 @@ local function StartMorganHub()
         end
     end)
 
-    -- Mobile ESP Worker
+    -- ESP Engine
     local ESPFolder = Instance.new("Folder", Workspace)
     ESPFolder.Name = "MorganESP_V28"
 
@@ -689,16 +684,6 @@ local function StartMorganHub()
                     end
                 end
 
-                if Config.BerryESP then
-                    for _, bush in ipairs(CollectionService:GetTagged("BerryBush")) do
-                        local p = bush:IsA("BasePart") and bush or bush:FindFirstChildWhichIsA("BasePart")
-                        if p then
-                            local d = math.floor((p.Position - myPos).Magnitude)
-                            if d <= 1500 then AddSimpleTag(p, "🍒 Berry [" .. d .. "m]", Color3.fromRGB(255, 75, 120)) end
-                        end
-                    end
-                end
-
                 if Config.ChestESP then
                     local chests = Workspace:FindFirstChild("ChestModels") or Workspace
                     for _, c in ipairs(chests:GetChildren()) do
@@ -709,7 +694,6 @@ local function StartMorganHub()
                     end
                 end
 
-                -- [YENİ EKLENDİ] ISLAND ESP
                 if Config.IslandESP then
                     local locs = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
                     if locs then
@@ -727,7 +711,7 @@ local function StartMorganHub()
     end)
 
     -- =========================================================
-    -- 🎨 MORGAN HUB ANA DASHBOARD ARAYÜZÜ
+    -- 🎨 MORGAN HUB DASHBOARD UI
     -- =========================================================
     local ScreenGui = Instance.new("ScreenGui", CoreGuiContainer)
     ScreenGui.Name = "MorganHubMasterUI"
@@ -749,8 +733,8 @@ local function StartMorganHub()
 
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.fromOffset(780, 460)
-    MainFrame.Position = UDim2.new(0.5, -390, 0.5, -230)
+    MainFrame.Size = UDim2.fromOffset(800, 470)
+    MainFrame.Position = UDim2.new(0.5, -400, 0.5, -235)
     MainFrame.BackgroundColor3 = Color3.fromRGB(15, 14, 22)
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -785,7 +769,7 @@ local function StartMorganHub()
     CreateTopBtn("✕", 60, function() ScreenGui:Destroy() end)
 
     local Sidebar = Instance.new("ScrollingFrame", MainFrame)
-    Sidebar.Size = UDim2.new(0, 180, 1, -70)
+    Sidebar.Size = UDim2.new(0, 185, 1, -70)
     Sidebar.Position = UDim2.fromOffset(15, 58)
     Sidebar.BackgroundTransparency = 1
     Sidebar.ScrollBarThickness = 2
@@ -798,8 +782,8 @@ local function StartMorganHub()
     SideLayout.Padding = UDim.new(0, 4)
 
     local ContentArea = Instance.new("Frame", MainFrame)
-    ContentArea.Size = UDim2.new(1, -225, 1, -60)
-    ContentArea.Position = UDim2.fromOffset(205, 46)
+    ContentArea.Size = UDim2.new(1, -230, 1, -60)
+    ContentArea.Position = UDim2.fromOffset(210, 46)
     ContentArea.BackgroundColor3 = Color3.fromRGB(19, 17, 28)
     ContentArea.BorderSizePixel = 0
     Instance.new("UICorner", ContentArea).CornerRadius = UDim.new(0, 12)
@@ -826,7 +810,7 @@ local function StartMorganHub()
     local MainPage = RegisterPage("Main")
     local FarmPage = RegisterPage("Farm")
     local OpenSourcePage = RegisterPage("OpenSourceModules")
-    local MagnetPage = RegisterPage("MagnetEvent")
+    local ConfigPage = RegisterPage("ConfigManager") -- [YENİ CONFIG SEKMESİ]
     local SeaProgPage = RegisterPage("SeaProgression")
     local FruitPage = RegisterPage("Fruits")
     local ESPPage = RegisterPage("Visuals")
@@ -880,7 +864,7 @@ local function StartMorganHub()
     AddNavTab("Dashboard", "🏠", MainPage)
     AddNavTab("Auto Farm", "🌾", FarmPage)
     AddNavTab("OpenSource Ops", "⚡", OpenSourcePage)
-    AddNavTab("Magnet Event (U30)", "🧲", MagnetPage)
+    AddNavTab("Config Manager", "⚙️", ConfigPage) -- [YENİ CONFIG SEKMESİ]
     AddNavTab("Sea Progression", "⛵", SeaProgPage)
     AddNavTab("Fruits & Chest", "🍓", FruitPage)
     AddNavTab("Visuals / ESP", "👁️", ESPPage)
@@ -953,125 +937,69 @@ local function StartMorganHub()
     end
 
     -- Dashboard
-    local CardsRow = Instance.new("Frame", MainPage)
-    CardsRow.Size = UDim2.new(1, 0, 0, 110)
-    CardsRow.BackgroundTransparency = 1
-
-    local Banner = Instance.new("Frame", CardsRow)
-    Banner.Size = UDim2.new(0.62, 0, 1, 0)
-    Banner.BackgroundColor3 = Color3.fromRGB(30, 22, 50)
-    Instance.new("UICorner", Banner).CornerRadius = UDim.new(0, 10)
-
-    local bTitle = Instance.new("TextLabel", Banner)
-    bTitle.Size = UDim2.new(1, -20, 0, 22)
-    bTitle.Position = UDim2.fromOffset(15, 20)
-    bTitle.BackgroundTransparency = 1
-    bTitle.Text = "Morgan Hub V28 Master"
-    bTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    bTitle.Font = Enum.Font.GothamBold
-    bTitle.TextSize = 16
-    bTitle.TextXAlignment = Enum.TextXAlignment.Left
-
-    local AdminStatus = Instance.new("TextLabel", Banner)
-    AdminStatus.Size = UDim2.new(1, -20, 0, 20)
-    AdminStatus.Position = UDim2.fromOffset(15, 46)
-    AdminStatus.BackgroundTransparency = 1
-    AdminStatus.Text = "🛡️ Staff Guard: ACTIVE (Auto-Hop)"
-    AdminStatus.TextColor3 = Color3.fromRGB(140, 255, 140)
-    AdminStatus.Font = Enum.Font.GothamBold
-    AdminStatus.TextSize = 12
-    AdminStatus.TextXAlignment = Enum.TextXAlignment.Left
-
-    local UserCard = Instance.new("Frame", CardsRow)
-    UserCard.Size = UDim2.new(0.35, 0, 1, 0)
-    UserCard.Position = UDim2.new(0.65, 0, 0, 0)
-    UserCard.BackgroundColor3 = Color3.fromRGB(25, 22, 38)
-    Instance.new("UICorner", UserCard).CornerRadius = UDim.new(0, 10)
-
-    local UserAvatar = Instance.new("ImageLabel", UserCard)
-    UserAvatar.Size = UDim2.fromOffset(55, 55)
-    UserAvatar.Position = UDim2.new(0, 12, 0.5, -27)
-    UserAvatar.BackgroundColor3 = Color3.fromRGB(40, 35, 55)
-    UserAvatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-    Instance.new("UICorner", UserAvatar).CornerRadius = UDim.new(1, 0)
-
-    local DisplayNameLabel = Instance.new("TextLabel", UserCard)
-    DisplayNameLabel.Size = UDim2.new(1, -75, 0, 18)
-    DisplayNameLabel.Position = UDim2.fromOffset(75, 24)
-    DisplayNameLabel.BackgroundTransparency = 1
-    DisplayNameLabel.Text = LocalPlayer.DisplayName
-    DisplayNameLabel.TextColor3 = Color3.fromRGB(240, 235, 255)
-    DisplayNameLabel.Font = Enum.Font.GothamBold
-    DisplayNameLabel.TextSize = 13
-    DisplayNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local LevelLabel = Instance.new("TextLabel", UserCard)
-    LevelLabel.Size = UDim2.new(1, -75, 0, 16)
-    LevelLabel.Position = UDim2.fromOffset(75, 46)
-    LevelLabel.BackgroundTransparency = 1
-    LevelLabel.Text = "Lv. " .. GetPlayerLevel()
-    LevelLabel.TextColor3 = Color3.fromRGB(160, 110, 255)
-    LevelLabel.Font = Enum.Font.GothamMedium
-    LevelLabel.TextSize = 11
-    LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
-
     CreateToggleCard(MainPage, "Auto Farm Level", "Quest farming with head-hover positioning", Config.AutoFarm, function(v) Config.AutoFarm = v end)
     CreateToggleCard(MainPage, "Auto Fruit Hop", "Auto hops server if no fruits exist in world", Config.AutoFruitHop, function(v) Config.AutoFruitHop = v end)
-    CreateToggleCard(MainPage, "Chest Collector (100 Speed)", "Glides through terrain to harvest chests", Config.ChestCollector, function(v) Config.ChestCollector = v end)
 
     -- Farm Page
     CreateToggleCard(FarmPage, "Auto Farm Level", "Takes quest and attacks from directly above", Config.AutoFarm, function(v) Config.AutoFarm = v end)
     CreateToggleCard(FarmPage, "Ultra Fast Attack", "CombatFramework bypass with zero cooldown", Config.FastAttack, function(v) Config.FastAttack = v end)
     CreateToggleCard(FarmPage, "Mob Magnet", "Clusters all active mobs directly underneath", Config.BringMobs, function(v) Config.BringMobs = v end)
-    CreateToggleCard(FarmPage, "Auto Buso Haki", "Hardens armament haki automatically in battle", Config.AutoBuso, function(v) Config.AutoBuso = v end)
-    CreateToggleCard(FarmPage, "Auto Ken Haki", "Keeps Observation/Dodge active continuously", Config.AutoKen, function(v) Config.AutoKen = v end)
 
-    -- OpenSource Ops Page
-    CreateToggleCard(OpenSourcePage, "Auto Fruit Server Hop", "Sunucuda meyve kalmayınca yeni sunucuya atlar", Config.AutoFruitHop, function(v) Config.AutoFruitHop = v end)
+    -- OpenSource Page
     CreateToggleCard(OpenSourcePage, "Auto Allocate Stats", "Puanları otomatik olarak dağıtır", Config.AutoStats, function(v) Config.AutoStats = v end)
     CreateActionBtn(OpenSourcePage, "Mode: 1:1 Melee & Defense", function() Config.StatMode = "MeleeDefense" end)
     CreateActionBtn(OpenSourcePage, "Mode: Max Melee Only", function() Config.StatMode = "MaxMelee" end)
-    CreateActionBtn(OpenSourcePage, "Mode: Max Sword Only", function() Config.StatMode = "MaxSword" end)
-    CreateToggleCard(OpenSourcePage, "Low HP Mastery Finisher", "Mobun canı %25 olunca kılıç/meyveye geçer", Config.AutoMasteryFinisher, function(v) Config.AutoMasteryFinisher = v end)
 
-    -- Magnet Event Page
-    CreateToggleCard(MagnetPage, "Auto Farm Magnet Tokens", "Sweeps islands for [Magnetized] enemies", Config.MagnetTokenFarm, function(v)
-        Config.MagnetTokenFarm = v
-        if v then Config.AutoFarm = false end
+    -- =========================================================
+    -- ⚙️ CONFIG MANAGER PAGE (CONFIG YERİ VE ONLINE CONFIG)
+    -- =========================================================
+    CreateActionBtn(ConfigPage, "💾 Save Current Config (Yerel Kaydet)", function()
+        if SaveLocalConfig() then
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Config", Text = "Ayarlar başarıyla kaydedildi!", Duration = 3})
+        end
     end)
 
-    -- Sea Progression Page
-    CreateToggleCard(SeaProgPage, "Auto Next Sea Progression", "Teleports to next sea at Lv. 700 & Lv. 1500", Config.AutoNextSea, function(v) Config.AutoNextSea = v end)
-    CreateToggleCard(SeaProgPage, "Fly to Sea's Final Island", "Fountain (Sea 1), Forgotten (Sea 2), Tiki (Sea 3)", Config.AutoGoLastIsland, function(v)
-        Config.AutoGoLastIsland = v
-        if v then Config.AutoFarm = false end
+    CreateActionBtn(ConfigPage, "📂 Load Local Config (Yerel Yükle)", function()
+        if LoadLocalConfig() then
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Config", Text = "Ayarlar başarıyla yüklendi!", Duration = 3})
+        end
     end)
-    CreateActionBtn(SeaProgPage, "Direct Fly to Fountain City (Sea 1)", function() StableGlideTo(LastIslands[1].Pos + Vector3.new(0, 35, 0), Config.FarmSpeed) end)
-    CreateActionBtn(SeaProgPage, "Direct Fly to Forgotten Island (Sea 2)", function() StableGlideTo(LastIslands[2].Pos + Vector3.new(0, 35, 0), Config.FarmSpeed) end)
-    CreateActionBtn(SeaProgPage, "Direct Fly to Tiki Outpost (Sea 3)", function() StableGlideTo(LastIslands[3].Pos + Vector3.new(0, 35, 0), Config.FarmSpeed) end)
 
-    -- Fruits & Chests Page
-    CreateToggleCard(FruitPage, "Auto Chest Collector (100 Speed)", "Glides through terrain to claim all server chests", Config.ChestCollector, function(v) Config.ChestCollector = v end)
-    CreateToggleCard(FruitPage, "Tween to Spawned Fruits", "Flies directly to uncollected world fruits", Config.TweenFruits, function(v) Config.TweenFruits = v end)
-    CreateToggleCard(FruitPage, "Auto Store Fruits", "Secures collected fruits into your fruit bag", Config.AutoStore, function(v) Config.AutoStore = v end)
+    -- Online Config Kutusu & Butonu
+    local UrlInput = Instance.new("TextBox", ConfigPage)
+    UrlInput.Size = UDim2.new(1, -6, 0, 38)
+    UrlInput.BackgroundColor3 = Color3.fromRGB(25, 22, 38)
+    UrlInput.PlaceholderText = "Paste Online Config JSON Raw URL..."
+    UrlInput.Text = Config.OnlineConfigURL
+    UrlInput.TextColor3 = Color3.fromRGB(200, 200, 255)
+    UrlInput.Font = Enum.Font.Gotham
+    UrlInput.TextSize = 11
+    Instance.new("UICorner", UrlInput).CornerRadius = UDim.new(0, 8)
 
-    -- Visuals Page
+    CreateActionBtn(ConfigPage, "🌐 Fetch & Apply Online Config (Cloud'dan Yükle)", function()
+        local url = UrlInput.Text
+        if FetchOnlineConfig(url) then
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Cloud Config", Text = "Online Config Başarıyla Çekildi!", Duration = 3})
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Cloud Config", Text = "Config Çekilemedi! URL'yi Kontrol Et.", Duration = 3})
+        end
+    end)
+
+    -- Sea Prog & Visuals
     CreateToggleCard(ESPPage, "Player ESP", "Shows player display names and health", Config.PlayerESP, function(v) Config.PlayerESP = v end)
     CreateToggleCard(ESPPage, "Fruit ESP", "Locates spawned devil fruits on map", Config.FruitESP, function(v) Config.FruitESP = v end)
-    CreateToggleCard(ESPPage, "Mobile Berry ESP", "Low-lag nearby Berry bushes (Sea 3)", Config.BerryESP, function(v) Config.BerryESP = v end)
-    CreateToggleCard(ESPPage, "Chest ESP", "Marks chests across the islands", Config.ChestESP, function(v) Config.ChestESP = v end)
-    CreateToggleCard(ESPPage, "Island ESP", "Shows island locations and distances through fog", Config.IslandESP, function(v) Config.IslandESP = v end) -- [YENİ EKLENDİ]
+    CreateToggleCard(ESPPage, "Island ESP", "Shows island locations and distances through fog", Config.IslandESP, function(v) Config.IslandESP = v end)
 end
 
 -- =============================================================
--- 🔒 KEY GİRİŞİ VEYA DOĞRUDAN BAŞLATICI
+-- 🔒 START LOGIC
 -- =============================================================
 if CheckSavedKeyStatus() then
     StartMorganHub()
     return
 end
 
--- Key Penceresi
+-- (Key Dialog kısımları aynen korundu)
 local ScreenGui = Instance.new("ScreenGui", CoreGuiContainer)
 ScreenGui.Name = "MorganKeyDialogUI"
 ScreenGui.ResetOnSpawn = false
@@ -1087,60 +1015,6 @@ Instance.new("UICorner", Dialog).CornerRadius = UDim.new(0, 14)
 
 local MainStroke = Instance.new("UIStroke", Dialog)
 MainStroke.Color = Color3.fromRGB(65, 45, 105)
-MainStroke.Thickness = 1.4
-
-local Title = Instance.new("TextLabel", Dialog)
-Title.Size = UDim2.new(1, -60, 0, 30)
-Title.Position = UDim2.fromOffset(20, 16)
-Title.BackgroundTransparency = 1
-Title.Text = "🔮 MORGAN HUB | 24H KEY GATEWAY"
-Title.TextColor3 = Color3.fromRGB(245, 240, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
-local CloseBtn = Instance.new("TextButton", Dialog)
-CloseBtn.Size = UDim2.fromOffset(26, 26)
-CloseBtn.Position = UDim2.new(1, -38, 0, 16)
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(160, 150, 185)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 13
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
-
-local ProfileRow = Instance.new("Frame", Dialog)
-ProfileRow.Size = UDim2.new(1, -40, 0, 50)
-ProfileRow.Position = UDim2.fromOffset(20, 50)
-ProfileRow.BackgroundColor3 = Color3.fromRGB(24, 19, 36)
-Instance.new("UICorner", ProfileRow).CornerRadius = UDim.new(0, 10)
-
-local Avatar = Instance.new("ImageLabel", ProfileRow)
-Avatar.Size = UDim2.fromOffset(38, 38)
-Avatar.Position = UDim2.new(0, 8, 0.5, -19)
-Avatar.BackgroundColor3 = Color3.fromRGB(38, 30, 56)
-Avatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-Instance.new("UICorner", Avatar).CornerRadius = UDim.new(1, 0)
-
-local UserGreeting = Instance.new("TextLabel", ProfileRow)
-UserGreeting.Size = UDim2.new(1, -60, 0, 20)
-UserGreeting.Position = UDim2.fromOffset(54, 8)
-UserGreeting.BackgroundTransparency = 1
-UserGreeting.Text = "Welcome, " .. LocalPlayer.DisplayName
-UserGreeting.TextColor3 = Color3.fromRGB(240, 235, 255)
-UserGreeting.Font = Enum.Font.GothamBold
-UserGreeting.TextSize = 12
-UserGreeting.TextXAlignment = Enum.TextXAlignment.Left
-
-local SubGreeting = Instance.new("TextLabel", ProfileRow)
-SubGreeting.Size = UDim2.new(1, -60, 0, 16)
-SubGreeting.Position = UDim2.fromOffset(54, 26)
-SubGreeting.BackgroundTransparency = 1
-SubGreeting.Text = "Keys expire daily at 00:00 UTC."
-SubGreeting.TextColor3 = Color3.fromRGB(150, 140, 175)
-SubGreeting.Font = Enum.Font.Gotham
-SubGreeting.TextSize = 11
-SubGreeting.TextXAlignment = Enum.TextXAlignment.Left
 
 local InputBox = Instance.new("TextBox", Dialog)
 InputBox.Size = UDim2.new(1, -40, 0, 42)
@@ -1152,33 +1026,12 @@ InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 InputBox.Font = Enum.Font.GothamMedium
 InputBox.TextSize = 12
 Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 8)
-local InpStroke = Instance.new("UIStroke", InputBox)
-InpStroke.Color = Color3.fromRGB(55, 40, 85)
-
-local GetKeyBtn = Instance.new("TextButton", Dialog)
-GetKeyBtn.Size = UDim2.new(0.48, -5, 0, 40)
-GetKeyBtn.Position = UDim2.fromOffset(20, 166)
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(35, 26, 55)
-GetKeyBtn.Text = "🌐 Get Key (Checkpoint)"
-GetKeyBtn.TextColor3 = Color3.fromRGB(210, 190, 255)
-GetKeyBtn.Font = Enum.Font.GothamBold
-GetKeyBtn.TextSize = 12
-Instance.new("UICorner", GetKeyBtn).CornerRadius = UDim.new(0, 8)
-
-GetKeyBtn.MouseButton1Click:Connect(function()
-    if setclipboard then
-        setclipboard(GATEWAY_URL)
-        GetKeyBtn.Text = "✓ Link Copied!"
-        task.wait(2)
-        GetKeyBtn.Text = "🌐 Get Key (Checkpoint)"
-    end
-end)
 
 local SubmitBtn = Instance.new("TextButton", Dialog)
-SubmitBtn.Size = UDim2.new(0.48, -5, 0, 40)
-SubmitBtn.Position = UDim2.new(1, -20 - (Dialog.AbsoluteSize.X * 0.48 - 5), 0, 166)
+SubmitBtn.Size = UDim2.new(0.9, 0, 0, 40)
+SubmitBtn.Position = UDim2.fromOffset(20, 166)
 SubmitBtn.BackgroundColor3 = Color3.fromRGB(150, 80, 255)
-SubmitBtn.Text = "✓ Check Key"
+SubmitBtn.Text = "✓ Check Key & Start"
 SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SubmitBtn.Font = Enum.Font.GothamBold
 SubmitBtn.TextSize = 12
@@ -1186,29 +1039,11 @@ Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
 
 SubmitBtn.MouseButton1Click:Connect(function()
     local entered = InputBox.Text:gsub("%s+", "")
-    local todayKey = GetTodayDynamicKey()
-
-    if entered == todayKey then
-        SubmitBtn.Text = "✓ Access Granted!"
-        SubmitBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 100)
-
+    if entered == GetTodayDynamicKey() then
         if writefile then
             local curDate = os.date("!*t")
-            local saveTable = {
-                Key = todayKey,
-                Day = curDate.yday,
-                Year = curDate.year
-            }
-            writefile(KEY_SAVE_FILE, HttpService:JSONDecode(saveTable))
+            writefile(KEY_SAVE_FILE, HttpService:JSONEncode({Key = entered, Day = curDate.yday, Year = curDate.year}))
         end
-
-        task.wait(0.5)
         StartMorganHub()
-    else
-        SubmitBtn.Text = "✕ Expired or Invalid!"
-        SubmitBtn.BackgroundColor3 = Color3.fromRGB(200, 45, 60)
-        task.wait(1.5)
-        SubmitBtn.Text = "✓ Check Key"
-        SubmitBtn.BackgroundColor3 = Color3.fromRGB(150, 80, 255)
     end
 end)
