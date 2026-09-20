@@ -1,5 +1,5 @@
 -- =================================================================================
--- 🔮 MORGAN HUB V2.7 PREMIUM (AUTO QUEST & FARM INTEGRATED) 🔮
+-- 🔮 MORGAN HUB V2.6 PREMIUM (FIXED - DELTA UYUMLU, MOBİL DOSTU, NO KEY) 🔮
 -- =================================================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -49,7 +49,6 @@ end)
 -- =============================================================
 local Config = {
     AutoFarm = false,
-    AutoQuest = true, -- Auto Quest Varsayılan Açık
     BringMobs = true,
     FastAttack = true,
     AutoBuso = true,
@@ -94,75 +93,6 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- =============================================================
--- 📜 AUTO QUEST SİSTEMİ (GÖREV ALMA)
--- =============================================================
-local function HasQuest()
-    local questGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
-    if questGui and questGui:FindFirstChild("Quest") and questGui.Quest.Visible then
-        return true
-    end
-    return false
-end
-
-local function GetQuestData()
-    local level = LocalPlayer.Data.Level.Value
-    
-    -- Sea 1, Sea 2, Sea 3 Temel Görev NPC / Görev Adı Eşleştirmesi
-    -- (Blox Fruits Seviyelerine Göre Otomatik Seçim)
-    if level >= 1 and level <= 9 then
-        return "BanditQuest1", 1, "Bandit", CFrame.new(1059, 16, 1549)
-    elseif level >= 10 and level <= 14 then
-        return "JungleQuest", 1, "Monkey", CFrame.new(-1601, 36, 153)
-    elseif level >= 15 and level <= 29 then
-        return "JungleQuest", 2, "Gorilla", CFrame.new(-1601, 36, 153)
-    elseif level >= 30 and level <= 39 then
-        return "BuggyQuest1", 1, "Pirate", CFrame.new(-1140, 4, 3828)
-    elseif level >= 40 and level <= 59 then
-        return "BuggyQuest1", 2, "Brute", CFrame.new(-1140, 4, 3828)
-    elseif level >= 60 and level <= 89 then
-        return "DesertQuest", 1, "Desert Officer", CFrame.new(897, 6, 4388)
-    elseif level >= 90 and level <= 119 then
-        return "SnowQuest", 1, "Snow Bandit", CFrame.new(1385, 87, -1298)
-    elseif level >= 120 and level <= 149 then
-        return "MarineQuest2", 1, "Chief Petty Officer", CFrame.new(-5030, 28, 4324)
-    elseif level >= 150 and level <= 189 then
-        return "SkyQuest", 1, "Sky Bandit", CFrame.new(-4840, 717, -2623)
-    elseif level >= 190 and level <= 224 then
-        return "PrisonerQuest", 1, "Prisoner", CFrame.new(530, 1, 474)
-    elseif level >= 225 and level <= 274 then
-        return "ColosseumQuest", 1, "Toga Warrior", CFrame.new(-1580, 7, -2980)
-    elseif level >= 275 and level <= 299 then
-        return "MagmaQuest", 1, "Military Soldier", CFrame.new(-5315, 12, 8515)
-    elseif level >= 300 and level <= 374 then
-        return "FishmanQuest", 1, "Fishman Warrior", CFrame.new(61122, 18, 1569)
-    elseif level >= 375 and level <= 449 then
-        return "SkyExp1Quest", 1, "God's Guard", CFrame.new(-4721, 845, -1954)
-    elseif level >= 450 and level <= 524 then
-        return "SkyExp2Quest", 1, "Shandorian Warrior", CFrame.new(-7860, 5545, -380)
-    elseif level >= 525 and level <= 624 then
-        return "FountainQuest", 1, "Galley Pirate", CFrame.new(5258, 38, 4050)
-    elseif level >= 625 and level <= 699 then
-        return "FountainQuest", 2, "Galley Captain", CFrame.new(5258, 38, 4050)
-    else
-        -- 700+ Üst Seviyeler İçin Otomatik Yakın Görev Desteği
-        return "BanditQuest1", 1, "Bandit", CFrame.new(1059, 16, 1549) 
-    end
-end
-
-local function TakeQuest()
-    if HasQuest() then return end
-    local questName, questLevel, mobName, questCFrame = GetQuestData()
-    if questName and questCFrame then
-        -- Görev NPC'sine git ve görevi al
-        TweenTo(questCFrame)
-        if (LocalPlayer.Character.HumanoidRootPart.Position - questCFrame.Position).Magnitude < 15 then
-            Comm("StartQuest", questName, questLevel)
-            task.wait(0.5)
-        end
-    end
-end
-
--- =============================================================
 -- 🎨 PREMIUM UI LIBRARY (MORGAN ENGINE)
 -- =============================================================
 local MorganUI = {}
@@ -174,6 +104,7 @@ function MorganUI:CreateWindow(titleText)
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = GuiParent
 
+    -- Ekran boyutuna göre pencere (telefonda taşmasın)
     local vp = Camera.ViewportSize
     local width = math.clamp(vp.X - 40, 320, 650)
     local height = math.clamp(vp.Y - 40, 260, 410)
@@ -247,7 +178,7 @@ function MorganUI:CreateWindow(titleText)
         ScreenGui:Destroy()
     end)
 
-    -- Sürükleme
+    -- Sürükleme (PC + mobil)
     do
         local dragging, dragStart, startPos = false, nil, nil
         TopBar.InputBegan:Connect(function(input)
@@ -342,6 +273,7 @@ function MorganUI:CreateWindow(titleText)
         local TabData = {Btn = TabBtn, Page = Page, Indicator = Indicator}
         table.insert(Window.Tabs, TabData)
 
+        -- ✅ FIX: MouseButton1Click:Fire() diye bir şey yok, bunun yerine fonksiyon kullanıyoruz
         local function SelectTab(t)
             for _, o in ipairs(Window.Tabs) do
                 o.Page.Visible = false
@@ -433,6 +365,7 @@ function MorganUI:CreateWindow(titleText)
             Btn.MouseLeave:Connect(function()
                 TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
             end)
+            -- task.spawn: InvokeServer beklerken UI donmasın
             Btn.MouseButton1Click:Connect(function()
                 task.spawn(function()
                     local ok, err = pcall(callback)
@@ -448,7 +381,7 @@ function MorganUI:CreateWindow(titleText)
 end
 
 -- =============================================================
--- 🍎 FAKE FRUIT SPAWNER
+-- 🍎 FAKE FRUIT SPAWNER (SADECE SENİN EKRANINDA GÖRÜNÜR)
 -- =============================================================
 local function SpawnFakeFruit(fruitName, color)
     local char = LocalPlayer.Character
@@ -493,7 +426,7 @@ local function ClearFakeFruits()
 end
 
 -- =============================================================
--- ⚔️ AUTO FARM & QUEST MOTORU
+-- ⚔️ AUTO FARM MOTORU
 -- =============================================================
 local currentTween = nil
 
@@ -532,7 +465,7 @@ local function StopFarm()
     end)
 end
 
--- Noclip + Float
+-- Noclip + havada sabit tutma (sadece farm açıkken)
 RunService.Stepped:Connect(function()
     if not Config.AutoFarm then return end
     pcall(function()
@@ -557,6 +490,7 @@ RunService.Stepped:Connect(function()
     end)
 end)
 
+-- CombatFramework arka planda yüklenir (UI'ı bekletmez)
 local CombatFrameworkR = nil
 task.spawn(function()
     pcall(function()
@@ -588,7 +522,6 @@ local function FastAttack()
     end)
 end
 
--- Ana Farm DÖNGÜSÜ (GÖREV + MOB)
 task.spawn(function()
     local lastBuso = 0
     while task.wait() do
@@ -599,13 +532,7 @@ task.spawn(function()
                 local hum = char and char:FindFirstChildOfClass("Humanoid")
                 if not root or not hum or hum.Health <= 0 then return end
 
-                -- 1. ADIM: Otomatik Görev Al
-                if Config.AutoQuest and not HasQuest() then
-                    TakeQuest()
-                    return
-                end
-
-                -- 2. ADIM: Silah Kuşan
+                -- Silah / yumruk kuşan
                 if not char:FindFirstChildOfClass("Tool") then
                     for _, t in ipairs(LocalPlayer.Backpack:GetChildren()) do
                         if t:IsA("Tool") and (t.ToolTip == "Melee" or t.ToolTip == "Sword") then
@@ -615,30 +542,25 @@ task.spawn(function()
                     end
                 end
 
-                -- 3. ADIM: Buso Haki
+                -- Buso Haki (3 sn'de bir dene)
                 if Config.AutoBuso and not char:FindFirstChild("HasBuso") and tick() - lastBuso > 3 then
                     lastBuso = tick()
                     task.spawn(Comm, "Buso")
                 end
 
-                -- 4. ADIM: Moba Git ve Kes
+                -- En yakın moba bul
                 local enemies = Workspace:FindFirstChild("Enemies")
                 if not enemies then return end
 
                 local closestMob, dist = nil, math.huge
-                local _, _, targetMobName = GetQuestData()
-
                 for _, mob in ipairs(enemies:GetChildren()) do
                     local mh = mob:FindFirstChild("Humanoid")
                     local mr = mob:FindFirstChild("HumanoidRootPart")
                     if mh and mr and mh.Health > 0 then
-                        -- Görevdeki mob ise öncelik ver
-                        if not Config.AutoQuest or (mob.Name:find(targetMobName) or mob.Name == targetMobName) then
-                            local d = (mr.Position - root.Position).Magnitude
-                            if d < dist then
-                                dist = d
-                                closestMob = mob
-                            end
+                        local d = (mr.Position - root.Position).Magnitude
+                        if d < dist then
+                            dist = d
+                            closestMob = mob
                         end
                     end
                 end
@@ -670,7 +592,7 @@ task.spawn(function()
 end)
 
 -- =============================================================
--- 🏃 WALKSPEED / JUMPPOWER
+-- 🏃 WALKSPEED / JUMPPOWER (artık gerçekten çalışıyor)
 -- =============================================================
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
@@ -696,7 +618,7 @@ local function ResetMovement()
 end
 
 -- =============================================================
--- 👁️ ESP SİSTEMİ
+-- 👁️ ESP SİSTEMİ (artık gerçekten çalışıyor)
 -- =============================================================
 local ESPStore = {Player = {}, Fruit = {}}
 
@@ -782,7 +704,6 @@ TabFarm:AddToggle("Auto Farm Mobs", false, function(v)
     Config.AutoFarm = v
     if not v then StopFarm() end
 end)
-TabFarm:AddToggle("Auto Quest (Gorev Al)", true, function(v) Config.AutoQuest = v end)
 TabFarm:AddToggle("Magnet Mobs (Bring)", true, function(v) Config.BringMobs = v end)
 TabFarm:AddToggle("Fast Attack (Zero Delay)", true, function(v) Config.FastAttack = v end)
 TabFarm:AddToggle("Auto Buso Haki", true, function(v) Config.AutoBuso = v end)
@@ -825,4 +746,4 @@ TabMisc:AddToggle("Fruit ESP", false, function(v)
     if not v then ClearESP("Fruit") end
 end)
 
-print("Morgan Hub Premium v2.7 (Auto Quest Added) Loaded!")
+print("Morgan Hub Premium v2.6 (Fixed) Loaded!")
