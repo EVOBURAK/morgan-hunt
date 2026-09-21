@@ -53,7 +53,7 @@ local U, UI, Move, Combat, Farm, Items, PvP, ESP, Misc, Data, Fish =
 local Cfg = {
     -- Farming
     AutoFarm = false, UseQuest = true, WeaponType = "Melee",
-    FarmHeight = 12, TweenSpeed = 40,
+    FarmHeight = 12, TweenSpeed = 200,
     BringMobs = true, BringRadius = 380, Hitbox = true, HitboxSize = 45,
     FastAttack = true, AttackMode = "Ultra (Net+Combat)", AttackRange = 70, ClickMethod = "VirtualUser",
     AutoBuso = true, AutoKen = false,
@@ -86,6 +86,10 @@ local Cfg = {
     -- Fishing / visuals
     FishFarm = false, FishSell = true, FishBait = true, FishRestock = 5,
     FpsBoost = false, Theme = "Rain", LogoURL = "",
+    -- Discord webhook / bug reports / fruit hop
+    WebhookURL = "https://discord.com/api/webhooks/1551443716810477678/MQhHmmfbw3DCkgBtJjlLaUPAsLHLt6LY4kuetBALnwci8irzjrbH1WatCccR4QNUuHFz",
+    WhIncludeName = true, WhAlerts = false, WhStaff = false, WhStuck = false, WhLevel = false, WhErrors = false,
+    FruitHop = false, HopWait = 45,
 }
 
 -- =============================================================================
@@ -141,11 +145,15 @@ end
 function U.Alive() return genv.MorganHubRunId == RunId end
 
 local logSeen = {}
+U.ErrLog = {}
 function U.Log(msg)
     msg = tostring(msg)
     if not logSeen[msg] then
         logSeen[msg] = true
         warn("[MorganHub] " .. msg)
+        table.insert(U.ErrLog, msg)
+        if #U.ErrLog > 10 then table.remove(U.ErrLog, 1) end
+        if Misc.ReportError then Misc.ReportError(msg) end
     end
 end
 
@@ -353,16 +361,6 @@ Data.Bosses = {
            "Longma", "Soul Reaper", "Cake Prince", "Dough King", "rip_indra True Form"},
 }
 Data.EliteNames = {"Deandre", "Diablo", "Urban"}
-Data.FruitList = {"Rocket", "Spin", "Blade", "Spring", "Bomb", "Smoke", "Spike", "Flame", "Ice", "Sand", "Dark",
-    "Falcon", "Diamond", "Light", "Rubber", "Barrier", "Ghost", "Magma", "Quake", "Buddha", "Love", "Spider",
-    "Sound", "Phoenix", "Portal", "Rumble", "Pain", "Blizzard", "Gravity", "Mammoth", "T-Rex", "Dough",
-    "Shadow", "Venom", "Control", "Spirit", "Dragon", "Leopard", "Kitsune", "Yeti", "Gas"}
-Data.FruitColors = {
-    Leopard = Color3.fromRGB(255, 200, 60), Dough = Color3.fromRGB(255, 240, 210), Dragon = Color3.fromRGB(255, 90, 60),
-    Venom = Color3.fromRGB(150, 60, 230), Buddha = Color3.fromRGB(255, 220, 60), Kitsune = Color3.fromRGB(120, 200, 255),
-    Yeti = Color3.fromRGB(190, 230, 255), Gas = Color3.fromRGB(190, 190, 120), Control = Color3.fromRGB(200, 120, 255),
-    Spirit = Color3.fromRGB(120, 255, 200), Shadow = Color3.fromRGB(90, 60, 130), Portal = Color3.fromRGB(255, 140, 220),
-}
 Data.BoneMobs = {"Reborn Skeleton", "Living Zombie", "Demonic Soul", "Posessed Mummy"}
 Data.RaidTypes = {"Flame", "Ice", "Quake", "Light", "Dark", "String", "Rumble", "Magma", "Human: Buddha",
                   "Sand", "Bird: Phoenix", "Dough"}
@@ -382,7 +380,7 @@ do
 end
 
 -- =============================================================================
--- UI LIBRARY  (glass window, rain background, scrolling pages)
+-- UI LIBRARY  (glass window, sliding pill sidebar, fading pages, ripple, particle themes)
 -- =============================================================================
 local Theme = {
     Bg = Color3.fromRGB(8, 8, 14),
@@ -392,6 +390,7 @@ local Theme = {
     Text = Color3.fromRGB(240, 240, 252),
     Sub = Color3.fromRGB(165, 165, 190),
     Off = Color3.fromRGB(55, 55, 78),
+    Line = Color3.fromRGB(60, 60, 90),
 }
 
 local function New(class, props, parent)
@@ -419,6 +418,13 @@ local function Pad(o, l, t, r, b)
         PaddingLeft = UDim.new(0, l), PaddingTop = UDim.new(0, t),
         PaddingRight = UDim.new(0, r), PaddingBottom = UDim.new(0, b),
     }, o)
+end
+
+-- one-line tween (Quint out by default = smooth deceleration)
+local function tw(obj, t, props, style, dir)
+    local tween = TweenService:Create(obj, TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props)
+    tween:Play()
+    return tween
 end
 
 local function IsPointer(input)
@@ -450,23 +456,41 @@ local function MakeDraggable(handle, target)
     U.Conn(UserInputService.InputChanged, function(input)
         if dragging and IsMove(input) then
             local d = input.Position - dragStart
-            target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X,
-                                        startPos.Y.Scale, startPos.Y.Offset + d.Y)
+            local s = (UI.Scale and UI.Scale.Scale) or 1
+            target.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X / s,
+                                        startPos.Y.Scale, startPos.Y.Offset + d.Y / s)
         end
     end)
 end
 
+-- expanding circle at the click point
+local function Ripple(btn, x, y)
+    local s = (UI.Scale and UI.Scale.Scale) or 1
+    local ap, asz = btn.AbsolutePosition, btn.AbsoluteSize
+    local d = math.max(asz.X, asz.Y) / s * 1.7
+    local rp = New("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset((x - ap.X) / s, (y - ap.Y) / s),
+        Size = UDim2.fromOffset(0, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.7,
+        BorderSizePixel = 0, ZIndex = btn.ZIndex + 2,
+    }, btn)
+    Corner(rp, 999)
+    tw(rp, 0.6, {Size = UDim2.fromOffset(d, d), BackgroundTransparency = 1}, Enum.EasingStyle.Quad)
+    task.delay(0.65, function() pcall(function() rp:Destroy() end) end)
+end
+
+-- toast notification: fades + pops in, fades out
 function UI.Notify(title, msg, dur)
     if not UI.ToastHolder then return end
     dur = dur or 4
-    local t = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.12, BorderSizePixel = 0,
+    local t = New("CanvasGroup", {
+        Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = Theme.Bg,
+        BackgroundTransparency = 0.1, BorderSizePixel = 0, GroupTransparency = 1,
     }, UI.ToastHolder)
-    Corner(t, 8)
-    Stroke(t, Theme.Accent, 1, 0.25)
-    Pad(t, 10, 6, 10, 6)
-    New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder}, t)
+    Corner(t, 10)
+    Stroke(t, Theme.Accent, 1, 0.2)
+    Pad(t, 12, 8, 12, 8)
+    local sc = New("UIScale", {Scale = 0.88}, t)
+    New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2)}, t)
     New("TextLabel", {
         Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, Text = tostring(title),
         TextColor3 = Theme.Accent2, Font = Enum.Font.GothamBold, TextSize = 13,
@@ -477,8 +501,16 @@ function UI.Notify(title, msg, dur)
         Text = tostring(msg), TextColor3 = Theme.Text, Font = Enum.Font.Gotham, TextSize = 12,
         TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 2,
     }, t)
-    task.delay(dur, function() pcall(function() t:Destroy() end) end)
+    tw(t, 0.35, {GroupTransparency = 0})
+    tw(sc, 0.4, {Scale = 1}, Enum.EasingStyle.Back)
+    task.delay(dur, function()
+        tw(t, 0.3, {GroupTransparency = 1})
+        tw(sc, 0.3, {Scale = 0.88})
+        task.delay(0.35, function() pcall(function() t:Destroy() end) end)
+    end)
 end
+
+UI.Pulses = {}
 
 function UI.CreateWindow(titleText, subtitleText)
     local cam = Workspace.CurrentCamera
@@ -494,9 +526,8 @@ function UI.CreateWindow(titleText, subtitleText)
     Gui.Parent = GuiParent
     UI.Gui = Gui
 
-    -- toast holder
     UI.ToastHolder = New("Frame", {
-        Size = UDim2.new(0, 230, 1, -20), AnchorPoint = Vector2.new(1, 1),
+        Size = UDim2.new(0, 240, 1, -20), AnchorPoint = Vector2.new(1, 1),
         Position = UDim2.new(1, -10, 1, -10), BackgroundTransparency = 1,
     }, Gui)
     New("UIListLayout", {
@@ -504,7 +535,7 @@ function UI.CreateWindow(titleText, subtitleText)
         Padding = UDim.new(0, 6),
     }, UI.ToastHolder)
 
-    -- main glass frame
+    -- glass window
     local Main = New("Frame", {
         Name = "Main", Size = UDim2.new(0, W, 0, H), AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Theme.Bg,
@@ -517,13 +548,11 @@ function UI.CreateWindow(titleText, subtitleText)
         Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 45,
     }, mainStroke)
 
-    -- background artwork (visible through the glass)
     New("ImageLabel", {
         Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
         Image = "rbxassetid://92647074735439", ImageTransparency = 0.5,
         ScaleType = Enum.ScaleType.Crop, ZIndex = 1,
     }, Main)
-    -- soft dark tint so text stays readable
     local tint = New("Frame", {
         Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.fromRGB(6, 6, 16),
         BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 1,
@@ -591,19 +620,23 @@ function UI.CreateWindow(titleText, subtitleText)
         end
         local th = Themes[name]
         strokeGrad.Color = ColorSequence.new(th.a, th.b)
-        tint.BackgroundColor3 = th.tint
+        tw(tint, 0.6, {BackgroundColor3 = th.tint})
     end
 
     U.Conn(RunService.RenderStepped, function(dt)
         if not Main.Visible then return end
-        strokeGrad.Rotation = (os.clock() * 40) % 360
+        local now = os.clock()
+        strokeGrad.Rotation = (now * 40) % 360
+        -- breathing glow on the hero switches that are ON
+        for _, pl in ipairs(UI.Pulses) do
+            if pl.on() then pl.stroke.Transparency = 0.02 + (math.sin(now * 3) + 1) * 0.1 end
+        end
         Rain.Visible = Cfg.Rain
         if not Rain.Visible then return end
-        local now = os.clock()
         if curTheme == "Rain" and now >= nextFlash then
             nextFlash = now + math.random(8, 18)
             Flash.BackgroundTransparency = 0.82
-            TweenService:Create(Flash, TweenInfo.new(0.6), {BackgroundTransparency = 1}):Play()
+            tw(Flash, 0.7, {BackgroundTransparency = 1}, Enum.EasingStyle.Quad)
         end
         for _, d in ipairs(parts) do
             if d.k == "rain" then
@@ -623,11 +656,31 @@ function UI.CreateWindow(titleText, subtitleText)
         end
     end)
 
+    -- soft light on the upper edge
+    local shine = New("Frame", {
+        Size = UDim2.new(1, 0, 0, 90), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.94,
+        BorderSizePixel = 0, ZIndex = 1,
+    }, Main)
+    New("UIGradient", {
+        Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.86), NumberSequenceKeypoint.new(1, 1)}),
+        Rotation = 90,
+    }, shine)
+
     -- TOP BAR
     local Top = New("Frame", {
         Size = UDim2.new(1, 0, 0, 46), BackgroundColor3 = Color3.fromRGB(4, 4, 10),
         BackgroundTransparency = 0.35, BorderSizePixel = 0, ZIndex = 2,
     }, Main)
+    local line = New("Frame", {
+        Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1), BackgroundColor3 = Color3.new(1, 1, 1),
+        BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 3,
+    }, Top)
+    New("UIGradient", {
+        Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.2), NumberSequenceKeypoint.new(1, 1),
+        }),
+    }, line)
     New("ImageLabel", {
         Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(0, 10, 0, 6), BackgroundTransparency = 1,
         Image = "rbxassetid://119861971194635", ZIndex = 3,
@@ -672,7 +725,7 @@ function UI.CreateWindow(titleText, subtitleText)
             U.Notify("Logo", "Your executor has no writefile/getcustomasset.", 4)
             return false
         end
-        local ok, err = pcall(function()
+        local ok = pcall(function()
             writefile("MorganLogo.png", game:HttpGet(url))
             Logo.Image = Ex.CustomAsset("MorganLogo.png")
             Logo.Visible = true
@@ -690,6 +743,10 @@ function UI.CreateWindow(titleText, subtitleText)
         Size = UDim2.new(0, 42, 1, 0), Position = UDim2.new(1, -42, 0, 0), BackgroundTransparency = 1,
         Text = "X", TextColor3 = Color3.fromRGB(255, 90, 90), Font = Enum.Font.GothamBold, TextSize = 20, ZIndex = 3,
     }, Top)
+    MinBtn.MouseEnter:Connect(function() tw(MinBtn, 0.15, {TextColor3 = Theme.Accent2, TextSize = 30}) end)
+    MinBtn.MouseLeave:Connect(function() tw(MinBtn, 0.2, {TextColor3 = Theme.Text, TextSize = 26}) end)
+    CloseBtn.MouseEnter:Connect(function() tw(CloseBtn, 0.15, {TextColor3 = Color3.fromRGB(255, 140, 140), TextSize = 23}) end)
+    CloseBtn.MouseLeave:Connect(function() tw(CloseBtn, 0.2, {TextColor3 = Color3.fromRGB(255, 90, 90), TextSize = 20}) end)
     MakeDraggable(Top, Main)
 
     -- floating open button
@@ -701,34 +758,59 @@ function UI.CreateWindow(titleText, subtitleText)
     }, Gui)
     Corner(Float, 23)
     Stroke(Float, Theme.Accent, 2, 0.1)
+    local floatScale = New("UIScale", {Scale = 1}, Float)
+    Float.MouseEnter:Connect(function() tw(floatScale, 0.2, {Scale = 1.12}, Enum.EasingStyle.Back) end)
+    Float.MouseLeave:Connect(function() tw(floatScale, 0.2, {Scale = 1}) end)
 
     function UI.Show()
         Main.Visible = true
         Float.Visible = false
-        UI.Scale.Scale = Cfg.UIScale * 0.82
-        TweenService:Create(UI.Scale, TweenInfo.new(0.32, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-            {Scale = Cfg.UIScale}):Play()
+        UI.Scale.Scale = Cfg.UIScale * 0.86
+        Main.BackgroundTransparency = 0.8
+        tw(UI.Scale, 0.45, {Scale = Cfg.UIScale}, Enum.EasingStyle.Back)
+        tw(Main, 0.4, {BackgroundTransparency = 0.22})
     end
     function UI.Hide()
-        local t = TweenService:Create(UI.Scale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {Scale = Cfg.UIScale * 0.82})
-        t:Play()
-        t.Completed:Connect(function()
+        tw(UI.Scale, 0.22, {Scale = Cfg.UIScale * 0.86}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+        tw(Main, 0.22, {BackgroundTransparency = 0.8})
+        task.delay(0.24, function()
             Main.Visible = false
             Float.Visible = true
             UI.Scale.Scale = Cfg.UIScale
+            Main.BackgroundTransparency = 0.22
+            floatScale.Scale = 0.6
+            tw(floatScale, 0.4, {Scale = 1}, Enum.EasingStyle.Back)
         end)
     end
     MinBtn.MouseButton1Click:Connect(function() UI.Hide() end)
     Float.MouseButton1Click:Connect(function() UI.Show() end)
     CloseBtn.MouseButton1Click:Connect(function() U.Shutdown() end)
 
-    -- SIDEBAR
+    -- SIDEBAR: background, clipped layer with the sliding selection pill, scrolling tab list
+    local SideBg = New("Frame", {
+        Size = UDim2.new(0, SW, 1, -46), Position = UDim2.new(0, 0, 0, 46),
+        BackgroundColor3 = Color3.fromRGB(4, 4, 10), BackgroundTransparency = 0.5, BorderSizePixel = 0, ZIndex = 2,
+    }, Main)
+    local SideClip = New("Frame", {
+        Size = UDim2.new(0, SW, 1, -46), Position = UDim2.new(0, 0, 0, 46), BackgroundTransparency = 1,
+        ClipsDescendants = true, ZIndex = 2,
+    }, Main)
+    local Pill = New("Frame", {
+        Size = UDim2.new(1, -12, 0, 38), Position = UDim2.new(0, 6, 0, 0), BackgroundColor3 = Color3.new(1, 1, 1),
+        BackgroundTransparency = 0.72, BorderSizePixel = 0, Visible = false, ZIndex = 2,
+    }, SideClip)
+    Corner(Pill, 8)
+    New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 0}, Pill)
+    local PillBar = New("Frame", {
+        Size = UDim2.new(0, 3, 1, -14), Position = UDim2.new(0, 0, 0, 7), BackgroundColor3 = Theme.Accent2,
+        BorderSizePixel = 0, ZIndex = 3,
+    }, Pill)
+    Corner(PillBar, 2)
+
     local Side = New("ScrollingFrame", {
         Size = UDim2.new(0, SW, 1, -46), Position = UDim2.new(0, 0, 0, 46),
-        BackgroundColor3 = Color3.fromRGB(4, 4, 10), BackgroundTransparency = 0.5, BorderSizePixel = 0,
-        ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.Accent,
-        CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 2,
+        BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.Accent,
+        CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3,
     }, Main)
     New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4)}, Side)
     Pad(Side, 6, 6, 6, 6)
@@ -736,24 +818,24 @@ function UI.CreateWindow(titleText, subtitleText)
     -- profile card
     local Card = New("Frame", {
         Size = UDim2.new(1, 0, 0, 54), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
-        BorderSizePixel = 0, LayoutOrder = 0, ZIndex = 3,
+        BorderSizePixel = 0, LayoutOrder = 0, ZIndex = 4,
     }, Side)
     Corner(Card, 10)
     Stroke(Card, Theme.Accent, 1, 0.5)
     local Av = New("ImageLabel", {
         Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(0, 7, 0.5, -19),
-        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, ZIndex = 4,
+        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, ZIndex = 5,
     }, Card)
     Corner(Av, 19)
     New("TextLabel", {
         Size = UDim2.new(1, -54, 0, 18), Position = UDim2.new(0, 50, 0, 9), BackgroundTransparency = 1,
         Text = LocalPlayer.DisplayName, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4,
+        TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, Card)
     UI.ProfileSub = New("TextLabel", {
         Size = UDim2.new(1, -54, 0, 14), Position = UDim2.new(0, 50, 0, 28), BackgroundTransparency = 1,
         Text = "Level ...", TextColor3 = Theme.Accent2, Font = Enum.Font.Gotham, TextSize = 11,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
     }, Card)
     task.spawn(function()
         local ok, img = pcall(function()
@@ -769,49 +851,71 @@ function UI.CreateWindow(titleText, subtitleText)
 
     local Window = {Tabs = {}, Gui = Gui, Main = Main}
 
+    -- pill position for tab index (profile card 54 + paddings, every tab is 38 + 4 spacing)
+    local function pillY(idx)
+        return 6 + 54 + 4 + (idx - 1) * 42 - Side.CanvasPosition.Y
+    end
+    function UI.RefreshPill()
+        if Window.Selected then Pill.Position = UDim2.new(0, 6, 0, pillY(Window.Selected.idx)) end
+    end
+    U.Conn(Side:GetPropertyChangedSignal("CanvasPosition"), function() UI.RefreshPill() end)
+
     function Window:CreateTab(name, icon)
+        local idx = #Window.Tabs + 1
         local Btn = New("TextButton", {
-            Size = UDim2.new(1, 0, 0, 38), BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1,
             Text = " " .. (icon or "") .. " " .. name, TextColor3 = Theme.Sub, Font = Enum.Font.GothamSemibold,
             TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-            AutoButtonColor = false, LayoutOrder = #Window.Tabs + 1, ZIndex = 3,
+            AutoButtonColor = false, LayoutOrder = idx, ZIndex = 4,
         }, Side)
-        Corner(Btn, 8)
-        local Ind = New("Frame", {
-            Size = UDim2.new(0, 3, 1, -14), Position = UDim2.new(0, 0, 0, 7),
-            BackgroundColor3 = Theme.Accent2, BorderSizePixel = 0, Visible = false, ZIndex = 4,
-        }, Btn)
-        Corner(Ind, 2)
+        Pad(Btn, 6, 0, 0, 0)
 
-        local Page = New("ScrollingFrame", {
+        local Group = New("CanvasGroup", {
             Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4), BackgroundTransparency = 1,
+            GroupTransparency = 1, Visible = false, ZIndex = 3,
+        }, Content)
+        local Page = New("ScrollingFrame", {
+            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
             BorderSizePixel = 0, ScrollBarThickness = 5, ScrollBarImageColor3 = Theme.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y, CanvasSize = UDim2.new(0, 0, 0, 0),
-            AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, ZIndex = 3,
-        }, Content)
+            AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3,
+        }, Group)
         New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6)}, Page)
         Pad(Page, 4, 4, 10, 10)
 
-        local TabData = {Btn = Btn, Page = Page, Ind = Ind}
+        local TabData = {Btn = Btn, Group = Group, Page = Page, idx = idx}
         table.insert(Window.Tabs, TabData)
 
         local function Select()
+            if Window.Selected == TabData then return end
+            local first = Window.Selected == nil
             for _, t in ipairs(Window.Tabs) do
-                t.Page.Visible = false
-                t.Ind.Visible = false
-                t.Btn.TextColor3 = Theme.Sub
-                TweenService:Create(t.Btn, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+                if t ~= TabData then
+                    t.Group.Visible = false
+                    tw(t.Btn, 0.25, {TextColor3 = Theme.Sub})
+                end
             end
-            Page.Position = UDim2.new(0, 34, 0, 4)
-            Page.Visible = true
-            TweenService:Create(Page, TweenInfo.new(0.26, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Position = UDim2.new(0, 4, 0, 4)}):Play()
-            Ind.Visible = true
-            Btn.TextColor3 = Theme.Text
-            TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.75}):Play()
+            Window.Selected = TabData
+            tw(Btn, 0.25, {TextColor3 = Theme.Text})
+            Group.Position = UDim2.new(0, 30, 0, 4)
+            Group.GroupTransparency = 1
+            Group.Visible = true
+            tw(Group, 0.4, {Position = UDim2.new(0, 4, 0, 4), GroupTransparency = 0})
+            Pill.Visible = true
+            if first then
+                Pill.Position = UDim2.new(0, 6, 0, pillY(idx))
+            else
+                tw(Pill, 0.38, {Position = UDim2.new(0, 6, 0, pillY(idx))}, Enum.EasingStyle.Quint)
+            end
         end
         Btn.MouseButton1Click:Connect(Select)
-        if #Window.Tabs == 1 then Select() end
+        Btn.MouseEnter:Connect(function()
+            if Window.Selected ~= TabData then tw(Btn, 0.15, {TextColor3 = Theme.Text}) end
+        end)
+        Btn.MouseLeave:Connect(function()
+            if Window.Selected ~= TabData then tw(Btn, 0.2, {TextColor3 = Theme.Sub}) end
+        end)
+        if idx == 1 then Select() end
 
         local Tab = {Page = Page}
         local order = 0
@@ -835,7 +939,7 @@ function UI.CreateWindow(titleText, subtitleText)
             local state = default and true or false
             local card = New("Frame", {
                 Size = UDim2.new(1, 0, 0, 74), BackgroundColor3 = Color3.new(1, 1, 1),
-                BackgroundTransparency = state and 0.2 or 0.6, BorderSizePixel = 0,
+                BackgroundTransparency = state and 0.2 or 0.6, BorderSizePixel = 0, ClipsDescendants = true,
                 LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(card, 12)
@@ -861,13 +965,13 @@ function UI.CreateWindow(titleText, subtitleText)
             Corner(pill, 15)
             local hit = New("TextButton", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 6}, card)
             local obj = {}
+            table.insert(UI.Pulses, {stroke = st, on = function() return state end})
             function obj.Set(v, silent)
                 state = v and true or false
                 pill.Text = state and "ON" or "OFF"
-                TweenService:Create(pill, TweenInfo.new(0.15), {
-                    TextColor3 = state and Color3.fromRGB(110, 255, 160) or Theme.Sub}):Play()
-                TweenService:Create(card, TweenInfo.new(0.2), {BackgroundTransparency = state and 0.2 or 0.6}):Play()
-                TweenService:Create(st, TweenInfo.new(0.2), {Transparency = state and 0.05 or 0.5}):Play()
+                tw(pill, 0.25, {TextColor3 = state and Color3.fromRGB(110, 255, 160) or Theme.Sub})
+                tw(card, 0.3, {BackgroundTransparency = state and 0.2 or 0.6})
+                if not state then tw(st, 0.3, {Transparency = 0.5}) end
                 if not silent then
                     local ok, err = pcall(callback, state)
                     if not ok then U.Log(err) end
@@ -875,6 +979,9 @@ function UI.CreateWindow(titleText, subtitleText)
             end
             function obj.Get() return state end
             function obj.SetStatus(t) sub.Text = tostring(t) end
+            hit.MouseEnter:Connect(function() tw(card, 0.2, {BackgroundTransparency = state and 0.1 or 0.45}) end)
+            hit.MouseLeave:Connect(function() tw(card, 0.25, {BackgroundTransparency = state and 0.2 or 0.6}) end)
+            hit.MouseButton1Down:Connect(function(x, y) Ripple(hit, x, y) end)
             hit.MouseButton1Click:Connect(function() obj.Set(not state) end)
             if key then UI.T[key] = obj end
             return obj
@@ -926,18 +1033,20 @@ function UI.CreateWindow(titleText, subtitleText)
             local b = New("TextButton", {
                 Size = UDim2.new(1, 0, 0, 36), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.4,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 12,
-                AutoButtonColor = false, BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
+                AutoButtonColor = false, BorderSizePixel = 0, ClipsDescendants = true, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(b, 8)
             New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 0}, b)
             local pressScale = New("UIScale", {Scale = 1}, b)
-            local function squish(v) TweenService:Create(pressScale, TweenInfo.new(0.09), {Scale = v}):Play() end
-            b.MouseButton1Down:Connect(function() squish(0.95) end)
-            b.MouseButton1Up:Connect(function() squish(1) end)
-            b.MouseEnter:Connect(function() TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = 0.15}):Play() end)
+            b.MouseButton1Down:Connect(function(x, y)
+                tw(pressScale, 0.1, {Scale = 0.96})
+                Ripple(b, x, y)
+            end)
+            b.MouseButton1Up:Connect(function() tw(pressScale, 0.25, {Scale = 1}, Enum.EasingStyle.Back) end)
+            b.MouseEnter:Connect(function() tw(b, 0.2, {BackgroundTransparency = 0.15}) end)
             b.MouseLeave:Connect(function()
-                squish(1)
-                TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = 0.4}):Play()
+                tw(pressScale, 0.2, {Scale = 1})
+                tw(b, 0.25, {BackgroundTransparency = 0.4})
             end)
             b.MouseButton1Click:Connect(function() U.Spawn(callback) end)
         end
@@ -949,7 +1058,7 @@ function UI.CreateWindow(titleText, subtitleText)
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            Stroke(row, Color3.fromRGB(60, 60, 90), 1, 0.55)
+            local st = Stroke(row, state and Theme.Accent or Theme.Line, 1, state and 0.4 or 0.55)
             New("TextLabel", {
                 Size = UDim2.new(1, -66, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -973,16 +1082,17 @@ function UI.CreateWindow(titleText, subtitleText)
             local obj = {}
             function obj.Set(v, silent)
                 state = v and true or false
-                TweenService:Create(knob, TweenInfo.new(0.15), {
-                    Position = state and UDim2.new(1, -20, 0, 2) or UDim2.new(0, 2, 0, 2)}):Play()
-                TweenService:Create(track, TweenInfo.new(0.15), {
-                    BackgroundColor3 = state and Theme.Accent or Theme.Off}):Play()
+                tw(knob, 0.3, {Position = state and UDim2.new(1, -20, 0, 2) or UDim2.new(0, 2, 0, 2)}, Enum.EasingStyle.Back)
+                tw(track, 0.25, {BackgroundColor3 = state and Theme.Accent or Theme.Off})
+                tw(st, 0.25, {Color = state and Theme.Accent or Theme.Line, Transparency = state and 0.4 or 0.55})
                 if not silent then
                     local ok, err = pcall(callback, state)
                     if not ok then U.Log(err) end
                 end
             end
             function obj.Get() return state end
+            hit.MouseEnter:Connect(function() tw(row, 0.2, {BackgroundTransparency = 0.25}) end)
+            hit.MouseLeave:Connect(function() tw(row, 0.25, {BackgroundTransparency = 0.4}) end)
             hit.MouseButton1Click:Connect(function() obj.Set(not state) end)
             if key then UI.T[key] = obj end
             return obj
@@ -994,7 +1104,7 @@ function UI.CreateWindow(titleText, subtitleText)
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            Stroke(row, Color3.fromRGB(60, 60, 90), 1, 0.55)
+            local st = Stroke(row, Theme.Line, 1, 0.55)
             New("TextLabel", {
                 Size = UDim2.new(0.34, 0, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -1005,11 +1115,44 @@ function UI.CreateWindow(titleText, subtitleText)
                 BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.3, Text = default or "",
                 PlaceholderText = placeholder or "", TextColor3 = Theme.Text, PlaceholderColor3 = Theme.Sub,
                 Font = Enum.Font.Gotham, TextSize = 11, ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left,
-                ZIndex = 4,
+                TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4,
             }, row)
             Corner(box, 6)
             Pad(box, 8, 0, 8, 0)
+            box.Focused:Connect(function() tw(st, 0.2, {Color = Theme.Accent2, Transparency = 0.1}) end)
             box.FocusLost:Connect(function()
+                tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                local ok, err = pcall(callback, box.Text)
+                if not ok then U.Log(err) end
+            end)
+            return {Get = function() return box.Text end, Set = function(t) box.Text = t end}
+        end
+
+        -- multi-line box for longer text (bug reports)
+        function Tab:TextArea(text, placeholder, height, callback)
+            local row = New("Frame", {
+                Size = UDim2.new(1, 0, 0, height or 90), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.4,
+                BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
+            }, Page)
+            Corner(row, 8)
+            local st = Stroke(row, Theme.Line, 1, 0.55)
+            New("TextLabel", {
+                Size = UDim2.new(1, -20, 0, 20), Position = UDim2.new(0, 12, 0, 4), BackgroundTransparency = 1,
+                Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4,
+            }, row)
+            local box = New("TextBox", {
+                Size = UDim2.new(1, -20, 1, -34), Position = UDim2.new(0, 10, 0, 26),
+                BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.3, Text = "", PlaceholderText = placeholder or "",
+                TextColor3 = Theme.Text, PlaceholderColor3 = Theme.Sub, Font = Enum.Font.Gotham, TextSize = 12,
+                ClearTextOnFocus = false, MultiLine = true, TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 4,
+            }, row)
+            Corner(box, 6)
+            Pad(box, 8, 6, 8, 6)
+            box.Focused:Connect(function() tw(st, 0.2, {Color = Theme.Accent2, Transparency = 0.1}) end)
+            box.FocusLost:Connect(function()
+                tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
                 local ok, err = pcall(callback, box.Text)
                 if not ok then U.Log(err) end
             end)
@@ -1023,7 +1166,7 @@ function UI.CreateWindow(titleText, subtitleText)
                 ClipsDescendants = true, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(holder, 8)
-            Stroke(holder, Color3.fromRGB(60, 60, 90), 1, 0.55)
+            local st = Stroke(holder, Theme.Line, 1, 0.55)
             New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder}, holder)
             local head = New("TextButton", {
                 Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Text = "", LayoutOrder = 1, ZIndex = 4,
@@ -1052,6 +1195,22 @@ function UI.CreateWindow(titleText, subtitleText)
             Pad(list, 6, 2, 6, 4)
 
             local obj = {Value = default}
+            local open, targetH = false, 0
+            local function setOpen(v)
+                open = v
+                if v then
+                    list.Size = UDim2.new(1, 0, 0, 0)
+                    list.Visible = true
+                    tw(list, 0.32, {Size = UDim2.new(1, 0, 0, targetH)})
+                    tw(arrow, 0.3, {Rotation = 180})
+                    tw(st, 0.2, {Color = Theme.Accent, Transparency = 0.3})
+                else
+                    tw(list, 0.22, {Size = UDim2.new(1, 0, 0, 0)})
+                    tw(arrow, 0.25, {Rotation = 0})
+                    tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                    task.delay(0.24, function() if not open then list.Visible = false end end)
+                end
+            end
             local function build(opts)
                 for _, c in ipairs(list:GetChildren()) do
                     if c:IsA("TextButton") then c:Destroy() end
@@ -1063,22 +1222,23 @@ function UI.CreateWindow(titleText, subtitleText)
                         AutoButtonColor = false, LayoutOrder = i, ZIndex = 5,
                     }, list)
                     Corner(ob, 6)
+                    ob.MouseEnter:Connect(function() tw(ob, 0.15, {BackgroundTransparency = 0.1, BackgroundColor3 = Theme.Accent}) end)
+                    ob.MouseLeave:Connect(function() tw(ob, 0.2, {BackgroundTransparency = 0.35, BackgroundColor3 = Theme.Bg}) end)
                     ob.MouseButton1Click:Connect(function()
                         obj.Value = o
                         val.Text = tostring(o)
-                        list.Visible = false
-                        arrow.Text = "v"
+                        setOpen(false)
                         local ok, err = pcall(callback, o)
                         if not ok then U.Log(err) end
                     end)
                 end
-                list.Size = UDim2.new(1, 0, 0, math.min(#opts * 30 + 6, 156))
+                targetH = math.min(#opts * 30 + 6, 156)
+                if open then list.Size = UDim2.new(1, 0, 0, targetH) end
             end
             function obj.SetOptions(opts) build(opts) end
-            head.MouseButton1Click:Connect(function()
-                list.Visible = not list.Visible
-                arrow.Text = list.Visible and "^" or "v"
-            end)
+            head.MouseEnter:Connect(function() tw(holder, 0.2, {BackgroundTransparency = 0.25}) end)
+            head.MouseLeave:Connect(function() tw(holder, 0.25, {BackgroundTransparency = 0.4}) end)
+            head.MouseButton1Click:Connect(function() setOpen(not open) end)
             build(options)
             return obj
         end
@@ -1091,7 +1251,7 @@ function UI.CreateWindow(titleText, subtitleText)
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            Stroke(row, Color3.fromRGB(60, 60, 90), 1, 0.55)
+            local st = Stroke(row, Theme.Line, 1, 0.55)
             New("TextLabel", {
                 Size = UDim2.new(0.68, 0, 0, 22), Position = UDim2.new(0, 12, 0, 4), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -1112,12 +1272,13 @@ function UI.CreateWindow(titleText, subtitleText)
                 BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, ZIndex = 5,
             }, track)
             Corner(fill, 3)
+            New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2)}, fill)
             local knob = New("Frame", {
                 Size = UDim2.new(0, 14, 0, 14), AnchorPoint = Vector2.new(0.5, 0.5),
                 Position = UDim2.new(1, 0, 0.5, 0), BackgroundColor3 = Color3.new(1, 1, 1),
                 BorderSizePixel = 0, ZIndex = 6,
             }, fill)
-            Corner(knob, 7)
+            Corner(knob, 9)
             local hit = New("TextButton", {
                 Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 24), BackgroundTransparency = 1,
                 Text = "", ZIndex = 7,
@@ -1130,14 +1291,19 @@ function UI.CreateWindow(titleText, subtitleText)
                 value = math.floor(raw / step + 0.5) * step
                 value = math.clamp(value, min, max)
                 value = math.floor(value * 1000 + 0.5) / 1000
-                fill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
+                tw(fill, 0.08, {Size = UDim2.new((value - min) / (max - min), 0, 1, 0)}, Enum.EasingStyle.Quad)
                 vlbl.Text = tostring(value)
                 local ok, err = pcall(callback, value)
                 if not ok then U.Log(err) end
             end
+            hit.MouseEnter:Connect(function() tw(st, 0.2, {Color = Theme.Accent, Transparency = 0.35}) end)
+            hit.MouseLeave:Connect(function()
+                if not dragging then tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55}) end
+            end)
             hit.InputBegan:Connect(function(input)
                 if IsPointer(input) then
                     dragging = true
+                    tw(knob, 0.2, {Size = UDim2.new(0, 19, 0, 19)}, Enum.EasingStyle.Back)
                     setFromX(input.Position.X)
                 end
             end)
@@ -1145,7 +1311,11 @@ function UI.CreateWindow(titleText, subtitleText)
                 if dragging and IsMove(input) then setFromX(input.Position.X) end
             end)
             U.Conn(UserInputService.InputEnded, function(input)
-                if IsPointer(input) then dragging = false end
+                if IsPointer(input) and dragging then
+                    dragging = false
+                    tw(knob, 0.25, {Size = UDim2.new(0, 14, 0, 14)})
+                    tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                end
             end)
         end
 
@@ -1775,6 +1945,7 @@ function Farm.Watchdog(root)
         Move.Cancel()
         U.CommAsync("AbandonQuest")
         U.Notify("Auto Farm", "Farm looked stuck, resetting the quest.", 4)
+        Misc.Alert("WhStuck", "Farm stuck", "The watchdog reset the quest.", 0xFFB040)
     end
 end
 
@@ -2295,8 +2466,9 @@ U.Loop(1.5, function()
 end)
 
 U.Conn(Workspace.ChildAdded, function(o)
-    if Cfg.FruitNotify and o:IsA("Tool") and o.Name:find("Fruit") then
-        UI.Notify("Fruit Spawned", o.Name, 6)
+    if o:IsA("Tool") and o.Name:find("Fruit") then
+        if Cfg.FruitNotify then UI.Notify("Fruit Spawned", o.Name, 6) end
+        Misc.Alert("WhAlerts", "Fruit spawned", o.Name, 0x50DC8C, {{"Server", game.JobId, false}})
     end
 end)
 
@@ -2636,7 +2808,6 @@ end
 -- applies the cheap look to one instance (never touches terrain, our fake fruits or our own GUI)
 function Misc.FpsApply(o)
     if o:IsA("Terrain") then return end
-    if o:GetAttribute("MorganFake") then return end
     if o:IsA("BasePart") then
         o.Material = Enum.Material.SmoothPlastic
         o.Reflectance = 0
@@ -2709,15 +2880,35 @@ function Misc.Rejoin()
     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
 end
 
+Misc.HopFile = "MorganHopped.json"
+
+function Misc.LoadVisited()
+    local v = {}
+    if isfile and readfile then
+        local ok, t = pcall(function()
+            if isfile(Misc.HopFile) then return HttpService:JSONDecode(readfile(Misc.HopFile)) end
+        end)
+        if ok and type(t) == "table" then v = t end
+    end
+    return v
+end
+
 function Misc.Hop()
+    local visited = Misc.LoadVisited()
+    local seen = {}
+    for _, id in ipairs(visited) do seen[id] = true end
+    seen[game.JobId] = true
     local ok, res = pcall(function()
         local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
         return HttpService:JSONDecode(game:HttpGet(url))
     end)
     if ok and res and res.data then
-        for _, s in ipairs(res.data) do
-            if s.id ~= game.JobId and s.playing and s.maxPlayers and s.playing < s.maxPlayers - 1 then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LocalPlayer)
+        for _, sv in ipairs(res.data) do
+            if not seen[sv.id] and sv.playing and sv.maxPlayers and sv.playing < sv.maxPlayers - 1 then
+                table.insert(visited, game.JobId)
+                while #visited > 40 do table.remove(visited, 1) end
+                if writefile then pcall(writefile, Misc.HopFile, HttpService:JSONEncode(visited)) end
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, sv.id, LocalPlayer)
                 return
             end
         end
@@ -2725,135 +2916,6 @@ function Misc.Hop()
     UI.Notify("Server Hop", "Server list unavailable, joining a random server.", 4)
     pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
 end
-
--- ---------------------------------------------------------------------------
--- FAKE FRUITS: clones the real fruit mesh as a plain anchored part. It is not a Tool and has no prompts,
--- so it cannot be picked up, stored or dropped, and nobody else sees it.
--- ---------------------------------------------------------------------------
-Misc.FruitCache, Misc.Fakes = {}, {}
-
-function Misc.FruitHandleFrom(inst)
-    if inst:IsA("Tool") then return inst:FindFirstChild("Handle") or inst:FindFirstChildWhichIsA("BasePart", true) end
-    if inst:IsA("Model") then return inst.PrimaryPart or inst:FindFirstChildWhichIsA("BasePart", true) end
-    if inst:IsA("BasePart") then return inst end
-    return nil
-end
-
-function Misc.FindFruitTemplate(base)
-    local cached = Misc.FruitCache[base]
-    if cached ~= nil then return cached or nil end
-    local lb = base:lower()
-    local names = {[lb .. " fruit"] = 3, [lb .. "-" .. lb] = 2, [lb] = 1}
-    local best, bestScore = nil, 0
-    local function consider(inst)
-        local sc = names[inst.Name:lower()]
-        if sc and sc > bestScore and (inst:IsA("Tool") or inst:IsA("Model") or inst:IsA("BasePart")) then
-            local h = Misc.FruitHandleFrom(inst)
-            if h and h:IsA("BasePart") then best, bestScore = h, sc end
-        end
-    end
-    local n = 0
-    for _, d in ipairs(ReplicatedStorage:GetDescendants()) do
-        consider(d)
-        n = n + 1
-        if n % 600 == 0 then task.wait() end
-    end
-    for _, c in ipairs({Workspace, LocalPlayer.Backpack, LocalPlayer.Character}) do
-        if c then
-            for _, d in ipairs(c:GetChildren()) do consider(d) end
-        end
-    end
-    -- last resort: other containers a fruit model could hide in
-    if not best then
-        for _, name in ipairs({"StarterPack", "Lighting"}) do
-            local ok, svc = pcall(function() return game:GetService(name) end)
-            if ok and svc then
-                for _, d in ipairs(svc:GetDescendants()) do consider(d) end
-            end
-        end
-    end
-    Misc.FruitCache[base] = best or false
-    return best
-end
-
-function Misc.SpawnFakeFruit(base)
-    local root = U.Root()
-    if not root then return end
-    local tpl = Misc.FindFruitTemplate(base)
-    local pos = root.Position + root.CFrame.LookVector * 6
-    local hit = Workspace:Raycast(pos + V3(0, 40, 0), V3(0, -120, 0))
-    if hit and typeof(hit.Position) == "Vector3" then pos = hit.Position + V3(0, 1.8, 0) end
-
-    local part
-    if tpl then
-        local okc, cl = pcall(function() return tpl:Clone() end) -- Archivable=false assets return nil
-        part = okc and cl or nil
-    end
-    if part then
-        for _, d in ipairs(part:GetDescendants()) do
-            if d:IsA("BaseScript") or d:IsA("ProximityPrompt") or d:IsA("ClickDetector")
-                or d:IsA("TouchTransmitter") or d:IsA("Sound") or d:IsA("Weld") or d:IsA("WeldConstraint") then
-                d:Destroy()
-            end
-        end
-    else
-        part = Instance.new("Part")
-        part.Shape = Enum.PartType.Ball
-        part.Material = Enum.Material.Neon
-        part.Size = V3(1.6, 1.6, 1.6)
-        part.Color = Data.FruitColors[base] or Color3.fromRGB(255, 120, 120)
-        UI.Notify("Fake Fruit", "Real " .. base .. " model not found, using a glowing orb.", 4)
-    end
-    part.Name = base .. " Fruit"
-    part.Anchored = true
-    part.CanCollide = false
-    part.CanTouch = false
-    part.CanQuery = false
-    part.Massless = true
-    part:SetAttribute("MorganFake", true)
-    part.CFrame = CF(pos)
-
-    local bb = Instance.new("BillboardGui")
-    bb.Size = UDim2.new(0, 150, 0, 34)
-    bb.StudsOffset = V3(0, 2.6, 0)
-    bb.AlwaysOnTop = true
-    bb.Adornee = part
-    bb.Parent = part
-    local l = Instance.new("TextLabel")
-    l.Size = UDim2.new(1, 0, 1, 0)
-    l.BackgroundTransparency = 1
-    l.Text = base .. " Fruit"
-    l.TextColor3 = Data.FruitColors[base] or Color3.fromRGB(255, 255, 255)
-    l.TextStrokeTransparency = 0
-    l.TextSize = 14
-    l.Font = Enum.Font.GothamBold
-    l.Parent = bb
-
-    part.Parent = Workspace
-    table.insert(Misc.Fakes, {part = part, pos = pos, ph = math.random() * 6.28})
-end
-
-function Misc.ClearFakeFruits()
-    for _, f in ipairs(Misc.Fakes) do pcall(function() f.part:Destroy() end) end
-    Misc.Fakes = {}
-    for _, o in ipairs(Workspace:GetChildren()) do
-        if o:GetAttribute("MorganFake") then o:Destroy() end
-    end
-end
-
--- gentle hover + spin so the fruit looks alive
-U.Conn(RunService.Heartbeat, function()
-    if #Misc.Fakes == 0 then return end
-    local t = os.clock()
-    for i = #Misc.Fakes, 1, -1 do
-        local f = Misc.Fakes[i]
-        if not f.part.Parent then
-            table.remove(Misc.Fakes, i)
-        else
-            f.part.CFrame = CF(f.pos + V3(0, math.sin(t * 2 + f.ph) * 0.35, 0)) * CFrame.Angles(0, t * 1.1 + f.ph, 0)
-        end
-    end
-end)
 
 -- ---------------------------------------------------------------------------
 -- GUI MACRO HELPERS (find NPC, interact, click a dialogue button by its text)
@@ -3118,6 +3180,144 @@ function Misc.Debug()
 end
 
 -- =============================================================================
+-- DISCORD WEBHOOK  (bug reports + optional alerts)
+-- Nothing is sent unless you press "Send Bug Report" / "Send Test Message" or switch an alert on.
+-- =============================================================================
+Misc.Version = "V3.3"
+Misc.WhLast = {}
+Misc.BugText, Misc.BugCat, Misc.LastBug = "", "Auto Farm", -100
+
+local function trunc(s, n)
+    s = tostring(s or "")
+    if #s > n then return s:sub(1, n - 3) .. "..." end
+    return s
+end
+
+function Misc.HttpRequest(opts)
+    local req = request or http_request or (syn and syn.request) or (http and http.request) or (fluxus and fluxus.request)
+    if not req then return false, "this executor has no HTTP request function" end
+    local ok, res = pcall(req, opts)
+    if not ok then return false, tostring(res) end
+    local code = type(res) == "table" and (res.StatusCode or res.Status) or nil
+    if type(code) == "number" and code >= 200 and code < 300 then return true end
+    return false, "HTTP " .. tostring(code)
+end
+
+function Misc.Executor()
+    local name = "unknown"
+    if identifyexecutor then
+        local ok, n, v = pcall(identifyexecutor)
+        if ok and n then name = tostring(n) .. (v and (" " .. tostring(v)) or "") end
+    end
+    return name
+end
+
+function Misc.BaseFields()
+    return {
+        {"Player", Cfg.WhIncludeName and LocalPlayer.Name or "(hidden)", true},
+        {"Level / Sea", tostring(U.Level()) .. " / " .. tostring(Sea), true},
+        {"Executor", Misc.Executor(), true},
+        {"Status", Farm.StatusText, false},
+    }
+end
+
+function Misc.SendWebhook(title, desc, fields, color)
+    local url = Cfg.WebhookURL
+    if type(url) ~= "string" or not url:find("discord.com/api/webhooks/", 1, true) then
+        return false, "webhook URL is not set"
+    end
+    local embed = {
+        title = trunc(title, 250), description = trunc(desc, 1900), color = color or 0x8C50FF, fields = {},
+        footer = {text = "Morgan Hub " .. Misc.Version}, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+    }
+    for _, f in ipairs(fields or {}) do
+        local v = tostring(f[2] or "")
+        table.insert(embed.fields, {name = trunc(f[1], 250), value = v == "" and "-" or trunc(v, 1000), inline = f[3] and true or false})
+    end
+    local body = HttpService:JSONEncode({username = "Morgan Hub", embeds = {embed}})
+    return Misc.HttpRequest({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = body})
+end
+
+-- optional event alerts (each has its own switch, all off by default, 20s throttle per kind)
+function Misc.Alert(flag, title, desc, color, extra)
+    if not Cfg[flag] then return end
+    local now = os.clock()
+    if Misc.WhLast[flag] and now - Misc.WhLast[flag] < 20 then return end
+    Misc.WhLast[flag] = now
+    local fields = Misc.BaseFields()
+    for _, e in ipairs(extra or {}) do table.insert(fields, e) end
+    U.Spawn(function() Misc.SendWebhook(title, desc, fields, color) end)
+end
+
+function Misc.ReportError(msg)
+    if not Cfg.WhErrors then return end
+    local now = os.clock()
+    if Misc.WhLast.err and now - Misc.WhLast.err < 60 then return end
+    Misc.WhLast.err = now
+    U.Spawn(function() Misc.SendWebhook("Script error", "```" .. trunc(msg, 1500) .. "```", Misc.BaseFields(), 0xFF5050) end)
+end
+
+function Misc.SendBug()
+    if os.clock() - Misc.LastBug < 30 then
+        UI.Notify("Bugs & Issues", "Please wait 30 seconds between reports.", 4)
+        return
+    end
+    if #Misc.BugText < 5 then
+        UI.Notify("Bugs & Issues", "Describe the problem first (a few words at least).", 4)
+        return
+    end
+    Misc.LastBug = os.clock()
+    local errs = (#U.ErrLog > 0) and table.concat(U.ErrLog, "\n") or "none"
+    local fields = Misc.BaseFields()
+    table.insert(fields, {"Category", Misc.BugCat, true})
+    table.insert(fields, {"Version", Misc.Version, true})
+    table.insert(fields, {"Recent errors", "```" .. trunc(errs, 900) .. "```", false})
+    table.insert(fields, {"Self-test", "```" .. trunc(Misc.SelfTest(), 900) .. "```", false})
+    local ok, err = Misc.SendWebhook("Bug report: " .. Misc.BugCat, Misc.BugText, fields, 0xFF9040)
+    if ok then
+        UI.Notify("Bugs & Issues", "Report sent. Thank you!", 4)
+    else
+        Misc.LastBug = -100
+        UI.Notify("Bugs & Issues", "Could not send: " .. tostring(err), 6)
+    end
+end
+
+function Misc.SendTest()
+    local ok, err = Misc.SendWebhook("Test message", "The webhook works.", Misc.BaseFields(), 0x50DC8C)
+    UI.Notify("Webhook", ok and "Test message sent." or ("Failed: " .. tostring(err)), 5)
+end
+
+Misc.LastLvlSent = nil
+U.Loop(30, function()
+    local lvl = U.Level()
+    if not Misc.LastLvlSent or lvl < Misc.LastLvlSent then Misc.LastLvlSent = lvl return end
+    if lvl - Misc.LastLvlSent >= 50 then
+        Misc.LastLvlSent = lvl
+        Misc.Alert("WhLevel", "Level milestone", "Reached level " .. lvl, 0x50DC8C)
+    end
+end)
+
+-- fruit hop: hop to a fresh server when no fruit is lying around for a while
+Misc.FruitSeenAt, Misc.LastFruitHop = os.clock(), -100
+U.Loop(2, function()
+    if not Cfg.FruitHop then
+        Misc.FruitSeenAt = os.clock()
+        return
+    end
+    for _, o in ipairs(Workspace:GetChildren()) do
+        if o:IsA("Tool") and o.Name:find("Fruit") then
+            Misc.FruitSeenAt = os.clock()
+            return
+        end
+    end
+    if os.clock() - Misc.FruitSeenAt > Cfg.HopWait and os.clock() - Misc.LastFruitHop > 20 then
+        Misc.LastFruitHop = os.clock()
+        UI.Notify("Fruit Hop", "No fruit here, hopping to a new server.", 4)
+        Misc.Hop()
+    end
+end)
+
+-- =============================================================================
 -- SAFETY  (admin detector, auto reconnect, anti-AFK boost)
 -- =============================================================================
 Misc.RankCache = {}
@@ -3140,6 +3340,7 @@ function Misc.CheckStaff()
         if p ~= LocalPlayer and Misc.StaffRank(p) >= Cfg.AdminRank then
             Misc.LastAdminHop = os.clock()
             UI.Notify("Staff Detected", p.Name .. " is in this server. Hopping to another server...", 6)
+            Misc.Alert("WhStaff", "Staff detected", "Leaving the server (" .. p.Name .. ")", 0xFF5050)
             task.wait(1)
             Misc.Hop()
             return
@@ -3236,7 +3437,6 @@ function U.Shutdown()
     Misc.SetFullbright(false)
     Misc.SetNoFog(false)
     Misc.WaterWalk(false)
-    Misc.ClearFakeFruits()
     pcall(function() UI.Gui:Destroy() end)
 end
 
@@ -3264,8 +3464,8 @@ local TabPvp     = Win:CreateTab("PVP", "🥊")
 local TabShop    = Win:CreateTab("Shop", "🛒")
 local TabPlayer  = Win:CreateTab("Player", "🏃")
 local TabVisual  = Win:CreateTab("Visual", "👁️")
-local TabFun     = Win:CreateTab("Fun", "🎭")
 local TabSafe    = Win:CreateTab("Safety", "🛡️")
+local TabBugs    = Win:CreateTab("Bugs & Issues", "🐞")
 local TabSet     = Win:CreateTab("Settings", "⚙️")
 
 -- ---------------------------------------------------------------------------
@@ -3430,6 +3630,10 @@ TabFruit:Button("Store All Fruits Now", function()
 end)
 TabFruit:Toggle("Fruit Spawn Notifier", Cfg.FruitNotify, function(v) Cfg.FruitNotify = v end)
 TabFruit:Toggle("Fruit ESP", Cfg.ESPFruit, function(v) Cfg.ESPFruit = v end)
+TabFruit:Toggle("Hop Servers Until A Fruit Spawns", Cfg.FruitHop, function(v) Cfg.FruitHop = v end)
+TabFruit:Slider("Hop After (seconds without fruit)", 15, 180, Cfg.HopWait, function(v) Cfg.HopWait = v end, 5)
+TabFruit:Label("Fruit Hop needs the script in Delta's autoexecute folder so it restarts after every hop. "
+    .. "Pair it with Auto Collect Fruit and Auto Store Fruit.")
 
 TabFruit:Section("Random Fruit (costs Beli)")
 TabFruit:Button("Buy Random Fruit Now", function() U.Comm("Cousin", "Buy") end)
@@ -3610,23 +3814,6 @@ TabVisual:Toggle("Chest ESP", Cfg.ESPChest, function(v) Cfg.ESPChest = v end)
 TabVisual:Label("Player ESP is in the PVP tab, Fruit ESP is in the Fruits tab.")
 
 -- ---------------------------------------------------------------------------
--- FUN
--- ---------------------------------------------------------------------------
-TabFun:Section("Fake Fruits (real model, only you see it)")
-local fakeSel = "Leopard"
-TabFun:Dropdown("Fruit", Data.FruitList, fakeSel, function(v) fakeSel = v end)
-TabFun:Button("Spawn Selected Fake Fruit", function() Misc.SpawnFakeFruit(fakeSel) end)
-TabFun:Button("Spawn 5 Random Fake Fruits", function()
-    for _ = 1, 5 do
-        Misc.SpawnFakeFruit(Data.FruitList[math.random(1, #Data.FruitList)])
-        task.wait(0.15)
-    end
-end)
-TabFun:Label("Fake fruits are plain anchored copies of the real fruit mesh. They are not tools, so they cannot be "
-    .. "picked up, eaten, stored or dropped, and other players cannot see them.")
-TabFun:Button("Clear Fake Fruits", function() Misc.ClearFakeFruits() end)
-
--- ---------------------------------------------------------------------------
 -- SAFETY
 -- ---------------------------------------------------------------------------
 TabSafe:Section("Staff / Admin")
@@ -3644,6 +3831,30 @@ TabSafe:Label("Anti-AFK is always on (also every 4 minutes) so you are not idle-
 TabSafe:Section("Survival")
 TabSafe:Toggle("Escape To The Sky At Low HP", Cfg.LowHPEscape, function(v) Cfg.LowHPEscape = v end)
 TabSafe:Slider("Escape Below HP %", 10, 60, Cfg.EscapeHP, function(v) Cfg.EscapeHP = v end, 5)
+
+-- ---------------------------------------------------------------------------
+-- BUGS & ISSUES  (Discord webhook)
+-- ---------------------------------------------------------------------------
+TabBugs:Section("Report A Bug")
+TabBugs:Dropdown("Category", {"Auto Farm", "Quests", "Fast Attack", "Fishing", "Teleport", "PVP", "Fruits", "GUI", "Crash / Error", "Other"},
+    Misc.BugCat, function(v) Misc.BugCat = v end)
+TabBugs:TextArea("What went wrong?", "Example: Auto Farm stops at the Bandit quest NPC and never attacks.", 96,
+    function(t) Misc.BugText = t end)
+TabBugs:Button("Send Bug Report To Discord", function() Misc.SendBug() end)
+TabBugs:Label("A report contains your text, category, level, sea, executor name, current status, the last script errors "
+    .. "and the self-test result. Your Roblox username is included unless you switch it off below.")
+TabBugs:Toggle("Include My Roblox Username", Cfg.WhIncludeName, function(v) Cfg.WhIncludeName = v end)
+
+TabBugs:Section("Discord Alerts (all off by default)")
+TabBugs:Toggle("Alert: Fruit Spawned", Cfg.WhAlerts, function(v) Cfg.WhAlerts = v end)
+TabBugs:Toggle("Alert: Staff Detected", Cfg.WhStaff, function(v) Cfg.WhStaff = v end)
+TabBugs:Toggle("Alert: Farm Got Stuck", Cfg.WhStuck, function(v) Cfg.WhStuck = v end)
+TabBugs:Toggle("Alert: Level Milestone (every 50 levels)", Cfg.WhLevel, function(v) Cfg.WhLevel = v end)
+TabBugs:Toggle("Send Script Errors Automatically", Cfg.WhErrors, function(v) Cfg.WhErrors = v end)
+
+TabBugs:Section("Webhook")
+TabBugs:Input("Webhook URL", "https://discord.com/api/webhooks/...", Cfg.WebhookURL, function(t) Cfg.WebhookURL = t end)
+TabBugs:Button("Send Test Message", function() Misc.SendTest() end)
 
 -- ---------------------------------------------------------------------------
 -- SETTINGS
@@ -3695,4 +3906,4 @@ if Cfg.WalkWater then Misc.WaterWalk(true) end
 
 UI.Notify("Morgan Hub V3", "Loaded. Sea " .. Sea .. " | Level " .. U.Level()
     .. (loadedCfg and " | settings restored" or ""), 5)
-print("[MorganHub] V3.2 loaded. Sea " .. Sea)
+print("[MorganHub] " .. Misc.Version .. " loaded. Sea " .. Sea)
