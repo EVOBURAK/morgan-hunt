@@ -55,7 +55,7 @@ local Cfg = {
     AutoFarm = false, UseQuest = true, WeaponType = "Melee",
     FarmHeight = 12, TweenSpeed = 200,
     BringMobs = true, BringRadius = 380, Hitbox = true, HitboxSize = 45,
-    FastAttack = true, AttackMode = "Ultra (Net+Combat)", AttackRange = 70, ClickMethod = "VirtualUser",
+    FastAttack = true, AttackMode = "Auto-Detect", AttackRange = 70, ClickMethod = "VirtualUser",
     AutoBuso = true, AutoKen = false,
     TargetLevel = 3000, StopAtTarget = false, AutoSeaTravel = true,
     FarmNearest = false, FarmMob = false, SelectedMob = "",
@@ -352,6 +352,13 @@ Data.Quests = {
 
 Data.CastlePos = V3(-5496.2, 313.8, -2841.5) -- Castle on the Sea (Sea 3), pirate raid spot
 
+-- Fisherman docks (approximate, used to fly there before the NPC has streamed in)
+Data.FisherPos = {
+    [1] = V3(1354, 88, -1394),   -- Frozen Village docks
+    [2] = V3(-350, 72, 1900),    -- Kingdom of Rose, Docks 2
+    [3] = V3(-246, 47, 5584),    -- Port Town docks
+}
+
 Data.Bosses = {
     [1] = {"Gorilla King", "Bobby", "The Saw", "Yeti", "Mob Leader", "Vice Admiral", "Saber Expert", "Warden",
            "Chief Warden", "Swan", "Magma Admiral", "Fishman Lord", "Wysper", "Thunder God", "Cyborg", "Ice Admiral"},
@@ -470,7 +477,7 @@ local function Ripple(btn, x, y)
     local d = math.max(asz.X, asz.Y) / s * 1.7
     local rp = New("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset((x - ap.X) / s, (y - ap.Y) / s),
-        Size = UDim2.fromOffset(0, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.7,
+        Size = UDim2.fromOffset(0, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.85,
         BorderSizePixel = 0, ZIndex = btn.ZIndex + 2,
     }, btn)
     Corner(rp, 999)
@@ -487,13 +494,13 @@ function UI.Notify(title, msg, dur)
         BackgroundTransparency = 0.1, BorderSizePixel = 0, GroupTransparency = 1,
     }, UI.ToastHolder)
     Corner(t, 10)
-    Stroke(t, Theme.Accent, 1, 0.2)
+    Stroke(t, Theme.Line, 1, 0.4)
     Pad(t, 12, 8, 12, 8)
     local sc = New("UIScale", {Scale = 0.88}, t)
     New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2)}, t)
     New("TextLabel", {
         Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, Text = tostring(title),
-        TextColor3 = Theme.Accent2, Font = Enum.Font.GothamBold, TextSize = 13,
+        TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 1,
     }, t)
     New("TextLabel", {
@@ -517,7 +524,7 @@ function UI.CreateWindow(titleText, subtitleText)
     local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
     local W = math.clamp(vp.X - 30, 340, 700)
     local H = math.clamp(vp.Y - 30, 250, 440)
-    local SW = (W < 520) and 112 or 152
+    local SW = (W < 520) and 100 or 132
 
     local Gui = New("ScreenGui", {
         Name = "MorganHubV3", ResetOnSpawn = false, DisplayOrder = 999,
@@ -539,23 +546,23 @@ function UI.CreateWindow(titleText, subtitleText)
     local Main = New("Frame", {
         Name = "Main", Size = UDim2.new(0, W, 0, H), AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Theme.Bg,
-        BackgroundTransparency = 0.22, BorderSizePixel = 0, ClipsDescendants = true,
+        BackgroundTransparency = 0.1, BorderSizePixel = 0, ClipsDescendants = true,
     }, Gui)
     Corner(Main, 14)
     UI.Scale = New("UIScale", {Scale = Cfg.UIScale}, Main)
-    local mainStroke = Stroke(Main, Theme.Accent, 2, 0.1)
+    local mainStroke = Stroke(Main, Theme.Line, 1.5, 0.3)
     local strokeGrad = New("UIGradient", {
         Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 45,
     }, mainStroke)
 
     New("ImageLabel", {
         Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
-        Image = "rbxassetid://92647074735439", ImageTransparency = 0.5,
+        Image = "rbxassetid://92647074735439", ImageTransparency = 0.8,
         ScaleType = Enum.ScaleType.Crop, ZIndex = 1,
     }, Main)
     local tint = New("Frame", {
         Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.fromRGB(6, 6, 16),
-        BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 1,
+        BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 1,
     }, Main)
     New("UIGradient", {
         Transparency = NumberSequence.new({
@@ -568,10 +575,6 @@ function UI.CreateWindow(titleText, subtitleText)
         Name = "Particles", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
         ClipsDescendants = true, ZIndex = 1,
     }, Main)
-    local Flash = New("Frame", {
-        Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.fromRGB(200, 220, 255),
-        BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 1,
-    }, Main)
     local Themes = {
         Rain = {a = Color3.fromRGB(140, 80, 255), b = Color3.fromRGB(80, 200, 255), tint = Color3.fromRGB(6, 6, 16)},
         Snow = {a = Color3.fromRGB(190, 225, 255), b = Color3.fromRGB(120, 180, 255), tint = Color3.fromRGB(8, 18, 36)},
@@ -579,7 +582,6 @@ function UI.CreateWindow(titleText, subtitleText)
     }
     local parts = {}
     local curTheme = "Rain"
-    local nextFlash = os.clock() + math.random(6, 14)
 
     function UI.SetTheme(name)
         if not Themes[name] then name = "Rain" end
@@ -587,20 +589,20 @@ function UI.CreateWindow(titleText, subtitleText)
         Cfg.Theme = name
         for _, p in ipairs(parts) do pcall(function() p.f:Destroy() end) end
         parts = {}
-        local count = (W < 520) and 30 or 56
+        local count = (W < 520) and 14 or 26
         for i = 1, count do
             local f, p
             if name == "Rain" then
                 f = New("Frame", {
                     Size = UDim2.new(0, 1, 0, math.random(10, 24)), BackgroundColor3 = Color3.fromRGB(175, 205, 255),
-                    BackgroundTransparency = 0.5 + math.random() * 0.3, BorderSizePixel = 0, Rotation = 12, ZIndex = 1,
+                    BackgroundTransparency = 0.74 + math.random() * 0.2, BorderSizePixel = 0, Rotation = 12, ZIndex = 1,
                 }, Rain)
                 p = {f = f, x = math.random(0, W), y = math.random(-H, H), s = math.random(420, 820), k = "rain"}
             elseif name == "Snow" then
                 local sz = math.random(3, 6)
                 f = New("Frame", {
                     Size = UDim2.new(0, sz, 0, sz), BackgroundColor3 = Color3.new(1, 1, 1),
-                    BackgroundTransparency = 0.1 + math.random() * 0.4, BorderSizePixel = 0, ZIndex = 1,
+                    BackgroundTransparency = 0.35 + math.random() * 0.4, BorderSizePixel = 0, ZIndex = 1,
                 }, Rain)
                 Corner(f, 3)
                 p = {f = f, x = math.random(0, W), y = math.random(-H, H), s = math.random(28, 75),
@@ -609,7 +611,7 @@ function UI.CreateWindow(titleText, subtitleText)
                 f = New("Frame", {
                     Size = UDim2.new(0, math.random(7, 11), 0, math.random(5, 7)),
                     BackgroundColor3 = Color3.fromRGB(255, math.random(150, 190), math.random(190, 220)),
-                    BackgroundTransparency = 0.15 + math.random() * 0.35, BorderSizePixel = 0, ZIndex = 1,
+                    BackgroundTransparency = 0.4 + math.random() * 0.35, BorderSizePixel = 0, ZIndex = 1,
                 }, Rain)
                 Corner(f, 4)
                 p = {f = f, x = math.random(0, W), y = math.random(-H, H), s = math.random(35, 85),
@@ -626,18 +628,12 @@ function UI.CreateWindow(titleText, subtitleText)
     U.Conn(RunService.RenderStepped, function(dt)
         if not Main.Visible then return end
         local now = os.clock()
-        strokeGrad.Rotation = (now * 40) % 360
         -- breathing glow on the hero switches that are ON
         for _, pl in ipairs(UI.Pulses) do
             if pl.on() then pl.stroke.Transparency = 0.02 + (math.sin(now * 3) + 1) * 0.1 end
         end
         Rain.Visible = Cfg.Rain
         if not Rain.Visible then return end
-        if curTheme == "Rain" and now >= nextFlash then
-            nextFlash = now + math.random(8, 18)
-            Flash.BackgroundTransparency = 0.82
-            tw(Flash, 0.7, {BackgroundTransparency = 1}, Enum.EasingStyle.Quad)
-        end
         for _, d in ipairs(parts) do
             if d.k == "rain" then
                 d.y = d.y + d.s * dt
@@ -656,65 +652,49 @@ function UI.CreateWindow(titleText, subtitleText)
         end
     end)
 
-    -- soft light on the upper edge
-    local shine = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 90), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.94,
-        BorderSizePixel = 0, ZIndex = 1,
-    }, Main)
-    New("UIGradient", {
-        Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.86), NumberSequenceKeypoint.new(1, 1)}),
-        Rotation = 90,
-    }, shine)
-
     -- TOP BAR
     local Top = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 46), BackgroundColor3 = Color3.fromRGB(4, 4, 10),
-        BackgroundTransparency = 0.35, BorderSizePixel = 0, ZIndex = 2,
+        Size = UDim2.new(1, 0, 0, 44), BackgroundColor3 = Color3.fromRGB(4, 4, 10),
+        BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 2,
     }, Main)
-    local line = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1), BackgroundColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 3,
+    New("Frame", {
+        Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1), BackgroundColor3 = Theme.Line,
+        BackgroundTransparency = 0.5, BorderSizePixel = 0, ZIndex = 3,
     }, Top)
-    New("UIGradient", {
-        Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
-        Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.2), NumberSequenceKeypoint.new(1, 1),
-        }),
-    }, line)
-    New("ImageLabel", {
-        Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(0, 10, 0, 6), BackgroundTransparency = 1,
-        Image = "rbxassetid://119861971194635", ZIndex = 3,
-    }, Top)
-    New("TextLabel", {
-        Size = UDim2.new(1, -230, 0, 24), Position = UDim2.new(0, 52, 0, 4), BackgroundTransparency = 1,
-        Text = titleText, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 17,
+    -- faded logo sitting behind the "Morgan Hub" title
+    local TitleLbl = New("TextLabel", {
+        Size = UDim2.new(1, -150, 0, 22), Position = UDim2.new(0, 16, 0, 5), BackgroundTransparency = 1,
+        Text = titleText, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 3,
     }, Top)
     New("TextLabel", {
-        Size = UDim2.new(1, -230, 0, 14), Position = UDim2.new(0, 52, 0, 27), BackgroundTransparency = 1,
-        Text = subtitleText or "", TextColor3 = Theme.Accent2, Font = Enum.Font.Gotham, TextSize = 11,
+        Size = UDim2.new(1, -150, 0, 14), Position = UDim2.new(0, 16, 0, 26), BackgroundTransparency = 1,
+        Text = subtitleText or "", TextColor3 = Theme.Sub, Font = Enum.Font.Gotham, TextSize = 11,
         TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 3,
     }, Top)
 
-    -- logo in the gap of the top bar (game icon from Roblox, custom URL optional)
+    -- small logo badge right after the title text (game icon by default, custom URL optional)
+    local titleW = 90
+    pcall(function()
+        local TextSvc = game:GetService("TextService")
+        titleW = TextSvc:GetTextSize(titleText, 16, Enum.Font.GothamBold, Vector2.new(1000, 20)).X
+    end)
     local Logo = New("ImageLabel", {
-        Size = UDim2.new(0, 36, 0, 36), AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -94, 0.5, 0),
-        BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.2, ScaleType = Enum.ScaleType.Crop, ZIndex = 3,
-        Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150",
+        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 16 + titleW + 8, 0, 6),
+        BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.15, ScaleType = Enum.ScaleType.Crop, ZIndex = 3,
+        Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150", Visible = false,
     }, Top)
-    Corner(Logo, 10)
-    Stroke(Logo, Theme.Accent2, 1.5, 0.15)
+    Corner(Logo, 6)
     local Emblem = New("TextLabel", {
-        Size = UDim2.new(0, 36, 0, 36), AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -94, 0.5, 0),
-        BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.1, Text = "M", TextColor3 = Color3.new(1, 1, 1),
-        Font = Enum.Font.GothamBlack, TextSize = 22, Visible = false, ZIndex = 3,
+        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 16 + titleW + 8, 0, 6),
+        BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.15, Text = "M", TextColor3 = Color3.new(1, 1, 1),
+        Font = Enum.Font.GothamBlack, TextSize = 12, Visible = true, ZIndex = 3,
     }, Top)
-    Corner(Emblem, 10)
-    New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 45}, Emblem)
-    task.delay(4, function()
-        if Logo.Parent and not Logo.IsLoaded then
-            Logo.Visible = false
-            Emblem.Visible = true
+    Corner(Emblem, 6)
+    task.delay(3, function()
+        if Logo.Parent and Logo.IsLoaded then
+            Logo.Visible = true
+            Emblem.Visible = false
         end
     end)
     UI.Logo = Logo
@@ -757,7 +737,7 @@ function UI.CreateWindow(titleText, subtitleText)
         Visible = false, AutoButtonColor = false,
     }, Gui)
     Corner(Float, 23)
-    Stroke(Float, Theme.Accent, 2, 0.1)
+    Stroke(Float, Theme.Line, 1.5, 0.3)
     local floatScale = New("UIScale", {Scale = 1}, Float)
     Float.MouseEnter:Connect(function() tw(floatScale, 0.2, {Scale = 1.12}, Enum.EasingStyle.Back) end)
     Float.MouseLeave:Connect(function() tw(floatScale, 0.2, {Scale = 1}) end)
@@ -768,7 +748,7 @@ function UI.CreateWindow(titleText, subtitleText)
         UI.Scale.Scale = Cfg.UIScale * 0.86
         Main.BackgroundTransparency = 0.8
         tw(UI.Scale, 0.45, {Scale = Cfg.UIScale}, Enum.EasingStyle.Back)
-        tw(Main, 0.4, {BackgroundTransparency = 0.22})
+        tw(Main, 0.4, {BackgroundTransparency = 0.1})
     end
     function UI.Hide()
         tw(UI.Scale, 0.22, {Scale = Cfg.UIScale * 0.86}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -777,7 +757,7 @@ function UI.CreateWindow(titleText, subtitleText)
             Main.Visible = false
             Float.Visible = true
             UI.Scale.Scale = Cfg.UIScale
-            Main.BackgroundTransparency = 0.22
+            Main.BackgroundTransparency = 0.1
             floatScale.Scale = 0.6
             tw(floatScale, 0.4, {Scale = 1}, Enum.EasingStyle.Back)
         end)
@@ -788,28 +768,27 @@ function UI.CreateWindow(titleText, subtitleText)
 
     -- SIDEBAR: background, clipped layer with the sliding selection pill, scrolling tab list
     local SideBg = New("Frame", {
-        Size = UDim2.new(0, SW, 1, -46), Position = UDim2.new(0, 0, 0, 46),
-        BackgroundColor3 = Color3.fromRGB(4, 4, 10), BackgroundTransparency = 0.5, BorderSizePixel = 0, ZIndex = 2,
+        Size = UDim2.new(0, SW, 1, -44), Position = UDim2.new(0, 0, 0, 44),
+        BackgroundColor3 = Color3.fromRGB(4, 4, 10), BackgroundTransparency = 0.6, BorderSizePixel = 0, ZIndex = 2,
     }, Main)
     local SideClip = New("Frame", {
-        Size = UDim2.new(0, SW, 1, -46), Position = UDim2.new(0, 0, 0, 46), BackgroundTransparency = 1,
+        Size = UDim2.new(0, SW, 1, -44), Position = UDim2.new(0, 0, 0, 44), BackgroundTransparency = 1,
         ClipsDescendants = true, ZIndex = 2,
     }, Main)
     local Pill = New("Frame", {
-        Size = UDim2.new(1, -12, 0, 38), Position = UDim2.new(0, 6, 0, 0), BackgroundColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 0.72, BorderSizePixel = 0, Visible = false, ZIndex = 2,
+        Size = UDim2.new(1, -12, 0, 34), Position = UDim2.new(0, 6, 0, 0), BackgroundColor3 = Theme.Accent,
+        BackgroundTransparency = 0.8, BorderSizePixel = 0, Visible = false, ZIndex = 2,
     }, SideClip)
     Corner(Pill, 8)
-    New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 0}, Pill)
     local PillBar = New("Frame", {
-        Size = UDim2.new(0, 3, 1, -14), Position = UDim2.new(0, 0, 0, 7), BackgroundColor3 = Theme.Accent2,
+        Size = UDim2.new(0, 3, 1, -14), Position = UDim2.new(0, 0, 0, 7), BackgroundColor3 = Theme.Accent,
         BorderSizePixel = 0, ZIndex = 3,
     }, Pill)
     Corner(PillBar, 2)
 
     local Side = New("ScrollingFrame", {
-        Size = UDim2.new(0, SW, 1, -46), Position = UDim2.new(0, 0, 0, 46),
-        BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.Accent,
+        Size = UDim2.new(0, SW, 1, -44), Position = UDim2.new(0, 0, 0, 44),
+        BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Theme.Line,
         CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3,
     }, Main)
     New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4)}, Side)
@@ -817,24 +796,23 @@ function UI.CreateWindow(titleText, subtitleText)
 
     -- profile card
     local Card = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 54), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3,
+        Size = UDim2.new(1, 0, 0, 46), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5,
         BorderSizePixel = 0, LayoutOrder = 0, ZIndex = 4,
     }, Side)
     Corner(Card, 10)
-    Stroke(Card, Theme.Accent, 1, 0.5)
     local Av = New("ImageLabel", {
-        Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(0, 7, 0.5, -19),
+        Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(0, 7, 0.5, -16),
         BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, ZIndex = 5,
     }, Card)
-    Corner(Av, 19)
+    Corner(Av, 16)
     New("TextLabel", {
-        Size = UDim2.new(1, -54, 0, 18), Position = UDim2.new(0, 50, 0, 9), BackgroundTransparency = 1,
+        Size = UDim2.new(1, -48, 0, 16), Position = UDim2.new(0, 45, 0, 7), BackgroundTransparency = 1,
         Text = LocalPlayer.DisplayName, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, Card)
     UI.ProfileSub = New("TextLabel", {
-        Size = UDim2.new(1, -54, 0, 14), Position = UDim2.new(0, 50, 0, 28), BackgroundTransparency = 1,
-        Text = "Level ...", TextColor3 = Theme.Accent2, Font = Enum.Font.Gotham, TextSize = 11,
+        Size = UDim2.new(1, -48, 0, 14), Position = UDim2.new(0, 45, 0, 24), BackgroundTransparency = 1,
+        Text = "Level ...", TextColor3 = Theme.Sub, Font = Enum.Font.Gotham, TextSize = 10,
         TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
     }, Card)
     task.spawn(function()
@@ -845,7 +823,7 @@ function UI.CreateWindow(titleText, subtitleText)
     end)
 
     local Content = New("Frame", {
-        Size = UDim2.new(1, -SW, 1, -46), Position = UDim2.new(0, SW, 0, 46),
+        Size = UDim2.new(1, -SW, 1, -44), Position = UDim2.new(0, SW, 0, 44),
         BackgroundTransparency = 1, ZIndex = 2,
     }, Main)
 
@@ -853,7 +831,7 @@ function UI.CreateWindow(titleText, subtitleText)
 
     -- pill position for tab index (profile card 54 + paddings, every tab is 38 + 4 spacing)
     local function pillY(idx)
-        return 6 + 54 + 4 + (idx - 1) * 42 - Side.CanvasPosition.Y
+        return 6 + 46 + 4 + (idx - 1) * 38 - Side.CanvasPosition.Y
     end
     function UI.RefreshPill()
         if Window.Selected then Pill.Position = UDim2.new(0, 6, 0, pillY(Window.Selected.idx)) end
@@ -863,8 +841,8 @@ function UI.CreateWindow(titleText, subtitleText)
     function Window:CreateTab(name, icon)
         local idx = #Window.Tabs + 1
         local Btn = New("TextButton", {
-            Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1,
-            Text = " " .. (icon or "") .. " " .. name, TextColor3 = Theme.Sub, Font = Enum.Font.GothamSemibold,
+            Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 1,
+            Text = " " .. (icon or "") .. " " .. name, TextColor3 = Theme.Sub, Font = Enum.Font.GothamMedium,
             TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
             AutoButtonColor = false, LayoutOrder = idx, ZIndex = 4,
         }, Side)
@@ -876,12 +854,12 @@ function UI.CreateWindow(titleText, subtitleText)
         }, Content)
         local Page = New("ScrollingFrame", {
             Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
-            BorderSizePixel = 0, ScrollBarThickness = 5, ScrollBarImageColor3 = Theme.Accent,
+            BorderSizePixel = 0, ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.Line,
             ScrollingDirection = Enum.ScrollingDirection.Y, CanvasSize = UDim2.new(0, 0, 0, 0),
             AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3,
         }, Group)
-        New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6)}, Page)
-        Pad(Page, 4, 4, 10, 10)
+        New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)}, Page)
+        Pad(Page, 6, 6, 10, 10)
 
         local TabData = {Btn = Btn, Group = Group, Page = Page, idx = idx}
         table.insert(Window.Tabs, TabData)
@@ -922,16 +900,12 @@ function UI.CreateWindow(titleText, subtitleText)
         local function nextOrder() order = order + 1 return order end
 
         function Tab:Section(text)
-            local sec = New("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = "    " .. string.upper(text),
-                TextColor3 = Theme.Accent2, Font = Enum.Font.GothamBold, TextSize = 11,
-                TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = nextOrder(), ZIndex = 3,
+            New("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, Text = string.upper(text),
+                TextColor3 = Theme.Sub, Font = Enum.Font.GothamBold, TextSize = 10,
+                TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Bottom,
+                LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
-            local bar = New("Frame", {
-                Size = UDim2.new(0, 3, 0, 12), Position = UDim2.new(0, 4, 0.5, -6),
-                BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, ZIndex = 4,
-            }, sec)
-            Corner(bar, 2)
         end
 
         -- two big hero switches (used on the Home tab)
@@ -939,15 +913,15 @@ function UI.CreateWindow(titleText, subtitleText)
             local state = default and true or false
             local card = New("Frame", {
                 Size = UDim2.new(1, 0, 0, 74), BackgroundColor3 = Color3.new(1, 1, 1),
-                BackgroundTransparency = state and 0.2 or 0.6, BorderSizePixel = 0, ClipsDescendants = true,
+                BackgroundTransparency = state and 0.4 or 0.78, BorderSizePixel = 0, ClipsDescendants = true,
                 LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(card, 12)
             New("UIGradient", {Color = ColorSequence.new(colA, colB), Rotation = 20}, card)
-            local st = Stroke(card, colB, 2, state and 0.05 or 0.5)
+            local st = Stroke(card, colB, 1.5, state and 0.4 or 0.75)
             New("TextLabel", {
                 Size = UDim2.new(1, -100, 0, 24), Position = UDim2.new(0, 14, 0, 10), BackgroundTransparency = 1,
-                Text = title, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBlack, TextSize = 16,
+                Text = title, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 15,
                 TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4,
             }, card)
             local sub = New("TextLabel", {
@@ -965,13 +939,12 @@ function UI.CreateWindow(titleText, subtitleText)
             Corner(pill, 15)
             local hit = New("TextButton", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 6}, card)
             local obj = {}
-            table.insert(UI.Pulses, {stroke = st, on = function() return state end})
             function obj.Set(v, silent)
                 state = v and true or false
                 pill.Text = state and "ON" or "OFF"
                 tw(pill, 0.25, {TextColor3 = state and Color3.fromRGB(110, 255, 160) or Theme.Sub})
-                tw(card, 0.3, {BackgroundTransparency = state and 0.2 or 0.6})
-                if not state then tw(st, 0.3, {Transparency = 0.5}) end
+                tw(card, 0.3, {BackgroundTransparency = state and 0.4 or 0.78})
+                tw(st, 0.3, {Transparency = state and 0.4 or 0.75})
                 if not silent then
                     local ok, err = pcall(callback, state)
                     if not ok then U.Log(err) end
@@ -979,8 +952,8 @@ function UI.CreateWindow(titleText, subtitleText)
             end
             function obj.Get() return state end
             function obj.SetStatus(t) sub.Text = tostring(t) end
-            hit.MouseEnter:Connect(function() tw(card, 0.2, {BackgroundTransparency = state and 0.1 or 0.45}) end)
-            hit.MouseLeave:Connect(function() tw(card, 0.25, {BackgroundTransparency = state and 0.2 or 0.6}) end)
+            hit.MouseEnter:Connect(function() tw(card, 0.2, {BackgroundTransparency = state and 0.3 or 0.65}) end)
+            hit.MouseLeave:Connect(function() tw(card, 0.25, {BackgroundTransparency = state and 0.4 or 0.78}) end)
             hit.MouseButton1Down:Connect(function(x, y) Ripple(hit, x, y) end)
             hit.MouseButton1Click:Connect(function() obj.Set(not state) end)
             if key then UI.T[key] = obj end
@@ -991,7 +964,7 @@ function UI.CreateWindow(titleText, subtitleText)
         function Tab:StatRow(captions)
             local n = #captions
             local row = New("Frame", {
-                Size = UDim2.new(1, 0, 0, 56), BackgroundTransparency = 1, LayoutOrder = nextOrder(), ZIndex = 3,
+                Size = UDim2.new(1, 0, 0, 52), BackgroundTransparency = 1, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             New("UIListLayout", {
                 FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6),
@@ -1001,17 +974,16 @@ function UI.CreateWindow(titleText, subtitleText)
             for i, cap in ipairs(captions) do
                 local c = New("Frame", {
                     Size = UDim2.new(1 / n, -6 * (n - 1) / n, 1, 0), BackgroundColor3 = Theme.Card,
-                    BackgroundTransparency = 0.35, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 3,
+                    BackgroundTransparency = 0.5, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 3,
                 }, row)
                 Corner(c, 10)
-                Stroke(c, Color3.fromRGB(70, 70, 110), 1, 0.5)
                 values[i] = New("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 6), BackgroundTransparency = 1,
-                    Text = "-", TextColor3 = Theme.Accent2, Font = Enum.Font.GothamBlack, TextSize = 19, ZIndex = 4,
+                    Size = UDim2.new(1, 0, 0, 28), Position = UDim2.new(0, 0, 0, 6), BackgroundTransparency = 1,
+                    Text = "-", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 18, ZIndex = 4,
                 }, c)
                 New("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 0, 34), BackgroundTransparency = 1,
-                    Text = cap, TextColor3 = Theme.Sub, Font = Enum.Font.GothamMedium, TextSize = 10, ZIndex = 4,
+                    Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 0, 32), BackgroundTransparency = 1,
+                    Text = cap, TextColor3 = Theme.Sub, Font = Enum.Font.Gotham, TextSize = 9, ZIndex = 4,
                 }, c)
             end
             return {Set = function(i, text) if values[i] then values[i].Text = tostring(text) end end}
@@ -1020,33 +992,31 @@ function UI.CreateWindow(titleText, subtitleText)
         function Tab:Label(text)
             local l = New("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5, Text = text,
-                TextColor3 = Theme.Sub, Font = Enum.Font.Gotham, TextSize = 12, TextWrapped = true,
+                BackgroundTransparency = 1, Text = text,
+                TextColor3 = Theme.Sub, Font = Enum.Font.Gotham, TextSize = 11, TextWrapped = true,
                 TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
-            Corner(l, 8)
-            Pad(l, 10, 6, 10, 6)
+            Pad(l, 4, 2, 4, 2)
             return {Set = function(t) l.Text = tostring(t) end}
         end
 
         function Tab:Button(text, callback)
             local b = New("TextButton", {
-                Size = UDim2.new(1, 0, 0, 36), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.4,
-                Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 12,
+                Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.6,
+                Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
                 AutoButtonColor = false, BorderSizePixel = 0, ClipsDescendants = true, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(b, 8)
-            New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2), Rotation = 0}, b)
             local pressScale = New("UIScale", {Scale = 1}, b)
             b.MouseButton1Down:Connect(function(x, y)
                 tw(pressScale, 0.1, {Scale = 0.96})
                 Ripple(b, x, y)
             end)
             b.MouseButton1Up:Connect(function() tw(pressScale, 0.25, {Scale = 1}, Enum.EasingStyle.Back) end)
-            b.MouseEnter:Connect(function() tw(b, 0.2, {BackgroundTransparency = 0.15}) end)
+            b.MouseEnter:Connect(function() tw(b, 0.2, {BackgroundTransparency = 0.4}) end)
             b.MouseLeave:Connect(function()
                 tw(pressScale, 0.2, {Scale = 1})
-                tw(b, 0.25, {BackgroundTransparency = 0.4})
+                tw(b, 0.25, {BackgroundTransparency = 0.6})
             end)
             b.MouseButton1Click:Connect(function() U.Spawn(callback) end)
         end
@@ -1054,11 +1024,10 @@ function UI.CreateWindow(titleText, subtitleText)
         function Tab:Toggle(text, default, callback, key)
             local state = default and true or false
             local row = New("Frame", {
-                Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.4,
+                Size = UDim2.new(1, 0, 0, 38), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5,
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            local st = Stroke(row, state and Theme.Accent or Theme.Line, 1, state and 0.4 or 0.55)
             New("TextLabel", {
                 Size = UDim2.new(1, -66, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -1084,15 +1053,14 @@ function UI.CreateWindow(titleText, subtitleText)
                 state = v and true or false
                 tw(knob, 0.3, {Position = state and UDim2.new(1, -20, 0, 2) or UDim2.new(0, 2, 0, 2)}, Enum.EasingStyle.Back)
                 tw(track, 0.25, {BackgroundColor3 = state and Theme.Accent or Theme.Off})
-                tw(st, 0.25, {Color = state and Theme.Accent or Theme.Line, Transparency = state and 0.4 or 0.55})
                 if not silent then
                     local ok, err = pcall(callback, state)
                     if not ok then U.Log(err) end
                 end
             end
             function obj.Get() return state end
-            hit.MouseEnter:Connect(function() tw(row, 0.2, {BackgroundTransparency = 0.25}) end)
-            hit.MouseLeave:Connect(function() tw(row, 0.25, {BackgroundTransparency = 0.4}) end)
+            hit.MouseEnter:Connect(function() tw(row, 0.2, {BackgroundTransparency = 0.35}) end)
+            hit.MouseLeave:Connect(function() tw(row, 0.25, {BackgroundTransparency = 0.5}) end)
             hit.MouseButton1Click:Connect(function() obj.Set(not state) end)
             if key then UI.T[key] = obj end
             return obj
@@ -1100,11 +1068,11 @@ function UI.CreateWindow(titleText, subtitleText)
 
         function Tab:Input(text, placeholder, default, callback)
             local row = New("Frame", {
-                Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.4,
+                Size = UDim2.new(1, 0, 0, 38), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5,
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            local st = Stroke(row, Theme.Line, 1, 0.55)
+            local st = Stroke(row, Theme.Line, 1, 1)
             New("TextLabel", {
                 Size = UDim2.new(0.34, 0, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -1121,7 +1089,7 @@ function UI.CreateWindow(titleText, subtitleText)
             Pad(box, 8, 0, 8, 0)
             box.Focused:Connect(function() tw(st, 0.2, {Color = Theme.Accent2, Transparency = 0.1}) end)
             box.FocusLost:Connect(function()
-                tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                tw(st, 0.25, {Color = Theme.Line, Transparency = 1})
                 local ok, err = pcall(callback, box.Text)
                 if not ok then U.Log(err) end
             end)
@@ -1131,11 +1099,11 @@ function UI.CreateWindow(titleText, subtitleText)
         -- multi-line box for longer text (bug reports)
         function Tab:TextArea(text, placeholder, height, callback)
             local row = New("Frame", {
-                Size = UDim2.new(1, 0, 0, height or 90), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.4,
+                Size = UDim2.new(1, 0, 0, height or 90), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5,
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            local st = Stroke(row, Theme.Line, 1, 0.55)
+            local st = Stroke(row, Theme.Line, 1, 1)
             New("TextLabel", {
                 Size = UDim2.new(1, -20, 0, 20), Position = UDim2.new(0, 12, 0, 4), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -1152,7 +1120,7 @@ function UI.CreateWindow(titleText, subtitleText)
             Pad(box, 8, 6, 8, 6)
             box.Focused:Connect(function() tw(st, 0.2, {Color = Theme.Accent2, Transparency = 0.1}) end)
             box.FocusLost:Connect(function()
-                tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                tw(st, 0.25, {Color = Theme.Line, Transparency = 1})
                 local ok, err = pcall(callback, box.Text)
                 if not ok then U.Log(err) end
             end)
@@ -1161,15 +1129,15 @@ function UI.CreateWindow(titleText, subtitleText)
 
         function Tab:Dropdown(text, options, default, callback)
             local holder = New("Frame", {
-                Size = UDim2.new(1, 0, 0, 40), AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.4, BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, 38), AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5, BorderSizePixel = 0,
                 ClipsDescendants = true, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(holder, 8)
-            local st = Stroke(holder, Theme.Line, 1, 0.55)
+            local st = Stroke(holder, Theme.Line, 1, 1)
             New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder}, holder)
             local head = New("TextButton", {
-                Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Text = "", LayoutOrder = 1, ZIndex = 4,
+                Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Text = "", LayoutOrder = 1, ZIndex = 4,
             }, holder)
             New("TextLabel", {
                 Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1,
@@ -1207,7 +1175,7 @@ function UI.CreateWindow(titleText, subtitleText)
                 else
                     tw(list, 0.22, {Size = UDim2.new(1, 0, 0, 0)})
                     tw(arrow, 0.25, {Rotation = 0})
-                    tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                    tw(st, 0.25, {Color = Theme.Line, Transparency = 1})
                     task.delay(0.24, function() if not open then list.Visible = false end end)
                 end
             end
@@ -1236,8 +1204,8 @@ function UI.CreateWindow(titleText, subtitleText)
                 if open then list.Size = UDim2.new(1, 0, 0, targetH) end
             end
             function obj.SetOptions(opts) build(opts) end
-            head.MouseEnter:Connect(function() tw(holder, 0.2, {BackgroundTransparency = 0.25}) end)
-            head.MouseLeave:Connect(function() tw(holder, 0.25, {BackgroundTransparency = 0.4}) end)
+            head.MouseEnter:Connect(function() tw(holder, 0.2, {BackgroundTransparency = 0.35}) end)
+            head.MouseLeave:Connect(function() tw(holder, 0.25, {BackgroundTransparency = 0.5}) end)
             head.MouseButton1Click:Connect(function() setOpen(not open) end)
             build(options)
             return obj
@@ -1247,11 +1215,11 @@ function UI.CreateWindow(titleText, subtitleText)
             step = step or 1
             local value = default
             local row = New("Frame", {
-                Size = UDim2.new(1, 0, 0, 54), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.4,
+                Size = UDim2.new(1, 0, 0, 50), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.5,
                 BorderSizePixel = 0, LayoutOrder = nextOrder(), ZIndex = 3,
             }, Page)
             Corner(row, 8)
-            local st = Stroke(row, Theme.Line, 1, 0.55)
+            local st = Stroke(row, Theme.Line, 1, 1)
             New("TextLabel", {
                 Size = UDim2.new(0.68, 0, 0, 22), Position = UDim2.new(0, 12, 0, 4), BackgroundTransparency = 1,
                 Text = text, TextColor3 = Theme.Text, Font = Enum.Font.GothamMedium, TextSize = 12,
@@ -1263,18 +1231,18 @@ function UI.CreateWindow(titleText, subtitleText)
                 TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 4,
             }, row)
             local track = New("Frame", {
-                Size = UDim2.new(1, -24, 0, 6), Position = UDim2.new(0, 12, 0, 38),
+                Size = UDim2.new(1, -24, 0, 4), Position = UDim2.new(0, 12, 0, 35),
                 BackgroundColor3 = Theme.Off, BorderSizePixel = 0, ZIndex = 4,
             }, row)
-            Corner(track, 3)
+            Corner(track, 2)
             local fill = New("Frame", {
                 Size = UDim2.new(math.clamp((default - min) / (max - min), 0, 1), 0, 1, 0),
                 BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, ZIndex = 5,
             }, track)
-            Corner(fill, 3)
+            Corner(fill, 2)
             New("UIGradient", {Color = ColorSequence.new(Theme.Accent, Theme.Accent2)}, fill)
             local knob = New("Frame", {
-                Size = UDim2.new(0, 14, 0, 14), AnchorPoint = Vector2.new(0.5, 0.5),
+                Size = UDim2.new(0, 12, 0, 12), AnchorPoint = Vector2.new(0.5, 0.5),
                 Position = UDim2.new(1, 0, 0.5, 0), BackgroundColor3 = Color3.new(1, 1, 1),
                 BorderSizePixel = 0, ZIndex = 6,
             }, fill)
@@ -1298,12 +1266,12 @@ function UI.CreateWindow(titleText, subtitleText)
             end
             hit.MouseEnter:Connect(function() tw(st, 0.2, {Color = Theme.Accent, Transparency = 0.35}) end)
             hit.MouseLeave:Connect(function()
-                if not dragging then tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55}) end
+                if not dragging then tw(st, 0.25, {Color = Theme.Line, Transparency = 1}) end
             end)
             hit.InputBegan:Connect(function(input)
                 if IsPointer(input) then
                     dragging = true
-                    tw(knob, 0.2, {Size = UDim2.new(0, 19, 0, 19)}, Enum.EasingStyle.Back)
+                    tw(knob, 0.2, {Size = UDim2.new(0, 17, 0, 17)}, Enum.EasingStyle.Back)
                     setFromX(input.Position.X)
                 end
             end)
@@ -1313,8 +1281,8 @@ function UI.CreateWindow(titleText, subtitleText)
             U.Conn(UserInputService.InputEnded, function(input)
                 if IsPointer(input) and dragging then
                     dragging = false
-                    tw(knob, 0.25, {Size = UDim2.new(0, 14, 0, 14)})
-                    tw(st, 0.25, {Color = Theme.Line, Transparency = 0.55})
+                    tw(knob, 0.25, {Size = UDim2.new(0, 12, 0, 12)})
+                    tw(st, 0.25, {Color = Theme.Line, Transparency = 1})
                 end
             end)
         end
@@ -1331,17 +1299,14 @@ end
 -- =============================================================================
 -- MOVEMENT  (tween, noclip, float, fly, speed, jump)
 -- =============================================================================
-Move.Tween, Move.Target, Move.Teleporting, Move.TpToken = nil, nil, false, 0
+Move.Goal, Move.Speed, Move.Left, Move.Teleporting, Move.TpToken = nil, 200, 0, false, 0
 
 function Move.Cancel()
-    if Move.Tween then
-        pcall(function() Move.Tween:Cancel() end)
-        Move.Tween = nil
-    end
-    Move.Target = nil
+    Move.Goal = nil
 end
 
--- Returns true when the character is already at (or snapped to) the target.
+-- Returns true when already at (or snapped onto) the target. Otherwise the target becomes the goal and the
+-- Heartbeat stepper below flies there at Tween Speed studs per second (no TweenService, nothing to get stuck).
 function Move.To(cf, speed)
     local root = U.Root()
     if not root then return false end
@@ -1349,20 +1314,39 @@ function Move.To(cf, speed)
     if hum and hum.Sit then hum.Sit = false end
     local dist = (root.Position - cf.Position).Magnitude
     if dist < 35 then
-        Move.Cancel()
+        Move.Goal = nil
+        Move.Left = 0
         root.CFrame = cf
         return true
     end
-    if Move.Target and Move.Tween and (Move.Target.Position - cf.Position).Magnitude < 4
-        and Move.Tween.PlaybackState == Enum.PlaybackState.Playing then
-        return false
-    end
-    Move.Cancel()
-    Move.Target = cf
-    Move.Tween = TweenService:Create(root, TweenInfo.new(dist / (speed or Cfg.TweenSpeed), Enum.EasingStyle.Linear), {CFrame = cf})
-    Move.Tween:Play()
+    Move.Goal = cf
+    Move.Speed = speed or Cfg.TweenSpeed
+    Move.Left = dist
     return false
 end
+
+function Move.Step(dt)
+    local goal = Move.Goal
+    if not goal then return end
+    local root = U.Root()
+    if not root then
+        Move.Goal = nil
+        return
+    end
+    local delta = goal.Position - root.Position
+    local dist = delta.Magnitude
+    if dist < 35 then
+        root.CFrame = goal
+        Move.Goal = nil
+        Move.Left = 0
+        return
+    end
+    local step = math.min(Move.Speed * dt, dist)
+    root.CFrame = root.CFrame + delta.Unit * step
+    Move.Left = dist - step
+end
+
+U.Conn(RunService.Heartbeat, function(dt) Move.Step(math.min(dt, 0.1)) end)
 
 function Move.AutoActive()
     return Cfg.AutoFarm or Cfg.FarmNearest or Cfg.FarmMob or Cfg.FarmBoss or Cfg.PirateRaid
@@ -1511,7 +1495,10 @@ task.spawn(function()
     pcall(function()
         local mods = ReplicatedStorage:WaitForChild("Modules", 20)
         local fl = mods and mods:FindFirstChild("Flags")
-        if fl then Combat.RemoteThread = require(fl).COMBAT_REMOTE_THREAD end
+        if fl then
+            Combat.RemoteThread = require(fl).COMBAT_REMOTE_THREAD
+            if Combat.RemoteThread == false then Combat.ProfileIdx = 2 end
+        end
     end)
 end)
 
@@ -1547,13 +1534,13 @@ function Combat.HitId()
     return tostring(LocalPlayer.UserId):sub(2, 4) .. tostring(coroutine.running()):sub(11, 15)
 end
 
--- Batched hit packet (modern Blox Fruits combat remotes). Best-effort.
-function Combat.Net()
+-- Batched hit packet (modern Blox Fruits combat remotes). variant 4 = with id + extra table, 2 = plain.
+function Combat.Net(variant)
     if not (Combat.RegAttack and Combat.RegHit) then return end
     local list, main = Combat.Targets(Cfg.AttackRange)
     if not main or #list == 0 then return end
     Combat.RegAttack:FireServer(0)
-    if Combat.RemoteThread == false then
+    if variant == 2 then
         Combat.RegHit:FireServer(main, list)
     else
         Combat.RegHit:FireServer(main, list, {}, Combat.HitId())
@@ -1574,41 +1561,88 @@ function Combat.FrameworkAttack()
 end
 
 -- Clicks land on the far right edge of the screen so they never hit this hub's own window.
-function Combat.Click()
+function Combat.Click(method, activate)
     local cam = Workspace.CurrentCamera
-    local m = Cfg.ClickMethod
-    if m ~= "VirtualInputManager" then
+    method = method or Cfg.ClickMethod
+    if method ~= "VirtualInputManager" then
         VirtualUser:CaptureController()
         VirtualUser:Button1Down(Vector2.new(1280, 672), cam.CFrame)
         VirtualUser:Button1Up(Vector2.new(1280, 672), cam.CFrame)
     end
-    if m ~= "VirtualUser" then
+    if method == "VirtualInputManager" or method == "Both" then
         local vp = cam.ViewportSize
         local x, y = vp.X - 3, vp.Y * 0.6
         VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
         VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
     end
-    local char = LocalPlayer.Character
-    local tool = char and char:FindFirstChildOfClass("Tool")
-    if tool then tool:Activate() end
+    if activate then
+        local char = LocalPlayer.Character
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        if tool then tool:Activate() end
+    end
+end
+
+-- Attack methods. Auto-Detect walks through them until the target's health really drops.
+Combat.Profiles = {
+    {name = "Net (4 args) + Click", net = 4, fw = true, click = "VirtualUser"},
+    {name = "Net (2 args) + Click", net = 2, fw = true, click = "VirtualUser"},
+    {name = "Click (VirtualUser)", click = "VirtualUser"},
+    {name = "Click (mouse events + Tool:Activate)", click = "VirtualInputManager", activate = true},
+    {name = "Framework + Click", fw = true, click = "VirtualUser"},
+}
+Combat.ProfileIdx = 1
+
+function Combat.Profile()
+    local m = Cfg.AttackMode
+    if m == "Auto-Detect" then return Combat.Profiles[Combat.ProfileIdx] end
+    if m == "Ultra (Net+Combat)" then return Combat.Profiles[1] end
+    if m == "Combat Framework" then return Combat.Profiles[5] end
+    return Combat.Profiles[3] -- "Click Only"
+end
+
+-- watches the mob we are hitting; if its health does not move for 5s while we are next to it, try the next method
+function Combat.Observe(target)
+    if Cfg.AttackMode ~= "Auto-Detect" then return end
+    local h = target:FindFirstChildOfClass("Humanoid")
+    local root = U.Root()
+    local tr = target:FindFirstChild("HumanoidRootPart")
+    if not h or not root or not tr then return end
+    if (root.Position - tr.Position).Magnitude > 45 then
+        Combat.Obs = nil
+        return
+    end
+    local now = os.clock()
+    local o = Combat.Obs
+    if not o or o.mob ~= target then
+        Combat.Obs = {mob = target, hp = h.Health, t = now}
+        return
+    end
+    if h.Health < o.hp then
+        o.hp, o.t = h.Health, now
+        Combat.Works = Combat.ProfileIdx
+        return
+    end
+    o.hp = h.Health
+    if now - o.t > 5 then
+        o.t = now
+        Combat.ProfileIdx = Combat.ProfileIdx % #Combat.Profiles + 1
+        UI.Notify("Fast Attack", "No damage yet, trying: " .. Combat.Profiles[Combat.ProfileIdx].name, 4)
+    end
 end
 
 U.Conn(RunService.Heartbeat, function()
     local now = os.clock()
     if now - Combat.Want > 0.35 then return end
+    local prof = Combat.Profile()
     local wt = Farm.Weapon()
     if Cfg.FastAttack and (wt == "Melee" or wt == "Sword") and now - Combat.Last >= 0.03 then
         Combat.Last = now
-        if Cfg.AttackMode == "Ultra (Net+Combat)" then
-            pcall(Combat.Net)
-            pcall(Combat.FrameworkAttack)
-        elseif Cfg.AttackMode == "Combat Framework" then
-            pcall(Combat.FrameworkAttack)
-        end
+        if prof.net then pcall(Combat.Net, prof.net) end
+        if prof.fw then pcall(Combat.FrameworkAttack) end
     end
     if now - Combat.LastClick >= 0.2 then
         Combat.LastClick = now
-        pcall(Combat.Click)
+        pcall(Combat.Click, prof.click, prof.activate)
     end
 end)
 
@@ -1856,42 +1890,50 @@ function Farm.GetRow(level)
 end
 
 Farm.QuestFails, Farm.OwnKills, Farm.OwnActive, Farm.Kills = 0, 0, false, 0
+Farm.OwnStart, Farm.GuiTrusted, Farm.QuestResp = 0, false, "-"
 Farm.LastProgress, Farm.WDPos = os.clock(), nil
 Farm.DynBlockedUntil, Farm.SubmergedTries = 0, 0
 Farm.NeedCache = {}
 
 -- Reads the on-screen quest tracker. Returns (active, title). active == nil means "GUI not found".
+-- Matches ANY visible label with a "(0/8)"-style counter, so this works regardless of the exact wording
+-- Blox Fruits uses ("Defeat 8 Bandits", "Kill 5 Gorillas", translated text, etc).
 function Farm.QuestInfo()
     local now = os.clock()
     local c = Farm.QI
-    if c and now - c.t < 0.25 then return c.active, c.title end
+    if c and now - c.t < 0.4 then return c.active, c.title end
     local active, title = nil, ""
-    local q = Farm.QuestCached
-    if not (q and q.Parent) then
-        q = nil
-        local pg = LocalPlayer:FindFirstChild("PlayerGui")
-        local main = pg and pg:FindFirstChild("Main")
-        if main then
-            q = main:FindFirstChild("Quest")
-            if not q then
-                for _, d in ipairs(main:GetChildren()) do
-                    if d.Name:lower():find("quest", 1, true) and d:IsA("GuiObject") then q = d break end
-                end
-            end
-        end
-        Farm.QuestCached = q
-    end
-    if q then
-        active = q.Visible and true or false
-        if active then
-            for _, d in ipairs(q:GetDescendants()) do
-                if d:IsA("TextLabel") and type(d.Text) == "string" and d.Text:lower():find("defeat", 1, true) then
-                    title = d.Text
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if pg then
+        local main = pg:FindFirstChild("Main") or pg
+        for _, d in ipairs(main:GetDescendants()) do
+            if d:IsA("TextLabel") then
+                local tx = d.Text
+                if type(tx) == "string" and tx:find("%(%s*%d+%s*/%s*%d+%s*%)") and Misc.IsShown(d) then
+                    active, title = true, tx
                     break
                 end
             end
         end
+        if not active then
+            for _, d in ipairs(main:GetDescendants()) do
+                if d:IsA("TextLabel") then
+                    local tx = d.Text
+                    if type(tx) == "string" and tx:lower():find("^%s*defeat%s+%d") and Misc.IsShown(d) then
+                        active, title = true, tx
+                        break
+                    end
+                end
+            end
+        end
+        -- classic Main.Quest frame, used only to know whether the tracker exists at all
+        local q = main:FindFirstChild("Quest")
+        if q then
+            Farm.QuestCached = q
+            if active == nil then active = q.Visible and true or false end
+        end
     end
+    if active then Farm.GuiTrusted = true end
     Farm.QI = {t = now, active = active, title = title}
     return active, title
 end
@@ -1922,8 +1964,9 @@ function Farm.QuestNeed(row)
     return need
 end
 
+-- If the title carries no "(n/n)" progress counter it isn't the kind of text we can check, so let it pass.
 function Farm.TitleMatches(title, row)
-    if type(title) ~= "string" or not title:lower():find("defeat", 1, true) then return true end
+    if type(title) ~= "string" or not title:find("%(%s*%d+%s*/%s*%d+%s*%)") then return true end
     local t, m = title:lower(), row[2]:lower()
     if t:find(m, 1, true) then return true end
     if m:find("kissed", 1, true) and t:find("kissed", 1, true) then return true end
@@ -2012,6 +2055,7 @@ function Farm.Fight(name, mobPos, row)
         Move.To(target.HumanoidRootPart.CFrame * CF(0, Farm.Height(), 0) * CFrame.Angles(math.rad(-90), 0, 0))
         Farm.Bring(target, U.CleanName(target.Name))
         Combat.Request()
+        Combat.Observe(target)
         return
     end
     -- nothing spawned near us: fly to the mob area
@@ -2019,6 +2063,7 @@ function Farm.Fight(name, mobPos, row)
     if pos then
         if row then Farm.Entrance(row, pos) end
         Move.To(CF(pos + V3(0, Farm.Height(), 0)))
+        Farm.Status(string.format("Flying to %s spawn, %d studs left", name, math.floor(Move.Left)))
     end
 end
 
@@ -2066,41 +2111,53 @@ function Farm.Level()
         Farm.SubmergedTries = 0
     end
 
-    Farm.Status(string.format("Lv %d | %s | %s | kills %d", lvl, row[7], row[2], Farm.Kills))
+    Farm.Status(string.format("Lv %d | %s | %s | kills %d | %s", lvl, row[7], row[2], Farm.Kills, Combat.Profile().name))
     Farm.Prep()
     Farm.Watchdog(root)
 
     if Cfg.UseQuest then
-        local active, title = Farm.QuestInfo()
-        if active == nil then
-            -- quest tracker not found: count our own kills instead of freezing at the NPC
-            active = Farm.OwnActive and Farm.OwnKills < Farm.QuestNeed(row)
+        local guiActive, title = Farm.QuestInfo()
+        local now = os.clock()
+        local active
+        if guiActive then
+            active = true
+            Farm.QuestFails = 0
+        elseif Farm.OwnActive and now - Farm.OwnStart < 8 then
+            active = true -- just accepted, the tracker can lag behind the server
+        elseif Farm.OwnActive and not Farm.GuiTrusted and Farm.OwnKills < Farm.QuestNeed(row) then
+            active = true -- the tracker never showed a quest here: trust our own kill counter instead of freezing
+        else
+            active = false
         end
-        if active and not Farm.TitleMatches(title, row) then
-            if os.clock() - Farm.LastAbandon > 8 then
-                Farm.LastAbandon = os.clock()
+        if guiActive and not Farm.TitleMatches(title, row) then
+            if now - Farm.LastAbandon > 8 then
+                Farm.LastAbandon = now
                 Farm.OwnActive = false
                 U.CommAsync("AbandonQuest")
             end
             return
         end
         if not active then
-            if os.clock() < Farm.QuestWait then return end
+            if now < Farm.QuestWait then return end
             local stand = row[5]
             if Farm.QuestFails >= 2 then stand = Farm.FindNPC("quest", row[5]) or row[5] end
             Farm.Entrance(row, stand)
             Move.To(CF(stand))
             local r2 = U.Root()
             if r2 and (r2.Position - stand).Magnitude < 14 then
-                U.CommAsync("StartQuest", row[3], row[4]) -- never block the loop on the server
-                Farm.QuestWait = os.clock() + 2
-                Farm.OwnActive, Farm.OwnKills = true, 0
+                U.Spawn(function()
+                    local r = U.Comm("StartQuest", row[3], row[4]) -- never block the loop on the server
+                    Farm.QuestResp = tostring(r)
+                end)
+                Farm.QuestWait = now + 2
+                Farm.OwnActive, Farm.OwnKills, Farm.OwnStart = true, 0, now
                 Farm.QuestFails = Farm.QuestFails + 1
-                Farm.LastProgress = os.clock()
+                Farm.LastProgress = now
+            else
+                Farm.Status(string.format("Flying to quest NPC, %d studs left", math.floor(Move.Left)))
             end
             return
         end
-        Farm.QuestFails = 0
     end
 
     Farm.Fight(row[2], row[6], row)
@@ -2488,7 +2545,7 @@ U.Loop(0.05, function()
     end
     if Move.Teleporting then return end
     if not Move.AutoActive() and not Cfg.FishFarm then
-        if Move.Tween then Move.Cancel() end
+        if Move.Goal then Move.Cancel() end
         Farm.Target = nil
         return
     end
@@ -3029,12 +3086,30 @@ function Fish.Mouse(down)
     Fish.Holding = down
 end
 
+-- Waits for the Fisherman model to stream in. Flies to the known dock first if it hasn't loaded yet.
+function Fish.LocateFisherman(timeout)
+    local npc = Misc.FindNPCModel("fisherman")
+    if npc then return npc end
+    local dock = Data.FisherPos[Sea]
+    if dock then
+        Farm.Status("Fishing: heading to the docks to find the Fisherman")
+        Move.Go(dock + V3(0, 3, 0))
+    end
+    local start = os.clock()
+    while os.clock() - start < (timeout or 20) do
+        npc = Misc.FindNPCModel("fisherman")
+        if npc then return npc end
+        task.wait(0.5)
+    end
+    return nil
+end
+
 function Fish.Restock()
     Fish.LastRestock = os.clock()
-    local npc = Misc.FindNPCModel("fisherman")
+    local npc = Fish.LocateFisherman(20)
     local part = npc and (npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChildWhichIsA("BasePart", true))
     if not part then
-        U.Notify("Fishing", "Fisherman NPC not found in this sea.", 5)
+        U.Notify("Fishing", "Fisherman NPC not found in this sea, even near the docks.", 5)
         return false
     end
     Farm.Status("Fishing: restocking (sell fish / buy bait)")
@@ -3112,7 +3187,8 @@ function Misc.SelfTest()
     add("Enemies folder", Workspace:FindFirstChild("Enemies") ~= nil)
     local tool = Farm.GetTool(Farm.Weapon())
     add("Weapon '" .. Farm.Weapon() .. "' found", tool ~= nil)
-    add("Fisherman NPC", Misc.FindNPCModel("fisherman") ~= nil)
+    add("Fisherman NPC loaded right now", Misc.FindNPCModel("fisherman") ~= nil,
+        "not streamed in yet, this is normal far from the docks; Auto Fish flies there and waits")
     add("Submarine Worker NPC", Misc.FindNPCModel("submarine") ~= nil)
     add("writefile (config/logo)", writefile ~= nil)
     add("getconnections (GUI macro)", Ex.GetConnections ~= nil)
@@ -3135,6 +3211,9 @@ function Misc.Debug()
     local active, title = Farm.QuestInfo()
     add("Quest GUI: found=" .. tostring(Farm.QuestCached ~= nil) .. " active=" .. tostring(active) .. " title=" .. title)
     add("Farm kills=" .. Farm.Kills .. " ownKills=" .. Farm.OwnKills .. " dynBlocked=" .. tostring(os.clock() < Farm.DynBlockedUntil))
+    add("Quest: guiTrusted=" .. tostring(Farm.GuiTrusted) .. " ownActive=" .. tostring(Farm.OwnActive) .. " lastStartQuestReply=" .. tostring(Farm.QuestResp))
+    add("Attack method: " .. Combat.Profile().name .. " (worked before: " .. tostring(Combat.Works) .. ")")
+    add("Move: goal=" .. tostring(Move.Goal ~= nil) .. " studsLeft=" .. tostring(math.floor(Move.Left)))
     for _, l in ipairs(string.split(Misc.SelfTest(), "\n")) do add("TEST " .. l) end
     pcall(function()
         local Quests = require(ReplicatedStorage.Quests)
@@ -3472,13 +3551,13 @@ local TabSet     = Win:CreateTab("Settings", "⚙️")
 -- HOME  (two hero switches + live status)
 -- ---------------------------------------------------------------------------
 TabHome:Section("Main Switches")
-TabHome:BigToggle("AUTO FARM", "Quests, island and mob by your level. Re-equips your weapon after death.",
+TabHome:BigToggle("AUTO FARM", "Quests, island and mob by your level.",
     Cfg.AutoFarm, function(v)
         Cfg.AutoFarm = v
         if not v then Move.Cancel() Farm.Target = nil end
     end, "AutoFarm", Color3.fromRGB(120, 70, 255), Color3.fromRGB(70, 190, 255))
 
-TabHome:BigToggle("PIRATE RAID", "Watches the Castle on the Sea. Goes when the raid starts, then Auto Farm continues.",
+TabHome:BigToggle("PIRATE RAID", "Joins the raid when it starts, then farming resumes.",
     Cfg.PirateRaid, function(v)
         Cfg.PirateRaid = v
         if not v then Move.Cancel() end
@@ -3497,7 +3576,7 @@ TabHome:Button("Stop Everything", function()
     Move.StopTeleport()
     U.Notify("Morgan Hub", "All automation stopped.", 3)
 end)
-TabHome:Label("Use '-' to hide the window and the round M button to bring it back. Every page scrolls.")
+TabHome:Label("Tip: '-' hides the window, the round M button brings it back.")
 
 local fpsSmooth = 60
 U.Conn(RunService.RenderStepped, function(dt)
@@ -3515,12 +3594,12 @@ U.Loop(0.5, function()
         .. "\nWeapon: " .. Farm.Weapon())
     if UI.T.AutoFarm then
         UI.T.AutoFarm.SetStatus(Cfg.AutoFarm and ("Running: " .. Farm.StatusText)
-            or "Quests, island and mob by your level. Re-equips your weapon after death.")
+            or "Quests, island and mob by your level.")
     end
     if UI.T.PirateRaid then
         UI.T.PirateRaid.SetStatus((Cfg.PirateRaid and Farm.StatusText:sub(1, 11) == "Pirate Raid")
-            and Farm.StatusText or (Cfg.PirateRaid and "Armed. Waiting for the raid, Auto Farm keeps running."
-            or "Watches the Castle on the Sea. Goes when the raid starts, then Auto Farm continues."))
+            and Farm.StatusText or (Cfg.PirateRaid and "Armed. Waiting for a raid."
+            or "Joins the raid when it starts, then farming resumes."))
     end
 end)
 
@@ -3542,7 +3621,7 @@ TabFarm:Slider("Farm Height", 5, 40, Cfg.FarmHeight, function(v) Cfg.FarmHeight 
 
 TabFarm:Section("Combat")
 TabFarm:Toggle("Fast Attack", Cfg.FastAttack, function(v) Cfg.FastAttack = v end)
-TabFarm:Dropdown("Attack Mode", {"Ultra (Net+Combat)", "Combat Framework", "Click Only"}, Cfg.AttackMode,
+TabFarm:Dropdown("Attack Mode", {"Auto-Detect", "Ultra (Net+Combat)", "Combat Framework", "Click Only"}, Cfg.AttackMode,
     function(v) Cfg.AttackMode = v end)
 TabFarm:Dropdown("Click Method", {"Both", "VirtualUser", "VirtualInputManager"}, Cfg.ClickMethod,
     function(v) Cfg.ClickMethod = v end)
@@ -3564,7 +3643,7 @@ TabFarm:Toggle("Skill F", Cfg.SkillF, function(v) Cfg.SkillF = v end)
 -- ---------------------------------------------------------------------------
 TabMore:Section("Pirate Raid")
 TabMore:Toggle("Wait At Castle When Idle", Cfg.PirateIdleWait, function(v) Cfg.PirateIdleWait = v end)
-TabMore:Label("The big PIRATE RAID switch on Home does the work. Leave 'Wait At Castle' off to keep farming between raids.")
+TabMore:Label("Turn on PIRATE RAID on the Home tab. It only interrupts your farm while a raid is active.")
 
 TabMore:Section("Bone Farm (Sea 3)")
 TabMore:Toggle("Auto Farm Bones (Haunted Castle)", Cfg.BoneFarm, function(v)
@@ -3612,8 +3691,7 @@ TabMore:Toggle("Auto Collect Chests", Cfg.AutoChest, function(v)
     Cfg.AutoChest = v
     if not v then Move.Cancel() end
 end, "AutoChest")
-TabMore:Label("Sword quest chains (Saber, Rengoku, CDK...) change often and are not automated. "
-    .. "Use Boss Farm for sword drops and the Shop tab for dealer swords.")
+TabMore:Label("Saber, Rengoku and CDK quest chains are not automated. Use Boss Farm for sword drops.")
 
 -- ---------------------------------------------------------------------------
 -- FRUITS
@@ -3632,14 +3710,12 @@ TabFruit:Toggle("Fruit Spawn Notifier", Cfg.FruitNotify, function(v) Cfg.FruitNo
 TabFruit:Toggle("Fruit ESP", Cfg.ESPFruit, function(v) Cfg.ESPFruit = v end)
 TabFruit:Toggle("Hop Servers Until A Fruit Spawns", Cfg.FruitHop, function(v) Cfg.FruitHop = v end)
 TabFruit:Slider("Hop After (seconds without fruit)", 15, 180, Cfg.HopWait, function(v) Cfg.HopWait = v end, 5)
-TabFruit:Label("Fruit Hop needs the script in Delta's autoexecute folder so it restarts after every hop. "
-    .. "Pair it with Auto Collect Fruit and Auto Store Fruit.")
+TabFruit:Label("Fruit Hop restarts the script after each hop, so keep it in Delta's autoexecute folder.")
 
 TabFruit:Section("Random Fruit (costs Beli)")
 TabFruit:Button("Buy Random Fruit Now", function() U.Comm("Cousin", "Buy") end)
 TabFruit:Toggle("Auto Buy Random Fruit", Cfg.AutoRandomFruit, function(v) Cfg.AutoRandomFruit = v end)
-TabFruit:Label("Fruit rarity is rolled on the server, so a client script cannot raise luck. "
-    .. "Auto Buy + Auto Store just repeats the normal roll for you.")
+TabFruit:Label("Fruit rarity is decided by the server, so luck cannot be changed from the client.")
 
 -- ---------------------------------------------------------------------------
 -- FISHING
@@ -3655,10 +3731,7 @@ TabFish:Slider("Restock Every (minutes, 0 = never)", 0, 30, Cfg.FishRestock, fun
 TabFish:Section("Actions")
 TabFish:Button("Go To Fisherman + Sell Fish + Buy Bait Now", function() Fish.Restock() end)
 TabFish:Button("Stop Fishing Click", function() if Fish.Holding then Fish.Mouse(false) end end)
-TabFish:Label("Get the rod first: talk to the Fisherman (Frozen Village docks in Sea 1, Kingdom of Rose Docks 2 "
-    .. "in Sea 2, Port Town docks in Sea 3). Stand on a dock facing the water, then turn Auto Fish on. "
-    .. "Selling and buying press the dialogue buttons by their text, so if it misses, run the Self-Test and "
-    .. "send me the console output.")
+TabFish:Label("Get the rod from the Fisherman first, then stand on a dock facing the water and switch Auto Fish on.")
 
 -- ---------------------------------------------------------------------------
 -- STATS
@@ -3819,14 +3892,12 @@ TabVisual:Label("Player ESP is in the PVP tab, Fruit ESP is in the Fruits tab.")
 TabSafe:Section("Staff / Admin")
 TabSafe:Toggle("Leave Server When Staff Joins", Cfg.AdminHop, function(v) Cfg.AdminHop = v end)
 TabSafe:Slider("Min Staff Rank (game group)", 2, 255, Cfg.AdminRank, function(v) Cfg.AdminRank = v end, 1)
-TabSafe:Label("Checks every player's rank in the game's group. Members are rank 1, so anything above that "
-    .. "counts as staff by default. Raise the rank if you get too many false alarms.")
+TabSafe:Label("Anyone in this server with a rank above the minimum in the game's group counts as staff.")
 TabSafe:Button("Hop To Another Server Now", function() Misc.Hop() end)
 
 TabSafe:Section("Connection")
 TabSafe:Toggle("Auto Reconnect After Disconnect", Cfg.AutoReconnect, function(v) Cfg.AutoReconnect = v end)
-TabSafe:Label("Anti-AFK is always on (also every 4 minutes) so you are not idle-kicked. "
-    .. "Put the script in Delta's autoexecute folder and your switches restore themselves after a rejoin.")
+TabSafe:Label("Anti-AFK is always on. Use Delta's autoexecute folder to resume after a rejoin.")
 
 TabSafe:Section("Survival")
 TabSafe:Toggle("Escape To The Sky At Low HP", Cfg.LowHPEscape, function(v) Cfg.LowHPEscape = v end)
@@ -3841,8 +3912,7 @@ TabBugs:Dropdown("Category", {"Auto Farm", "Quests", "Fast Attack", "Fishing", "
 TabBugs:TextArea("What went wrong?", "Example: Auto Farm stops at the Bandit quest NPC and never attacks.", 96,
     function(t) Misc.BugText = t end)
 TabBugs:Button("Send Bug Report To Discord", function() Misc.SendBug() end)
-TabBugs:Label("A report contains your text, category, level, sea, executor name, current status, the last script errors "
-    .. "and the self-test result. Your Roblox username is included unless you switch it off below.")
+TabBugs:Label("Sends your text, category, level, sea, executor, status, recent errors and self-test. Nothing is sent automatically.")
 TabBugs:Toggle("Include My Roblox Username", Cfg.WhIncludeName, function(v) Cfg.WhIncludeName = v end)
 
 TabBugs:Section("Discord Alerts (all off by default)")
@@ -3893,7 +3963,7 @@ TabSet:Button("Run Self-Test (checks every module)", function()
     print("[MorganHub SelfTest]\n" .. report)
 end)
 TabSet:Button("Print Debug Info (executor console)", function() Misc.Debug() end)
-TabSet:Label("If quests or attacks misbehave, press the debug button and send me the console output.")
+TabSet:Label("Quests or attacks misbehaving? Run the self-test and send it through Bugs & Issues.")
 TabSet:Section("Script")
 TabSet:Button("Unload Morgan Hub", function() U.Shutdown() end)
 
