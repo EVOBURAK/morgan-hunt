@@ -350,6 +350,18 @@ Data.Quests = {
     },
 }
 
+-- Submerged Island (2600-2800) quest routing.
+-- Quest NPC positions and quest IDs are resolved from the live quest module so
+-- this does not depend on stale hard-coded coordinates.
+Data.SubmergedQuests = {
+    {2600, "Reef Bandit", "Submerged Quest Giver 1"},
+    {2625, "Coral Pirate", "Submerged Quest Giver 1"},
+    {2650, "Sea Chanter", "Submerged Quest Giver 2"},
+    {2675, "Ocean Prophet", "Submerged Quest Giver 2"},
+    {2675, "High Disciple", "Submerged Quest Giver 3"},
+    {2700, "Grand Devotee", "Submerged Quest Giver 3"},
+}
+
 Data.CastlePos = V3(-5496.2, 313.8, -2841.5) -- Castle on the Sea (Sea 3), pirate raid spot
 
 -- Fisherman docks (approximate, used to fly there before the NPC has streamed in)
@@ -1836,7 +1848,9 @@ function Farm.FindNPC(pattern, near)
     return best
 end
 
--- Levels above the hard-coded table (Submerged Island etc.) are resolved from the game's quest module.
+-- Resolve a quest row from the live quest module. For Submerged Island we
+-- use the known level/mob route first, instead of choosing an arbitrary
+-- highest-LevelReq quest from pairs(), which can select the wrong quest.
 function Farm.Dynamic(level)
     local c = Farm.DynCache
     if c and c.level == level then return c.row end
@@ -1845,6 +1859,47 @@ function Farm.Dynamic(level)
         local qm = ReplicatedStorage:FindFirstChild("Quests")
         if not qm then return end
         local Quests = require(qm)
+
+        local wanted
+        for i = #Data.SubmergedQuests, 1, -1 do
+            local r = Data.SubmergedQuests[i]
+            if level >= r[1] then
+                wanted = r
+                break
+            end
+        end
+
+        local function matchesMob(info, mobName)
+            if type(info) ~= "table" or type(info.Task) ~= "table" then return false end
+            for mob, count in pairs(info.Task) do
+                if type(mob) == "string" and type(count) == "number"
+                    and count > 0 and mob:lower() == mobName:lower() then
+                    return true
+                end
+            end
+            return false
+        end
+
+        if wanted then
+            for qName, qTable in pairs(Quests) do
+                if type(qTable) == "table" then
+                    for idx, info in pairs(qTable) do
+                        if type(info) == "table" and type(info.LevelReq) == "number"
+                            and info.LevelReq == wanted[1] and matchesMob(info, wanted[2]) then
+                            local mpos = Farm.FindMobSpawn(wanted[2])
+                            local qpos = mpos and Farm.FindNPC("quest", mpos)
+                            qpos = qpos or Farm.FindNPC(wanted[3])
+                            if mpos and qpos then
+                                row = {wanted[1], wanted[2], qName, idx, qpos, mpos, "Dynamic: Submerged Island"}
+                                return
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Generic fallback for future quest additions.
         local bestReq, bestQ, bestIdx, bestMob = -1, nil, nil, nil
         for qName, qTable in pairs(Quests) do
             if type(qTable) == "table" then
@@ -1853,7 +1908,7 @@ function Farm.Dynamic(level)
                         and info.LevelReq <= level and info.LevelReq > bestReq then
                         local mob, cnt
                         for k, v in pairs(info.Task) do mob, cnt = k, v break end
-                        if type(mob) == "string" and type(cnt) == "number" and cnt > 1 then
+                        if type(mob) == "string" and type(cnt) == "number" and cnt > 0 then
                             bestReq, bestQ, bestIdx, bestMob = info.LevelReq, qName, idx, mob
                         end
                     end
@@ -1881,7 +1936,7 @@ function Farm.GetRow(level)
     for _, r in ipairs(rows) do
         if level >= r[1] then best = r else break end
     end
-    if Sea == 3 and level >= 2550 and os.clock() >= Farm.DynBlockedUntil then
+    if Sea == 3 and level >= 2600 and os.clock() >= Farm.DynBlockedUntil then
         local dyn = Farm.Dynamic(level)
         if dyn then return dyn end
     end
@@ -2095,7 +2150,7 @@ function Farm.Level()
     end
 
     -- far-away dynamic quests (Submerged Island): try to travel, then fall back so we never sit idle
-    if row[7]:sub(1, 7) == "Dynamic" then
+    if type(row[7]) == "string" and row[7]:sub(1, 7) == "Dynamic" then
         if (root.Position - row[6]).Magnitude > 6000 then
             if Farm.SubmergedTries >= 3 then
                 Farm.SubmergedTries = 0
