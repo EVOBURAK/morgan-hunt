@@ -85,7 +85,9 @@ local Cfg = {
     UIScale = 1, SaveConfig = true,
     -- Fishing / visuals
     FishFarm = false, FishSell = true, FishBait = true, FishRestock = 5,
-    FpsBoost = false, Theme = "Rain", LogoURL = "",
+    FpsBoost = false, Theme = "Rain",
+    -- Uses a Roblox asset by default; the URL option below can still override it.
+    LogoAsset = "rbxassetid://92647074735439", LogoURL = "",
     -- Discord webhook / bug reports / fruit hop
     WebhookURL = "https://discord.com/api/webhooks/1551443716810477678/MQhHmmfbw3DCkgBtJjlLaUPAsLHLt6LY4kuetBALnwci8irzjrbH1WatCccR4QNUuHFz",
     WhIncludeName = true, WhAlerts = false, WhStaff = false, WhStuck = false, WhLevel = false, WhErrors = false,
@@ -559,6 +561,7 @@ function UI.CreateWindow(titleText, subtitleText)
         Name = "Main", Size = UDim2.new(0, W, 0, H), AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Theme.Bg,
         BackgroundTransparency = 0.1, BorderSizePixel = 0, ClipsDescendants = true,
+        Active = true,
     }, Gui)
     Corner(Main, 14)
     UI.Scale = New("UIScale", {Scale = Cfg.UIScale}, Main)
@@ -606,8 +609,10 @@ function UI.CreateWindow(titleText, subtitleText)
             local f, p
             if name == "Rain" then
                 f = New("Frame", {
-                    Size = UDim2.new(0, 1, 0, math.random(10, 24)), BackgroundColor3 = Color3.fromRGB(175, 205, 255),
-                    BackgroundTransparency = 0.74 + math.random() * 0.2, BorderSizePixel = 0, Rotation = 12, ZIndex = 1,
+                    Size = UDim2.new(0, math.random(1, 2), 0, math.random(12, 26)),
+                    BackgroundColor3 = Themes[name].b,
+                    BackgroundTransparency = 0.68 + math.random() * 0.2, BorderSizePixel = 0,
+                    Rotation = 12, ZIndex = 1,
                 }, Rain)
                 p = {f = f, x = math.random(0, W), y = math.random(-H, H), s = math.random(420, 820), k = "rain"}
             elseif name == "Snow" then
@@ -685,40 +690,59 @@ function UI.CreateWindow(titleText, subtitleText)
         TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 3,
     }, Top)
 
-    -- small logo badge right after the title text (game icon by default, custom URL optional)
+    -- logo badge + robust fallback. The same logo is also used by the open button.
     local titleW = 90
     pcall(function()
         local TextSvc = game:GetService("TextService")
         titleW = TextSvc:GetTextSize(titleText, 16, Enum.Font.GothamBold, Vector2.new(1000, 20)).X
     end)
+
+    local LogoWrap = New("Frame", {
+        Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 16 + titleW + 8, 0, 4),
+        BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.08, BorderSizePixel = 0, ZIndex = 3,
+    }, Top)
+    Corner(LogoWrap, 8)
+    Stroke(LogoWrap, Theme.Line, 1, 0.35)
+
     local Logo = New("ImageLabel", {
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 16 + titleW + 8, 0, 6),
-        BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.15, ScaleType = Enum.ScaleType.Crop, ZIndex = 3,
-        Image = "rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150", Visible = false,
-    }, Top)
+        Size = UDim2.new(1, -4, 1, -4), Position = UDim2.new(0, 2, 0, 2),
+        BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Crop, ZIndex = 4,
+        Image = Cfg.LogoAsset or ("rbxthumb://type=GameIcon&id=" .. tostring(game.GameId) .. "&w=150&h=150"),
+    }, LogoWrap)
     Corner(Logo, 6)
+
     local Emblem = New("TextLabel", {
-        Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0, 16 + titleW + 8, 0, 6),
-        BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.15, Text = "M", TextColor3 = Color3.new(1, 1, 1),
-        Font = Enum.Font.GothamBlack, TextSize = 12, Visible = true, ZIndex = 3,
-    }, Top)
-    Corner(Emblem, 6)
-    task.delay(3, function()
-        if Logo.Parent and Logo.IsLoaded then
-            Logo.Visible = true
-            Emblem.Visible = false
-        end
+        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "M",
+        TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBlack, TextSize = 14,
+        Visible = true, ZIndex = 5,
+    }, LogoWrap)
+    Corner(Emblem, 8)
+
+    Logo:GetPropertyChangedSignal("IsLoaded"):Connect(function()
+        if Logo.IsLoaded then Emblem.Visible = false end
     end)
+    if Logo.IsLoaded then Emblem.Visible = false end
     UI.Logo = Logo
+
+    function UI.SetLogoAsset(asset)
+        asset = tostring(asset or "")
+        if asset == "" then return false end
+        Logo.Image = asset
+        Emblem.Visible = true
+        if Logo.IsLoaded then Emblem.Visible = false end
+        Cfg.LogoAsset = asset
+        return true
+    end
 
     function UI.SetLogoURL(url)
         if not url or url == "" then return false end
         if not (writefile and Ex.CustomAsset) then
-            U.Notify("Logo", "Your executor has no writefile/getcustomasset.", 4)
+            U.Notify("Logo", "Logo URL needs writefile + getcustomasset support.", 4)
             return false
         end
         local ok = pcall(function()
-            writefile("MorganLogo.png", game:HttpGet(url))
+            local body = game:HttpGet(url)
+            writefile("MorganLogo.png", body)
             Logo.Image = Ex.CustomAsset("MorganLogo.png")
             Logo.Visible = true
             Emblem.Visible = false
@@ -728,28 +752,49 @@ function UI.CreateWindow(titleText, subtitleText)
     end
 
     local MinBtn = New("TextButton", {
-        Size = UDim2.new(0, 42, 1, 0), Position = UDim2.new(1, -84, 0, 0), BackgroundTransparency = 1,
-        Text = "-", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 26, ZIndex = 3,
+        Size = UDim2.new(0, 42, 1, 0), Position = UDim2.new(1, -84, 0, 0),
+        BackgroundTransparency = 1, Text = "−", TextColor3 = Theme.Text,
+        Font = Enum.Font.GothamBold, TextSize = 26, ZIndex = 3, AutoButtonColor = false,
     }, Top)
     local CloseBtn = New("TextButton", {
-        Size = UDim2.new(0, 42, 1, 0), Position = UDim2.new(1, -42, 0, 0), BackgroundTransparency = 1,
-        Text = "X", TextColor3 = Color3.fromRGB(255, 90, 90), Font = Enum.Font.GothamBold, TextSize = 20, ZIndex = 3,
+        Size = UDim2.new(0, 42, 1, 0), Position = UDim2.new(1, -42, 0, 0),
+        BackgroundTransparency = 1, Text = "×", TextColor3 = Color3.fromRGB(255, 90, 90),
+        Font = Enum.Font.GothamBold, TextSize = 22, ZIndex = 3, AutoButtonColor = false,
     }, Top)
     MinBtn.MouseEnter:Connect(function() tw(MinBtn, 0.15, {TextColor3 = Theme.Accent2, TextSize = 30}) end)
     MinBtn.MouseLeave:Connect(function() tw(MinBtn, 0.2, {TextColor3 = Theme.Text, TextSize = 26}) end)
-    CloseBtn.MouseEnter:Connect(function() tw(CloseBtn, 0.15, {TextColor3 = Color3.fromRGB(255, 140, 140), TextSize = 23}) end)
-    CloseBtn.MouseLeave:Connect(function() tw(CloseBtn, 0.2, {TextColor3 = Color3.fromRGB(255, 90, 90), TextSize = 20}) end)
+    CloseBtn.MouseEnter:Connect(function() tw(CloseBtn, 0.15, {TextColor3 = Color3.fromRGB(255, 140, 140), TextSize = 25}) end)
+    CloseBtn.MouseLeave:Connect(function() tw(CloseBtn, 0.2, {TextColor3 = Color3.fromRGB(255, 90, 90), TextSize = 22}) end)
+    Top.Active = true
     MakeDraggable(Top, Main)
 
-    -- floating open button
+    -- floating open button: image logo + M fallback, matching the top logo.
     local Float = New("TextButton", {
-        Size = UDim2.new(0, 46, 0, 46), AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -12, 0.35, 0), BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.15,
-        Text = "M", TextColor3 = Theme.Accent2, Font = Enum.Font.GothamBlack, TextSize = 22,
-        Visible = false, AutoButtonColor = false,
+        Size = UDim2.new(0, 50, 0, 50), AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -12, 0.35, 0), BackgroundColor3 = Theme.Bg,
+        BackgroundTransparency = 0.08, Text = "", Visible = false, AutoButtonColor = false,
     }, Gui)
-    Corner(Float, 23)
-    Stroke(Float, Theme.Line, 1.5, 0.3)
+    Corner(Float, 25)
+    Stroke(Float, Theme.Line, 1.5, 0.25)
+
+    local FloatLogo = New("ImageLabel", {
+        Size = UDim2.new(1, -6, 1, -6), Position = UDim2.new(0, 3, 0, 3),
+        BackgroundTransparency = 1, Image = Logo.Image, ScaleType = Enum.ScaleType.Crop, ZIndex = 2,
+    }, Float)
+    Corner(FloatLogo, 22)
+
+    local FloatEmblem = New("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "M",
+        TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBlack, TextSize = 22, ZIndex = 3,
+    }, Float)
+    Corner(FloatEmblem, 25)
+
+    Logo:GetPropertyChangedSignal("Image"):Connect(function()
+        FloatLogo.Image = Logo.Image
+        FloatEmblem.Visible = not Logo.IsLoaded
+    end)
+    FloatEmblem.Visible = not Logo.IsLoaded
+
     local floatScale = New("UIScale", {Scale = 1}, Float)
     Float.MouseEnter:Connect(function() tw(floatScale, 0.2, {Scale = 1.12}, Enum.EasingStyle.Back) end)
     Float.MouseLeave:Connect(function() tw(floatScale, 0.2, {Scale = 1}) end)
@@ -3992,6 +4037,7 @@ end, 0.05)
 TabSet:Dropdown("GUI Theme", {"Rain", "Snow", "Sakura"}, Cfg.Theme, function(v) UI.SetTheme(v) end)
 TabSet:Toggle("Particle Effect (rain / snow / petals)", Cfg.Rain, function(v) Cfg.Rain = v end)
 TabSet:Input("Logo Image URL", "https://.../logo.png", Cfg.LogoURL, function(t) Cfg.LogoURL = t end)
+TabSet:Input("Logo Roblox Asset", "rbxassetid://123456789", Cfg.LogoAsset, function(t) UI.SetLogoAsset(t) end)
 TabSet:Button("Apply Logo From URL", function() UI.SetLogoURL(Cfg.LogoURL) end)
 
 TabSet:Section("Config")
@@ -4024,7 +4070,12 @@ TabSet:Button("Unload Morgan Hub", function() U.Shutdown() end)
 
 -- apply side effects of restored settings
 if Cfg.FpsBoost then Misc.SetFpsBoost(true) end
-if Cfg.LogoURL ~= "" then U.Spawn(function() UI.SetLogoURL(Cfg.LogoURL) end) end
+if Cfg.LogoAsset and Cfg.LogoAsset ~= "" then
+    U.Spawn(function() UI.SetLogoAsset(Cfg.LogoAsset) end)
+end
+if Cfg.LogoURL ~= "" then
+    U.Spawn(function() UI.SetLogoURL(Cfg.LogoURL) end)
+end
 if Cfg.Fullbright then Misc.SetFullbright(true) end
 if Cfg.NoFog then Misc.SetNoFog(true) end
 if Cfg.WalkWater then Misc.WaterWalk(true) end
