@@ -1,11 +1,11 @@
 --[[
-    ⛩️ BLOX FRUITS - AUTO MARINE + FULL FRUIT SNIPER & ESP (Update 31)
-    ---------------------------------------------------------------
-    ✔ Girişte / Server Hop'ta Otomatik MARINE Takımı Seçer
-    ✔ Liste + Tüm "Fruit/Meyve" Obje Tespit Mantığı
-    ✔ Gelişmiş ESP (Highlight + Billboard Label)
-    ✔ Otomatik Işınlanma, Toplama ve Envantere Kaldırma (Store)
-    ✔ 15s Sayacı & Otomatik Server Hop
+    ⛩️ BLOX FRUITS - AUTO MARINE + SMOOTH FLY FRUIT SNIPER (60 SPEED)
+    ------------------------------------------------------------------
+    ✔ Teleport (TP) Kaldırıldı! Saniyede 60 Hızla Meyveye Süzülür
+    ✔ "Restricted Area" Fix + Otomatik Marine Seçimi
+    ✔ Tüm Meyveler ve "Fruit/Meyve" Obje ESP'si
+    ✔ Otomatik Toplama ve Store
+    ✔ 15s Sayacı & Güvenli Server Hop
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -14,6 +14,7 @@ local Players           = game:GetService("Players")
 local HttpService      = game:GetService("HttpService")
 local TeleportService  = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService      = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local FireTouch   = firetouchinterest
@@ -21,7 +22,6 @@ local FireTouch   = firetouchinterest
 -- ==================== OTO MARINE SEÇİMİ ====================
 local function AutoSelectMarine()
     pcall(function()
-        -- Takım henüz seçilmediyse veya neutral/pirate ise Marine seç
         if LocalPlayer.Team == nil or LocalPlayer.Team.Name ~= "Marines" then
             local remotes = ReplicatedStorage:FindFirstChild("Remotes")
             local comm = remotes and remotes:FindFirstChild("CommF_")
@@ -32,33 +32,25 @@ local function AutoSelectMarine()
     end)
 end
 
--- Kod başlar başlamaz Marine seçmeyi dene
 AutoSelectMarine()
 
--- ==================== AYARLAR & FULL MEYVE LİSTESİ ====================
+-- ==================== AYARLAR & MEYVE LİSTESİ ====================
 local Cfg = {
     Active   = true,
-    WaitTime = 15, -- Meyve yoksa beklenip hop atılacak süre
+    FlySpeed = 60,  -- İstediğin 60 Hızı
+    WaitTime = 15,
 }
 
 local AllFruitsDatabase = {
-    -- Mythical
-    "Dragon", "Control", "Kitsune", "Yeti", "Tiger", "Spirit", 
-    "Gas", "Venom", "Shadow", "Dough", "T-Rex", "Mammoth", "Gravity",
-    -- Legendary
-    "Quake", "Buddha", "Love", "Creation", "Spider", "Sound", 
-    "Phoenix", "Portal", "Lightning", "Pain", "Blizzard",
-    -- Rare
-    "Light", "Rubber", "Ghost", "Magma",
-    -- Uncommon
-    "Flame", "Ice", "Sand", "Dark", "Eagle", "Diamond",
-    -- Common
+    "Dragon", "Control", "Kitsune", "Yeti", "Tiger", "Spirit", "Gas", "Venom", "Shadow", "Dough", "T-Rex", "Mammoth", "Gravity",
+    "Quake", "Buddha", "Love", "Creation", "Spider", "Sound", "Phoenix", "Portal", "Lightning", "Pain", "Blizzard",
+    "Light", "Rubber", "Ghost", "Magma", "Flame", "Ice", "Sand", "Dark", "Eagle", "Diamond",
     "Rocket", "Spin", "Blade", "Spring", "Bomb", "Smoke", "Spike"
 }
 
 -- ==================== ARAYÜZ (GUI) ====================
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "FullFruitSniperESP_Marine"
+Gui.Name = "FruitSniper_60SpeedFly"
 Gui.ResetOnSpawn = false
 Gui.DisplayOrder = 999
 
@@ -72,11 +64,9 @@ Main.Position = UDim2.new(0.5, 0, 0.45, 0)
 Main.BackgroundColor3 = Color3.fromRGB(18, 15, 25)
 Main.BorderSizePixel = 0
 
-local Corner = Instance.new("UICorner", Main)
-Corner.CornerRadius = UDim.new(0, 10)
-
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Color3.fromRGB(0, 120, 255) -- Marine Teması (Mavi)
+Stroke.Color = Color3.fromRGB(0, 150, 255)
 Stroke.Thickness = 2
 
 local Layout = Instance.new("UIListLayout", Main)
@@ -91,7 +81,7 @@ Padding.PaddingTop = UDim.new(0, 12)
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 24)
 Title.BackgroundTransparency = 1
-Title.Text = "⚓ AUTO MARINE - FRUIT SNIPER"
+Title.Text = "⚓ MARINE - 60 SPEED FLY SNIPER"
 Title.TextColor3 = Color3.fromRGB(100, 200, 255)
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 13
@@ -100,7 +90,7 @@ Title.LayoutOrder = 1
 local StatusLbl = Instance.new("TextLabel", Main)
 StatusLbl.Size = UDim2.new(1, 0, 0, 45)
 StatusLbl.BackgroundColor3 = Color3.fromRGB(28, 24, 38)
-StatusLbl.Text = "Marine takımı seçildi, tarama başlatılıyor..."
+StatusLbl.Text = "Sistem hazır, tarama başlıyor..."
 StatusLbl.TextColor3 = Color3.fromRGB(220, 220, 240)
 StatusLbl.Font = Enum.Font.Gotham
 StatusLbl.TextSize = 11
@@ -130,7 +120,7 @@ Instance.new("UICorner", HopBtn).CornerRadius = UDim.new(0, 8)
 
 local function Status(msg) StatusLbl.Text = msg end
 
--- ==================== ESP MANTIGI ====================
+-- ==================== ESP & TARAMA ====================
 local function ApplyESP(obj, displayName)
     if obj:FindFirstChild("FruitESP_Tag") then return end
     
@@ -164,17 +154,14 @@ end
 
 local function CheckIsFruit(obj)
     local name = string.lower(obj.Name)
-    
     if string.find(name, "fruit") or string.find(name, "meyve") then
         return true, obj.Name
     end
-    
     for _, fName in ipairs(AllFruitsDatabase) do
         if string.find(name, string.lower(fName)) then
             return true, fName .. " Fruit"
         end
     end
-    
     return false, nil
 end
 
@@ -193,7 +180,7 @@ local function FindAllFruitsOnMap()
     return results
 end
 
--- ==================== DOKUNMA & ENVANTERE STORE ETME ====================
+-- ==================== 60 HIZINDA FLY / GLIDE MANTIGI ====================
 local function StoreFruit(fruitName)
     pcall(function()
         local remotes = ReplicatedStorage:FindFirstChild("Remotes")
@@ -206,64 +193,110 @@ local function StoreFruit(fruitName)
     end)
 end
 
-local function TeleportAndCollect(item)
+local function FlyToTarget(targetPart)
     local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not (root and item.part and item.part.Parent) then return end
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid or not targetPart or not targetPart.Parent then return false end
+
+    local targetCFrame = targetPart.CFrame * CFrame.new(0, 1.5, 0)
+    local distance = (root.Position - targetCFrame.Position).Magnitude
+    local duration = distance / Cfg.FlySpeed
+
+    -- Düşmeyi önlemek için geçici BodyVelocity
+    local bv = Instance.new("BodyVelocity")
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Parent = root
+
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
     
-    Status("Toplanıyor: " .. item.name)
-    root.CFrame = item.part.CFrame * CFrame.new(0, 1.5, 0)
-    task.wait(0.2)
+    tween:Play()
     
-    if FireTouch then
-        pcall(function()
-            FireTouch(root, item.part)
-            FireTouch(item.part, root)
-        end)
+    local startTime = tick()
+    while tween.PlaybackState == Enum.PlaybackState.Playing do
+        if not Cfg.Active or not targetPart or not targetPart.Parent then
+            tween:Cancel()
+            bv:Destroy()
+            return false
+        end
+        task.wait(0.05)
     end
-    
-    task.wait(0.6)
-    StoreFruit(item.name)
+
+    bv:Destroy()
+    return true
 end
 
--- ==================== SERVER HOP ====================
-local function ServerHop()
-    Status("Yeni sunucu aranıyor...")
+local function CollectAndStore(item)
+    if not item.part or not item.part.Parent then return end
+    
+    Status("60 Hızında Gidiliyor: " .. item.name)
+    local reached = FlyToTarget(item.part)
+    
+    if reached then
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if FireTouch and root and item.part then
+            pcall(function()
+                FireTouch(root, item.part)
+                FireTouch(item.part, root)
+            end)
+        end
+        
+        task.wait(0.5)
+        StoreFruit(item.name)
+        Status("Toplandı ve Depolandı: " .. item.name)
+    end
+end
+
+-- ==================== GÜVENLİ SERVER HOP ====================
+local function SafeServerHop()
+    Status("Açık ve erişilebilir sunucu aranıyor...")
     local req = (syn and syn.request) or (http and http.request) or request or http_request
-    if not req then Status("HTTP İsteği Atılamadı!") return end
+    if not req then 
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        return 
+    end
+    
+    local currentPlaceId = game.PlaceId
+    local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", currentPlaceId)
     
     local success, response = pcall(function()
-        return req({
-            Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=2&limit=100", game.PlaceId),
-            Method = "GET"
-        })
+        return req({Url = url, Method = "GET"})
     end)
     
     if success and response and response.Body then
-        local data = HttpService:JSONDecode(response.Body)
-        if data and data.data then
-            local servers = {}
+        local ok, data = pcall(function() return HttpService:JSONDecode(response.Body) end)
+        if ok and data and data.data then
+            local validServers = {}
             for _, s in ipairs(data.data) do
-                if s.playable and s.id ~= game.JobId and (s.maxPlayers or 0) - (s.playing or 0) > 2 then
-                    table.insert(servers, s)
+                if type(s) == "table" and s.playable and s.id ~= game.JobId and (s.maxPlayers or 0) > (s.playing or 0) then
+                    table.insert(validServers, s.id)
                 end
             end
-            if #servers > 0 then
-                local chosen = servers[math.random(1, math.min(#servers, 10))]
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, chosen.id, LocalPlayer)
+            
+            if #validServers > 0 then
+                local randomServerId = validServers[math.random(1, #validServers)]
+                Status("Sunucuya bağlanılıyor...")
+                TeleportService:TeleportToPlaceInstance(currentPlaceId, randomServerId, LocalPlayer)
                 return
             end
         end
     end
-    Status("Sunucu bulunamadı, tekrar deneniyor...")
+    
+    Status("Yeniden deneniyor...")
+    TeleportService:Teleport(currentPlaceId, LocalPlayer)
 end
 
 TeleportService.TeleportInitFailed:Connect(function()
-    task.wait(2)
-    ServerHop()
+    task.wait(1.5)
+    SafeServerHop()
 end)
 
--- ==================== TIKLAMA OLAYLARI ====================
+-- ==================== BUTONLAR ====================
 ToggleBtn.MouseButton1Click:Connect(function()
     Cfg.Active = not Cfg.Active
     if Cfg.Active then
@@ -276,22 +309,22 @@ ToggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-HopBtn.MouseButton1Click:Connect(function() ServerHop() end)
+HopBtn.MouseButton1Click:Connect(function() SafeServerHop() end)
 
 -- ==================== ANA DÖNGÜ ====================
 task.spawn(function()
     while Gui.Parent do
-        AutoSelectMarine() -- Doğma anında garantiye al
+        AutoSelectMarine()
         
         if Cfg.Active then
             Status("Haritadaki tüm meyveler taranıyor...")
             local foundFruits = FindAllFruitsOnMap()
             
             if #foundFruits > 0 then
-                Status(#foundFruits .. " adet meyve bulundu! Toplanıyor...")
+                Status(#foundFruits .. " adet meyve bulundu! 60 Hızında Gidiliyor...")
                 for _, item in ipairs(foundFruits) do
                     if not Cfg.Active then break end
-                    TeleportAndCollect(item)
+                    CollectAndStore(item)
                     task.wait(0.5)
                 end
             else
@@ -306,8 +339,8 @@ task.spawn(function()
                 end
                 
                 if Cfg.Active and #FindAllFruitsOnMap() == 0 then
-                    ServerHop()
-                    task.wait(10)
+                    SafeServerHop()
+                    task.wait(8)
                 end
             end
         else
