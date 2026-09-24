@@ -1,11 +1,11 @@
 --[[
-    ⛩️ BLOX FRUITS - AUTO MARINE + SMOOTH FLY FRUIT SNIPER (60 SPEED)
-    ------------------------------------------------------------------
-    ✔ Teleport (TP) Kaldırıldı! Saniyede 60 Hızla Meyveye Süzülür
-    ✔ "Restricted Area" Fix + Otomatik Marine Seçimi
-    ✔ Tüm Meyveler ve "Fruit/Meyve" Obje ESP'si
-    ✔ Otomatik Toplama ve Store
-    ✔ 15s Sayacı & Güvenli Server Hop
+    ⛩️ BLOX FRUITS - EXACT 60 SPEED TWEEN FRUIT SNIPER
+    ---------------------------------------------------
+    ✔ Pure 60 Stud/s Smooth Tween (No Instantly TP / No Physics Freeze)
+    ✔ Working ESP (Highlight + Billboard Text)
+    ✔ Auto Select Marine
+    ✔ English Compact GUI
+    ✔ Safe Server Hop
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -19,7 +19,7 @@ local TweenService      = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local FireTouch   = firetouchinterest
 
--- ==================== OTO MARINE SEÇİMİ ====================
+-- ==================== AUTO MARINE ====================
 local function AutoSelectMarine()
     pcall(function()
         if LocalPlayer.Team == nil or LocalPlayer.Team.Name ~= "Marines" then
@@ -31,156 +31,149 @@ local function AutoSelectMarine()
         end
     end)
 end
-
 AutoSelectMarine()
 
--- ==================== AYARLAR & MEYVE LİSTESİ ====================
+-- ==================== SETTINGS & DATABASE ====================
 local Cfg = {
     Active   = true,
-    FlySpeed = 60,  -- İstediğin 60 Hızı
+    Speed    = 60, -- 60 Studs per second
     WaitTime = 15,
 }
 
-local AllFruitsDatabase = {
+local ValidFruitNames = {
     "Dragon", "Control", "Kitsune", "Yeti", "Tiger", "Spirit", "Gas", "Venom", "Shadow", "Dough", "T-Rex", "Mammoth", "Gravity",
     "Quake", "Buddha", "Love", "Creation", "Spider", "Sound", "Phoenix", "Portal", "Lightning", "Pain", "Blizzard",
     "Light", "Rubber", "Ghost", "Magma", "Flame", "Ice", "Sand", "Dark", "Eagle", "Diamond",
     "Rocket", "Spin", "Blade", "Spring", "Bomb", "Smoke", "Spike"
 }
 
--- ==================== ARAYÜZ (GUI) ====================
+-- ==================== ENGLISH COMPACT GUI ====================
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "FruitSniper_60SpeedFly"
+Gui.Name = "BF_60SpeedTweenSniper"
 Gui.ResetOnSpawn = false
-Gui.DisplayOrder = 999
 
 pcall(function() Gui.Parent = (gethui and gethui()) or game:GetService("CoreGui") end)
 if not Gui.Parent then Gui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 300, 0, 230)
-Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.Position = UDim2.new(0.5, 0, 0.45, 0)
-Main.BackgroundColor3 = Color3.fromRGB(18, 15, 25)
+Main.Size = UDim2.new(0, 250, 0, 170)
+Main.Position = UDim2.new(0.02, 0, 0.25, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
 Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
 
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Color3.fromRGB(0, 150, 255)
-Stroke.Thickness = 2
-
-local Layout = Instance.new("UIListLayout", Main)
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
-Layout.Padding = UDim.new(0, 8)
-
-local Padding = Instance.new("UIPadding", Main)
-Padding.PaddingLeft = UDim.new(0, 12)
-Padding.PaddingRight = UDim.new(0, 12)
-Padding.PaddingTop = UDim.new(0, 12)
+Stroke.Color = Color3.fromRGB(0, 170, 255)
+Stroke.Thickness = 1.5
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 24)
+Title.Size = UDim2.new(1, 0, 0, 28)
 Title.BackgroundTransparency = 1
-Title.Text = "⚓ MARINE - 60 SPEED FLY SNIPER"
-Title.TextColor3 = Color3.fromRGB(100, 200, 255)
-Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 13
-Title.LayoutOrder = 1
+Title.Text = "⚡ 60 SPEED TWEEN SNIPER"
+Title.TextColor3 = Color3.fromRGB(0, 190, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 12
 
 local StatusLbl = Instance.new("TextLabel", Main)
-StatusLbl.Size = UDim2.new(1, 0, 0, 45)
-StatusLbl.BackgroundColor3 = Color3.fromRGB(28, 24, 38)
-StatusLbl.Text = "Sistem hazır, tarama başlıyor..."
-StatusLbl.TextColor3 = Color3.fromRGB(220, 220, 240)
+StatusLbl.Size = UDim2.new(0.9, 0, 0, 38)
+StatusLbl.Position = UDim2.new(0.05, 0, 0.22, 0)
+StatusLbl.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+StatusLbl.Text = "Initializing..."
+StatusLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
 StatusLbl.Font = Enum.Font.Gotham
 StatusLbl.TextSize = 11
 StatusLbl.TextWrapped = true
-StatusLbl.LayoutOrder = 2
-Instance.new("UICorner", StatusLbl).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", StatusLbl).CornerRadius = UDim.new(0, 6)
 
 local ToggleBtn = Instance.new("TextButton", Main)
-ToggleBtn.Size = UDim2.new(1, 0, 0, 36)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(35, 140, 70)
-ToggleBtn.Text = "OTO TOPLAMA: AÇIK"
+ToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
+ToggleBtn.Position = UDim2.new(0.05, 0, 0.50, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 80)
+ToggleBtn.Text = "AUTO FARM: ON"
 ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
 ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 13
-ToggleBtn.LayoutOrder = 3
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+ToggleBtn.TextSize = 11
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
 
 local HopBtn = Instance.new("TextButton", Main)
-HopBtn.Size = UDim2.new(1, 0, 0, 32)
-HopBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 70)
-HopBtn.Text = "🚀 Anında Server Hop"
-HopBtn.TextColor3 = Color3.fromRGB(230, 200, 255)
-HopBtn.Font = Enum.Font.GothamBold
-HopBtn.TextSize = 12
-HopBtn.LayoutOrder = 4
-Instance.new("UICorner", HopBtn).CornerRadius = UDim.new(0, 8)
+HopBtn.Size = UDim2.new(0.9, 0, 0, 26)
+HopBtn.Position = UDim2.new(0.05, 0, 0.73, 0)
+HopBtn.BackgroundColor3 = Color3.fromRGB(40, 35, 55)
+HopBtn.Text = "Server Hop Now"
+HopBtn.TextColor3 = Color3.fromRGB(200, 170, 255)
+HopBtn.Font = Enum.Font.Gotham
+HopBtn.TextSize = 11
+Instance.new("UICorner", HopBtn).CornerRadius = UDim.new(0, 6)
 
-local function Status(msg) StatusLbl.Text = msg end
+local function SetStatus(msg) StatusLbl.Text = msg end
 
--- ==================== ESP & TARAMA ====================
-local function ApplyESP(obj, displayName)
-    if obj:FindFirstChild("FruitESP_Tag") then return end
-    
+-- ==================== WORKING ESP ====================
+local function ApplyESP(targetPart, fruitName)
+    if not targetPart or targetPart:FindFirstChild("FruitESP_Bill") then return end
+
     local bg = Instance.new("BillboardGui")
-    bg.Name = "FruitESP_Tag"
-    bg.Adornee = obj
+    bg.Name = "FruitESP_Bill"
+    bg.Adornee = targetPart
     bg.AlwaysOnTop = true
-    bg.Size = UDim2.new(0, 150, 0, 35)
-    bg.StudsOffset = Vector3.new(0, 3.5, 0)
-    
+    bg.Size = UDim2.new(0, 150, 0, 30)
+    bg.StudsOffset = Vector3.new(0, 3, 0)
+
     local txt = Instance.new("TextLabel", bg)
     txt.Size = UDim2.new(1, 0, 1, 0)
     txt.BackgroundTransparency = 1
-    txt.Text = "🍎 " .. displayName
-    txt.TextColor3 = Color3.fromRGB(255, 50, 50)
-    txt.Font = Enum.Font.GothamBlack
-    txt.TextSize = 14
+    txt.Text = "🍎 " .. fruitName
+    txt.TextColor3 = Color3.fromRGB(255, 40, 40)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 13
     txt.TextStrokeTransparency = 0
-    
+
     local hl = Instance.new("Highlight")
-    hl.Name = "FruitESP_Highlight"
-    hl.Adornee = obj
+    hl.Name = "FruitESP_High"
+    hl.Adornee = targetPart.Parent
     hl.FillColor = Color3.fromRGB(255, 0, 80)
     hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-    hl.FillTransparency = 0.3
+    hl.FillTransparency = 0.2
     hl.OutlineTransparency = 0
-    
-    bg.Parent = obj
-    hl.Parent = obj
+
+    bg.Parent = targetPart
+    hl.Parent = targetPart
 end
 
-local function CheckIsFruit(obj)
-    local name = string.lower(obj.Name)
-    if string.find(name, "fruit") or string.find(name, "meyve") then
-        return true, obj.Name
-    end
-    for _, fName in ipairs(AllFruitsDatabase) do
-        if string.find(name, string.lower(fName)) then
-            return true, fName .. " Fruit"
-        end
-    end
-    return false, nil
-end
-
-local function FindAllFruitsOnMap()
-    local results = {}
+local function GetGroundFruits()
+    local list = {}
     for _, obj in ipairs(workspace:GetChildren()) do
-        local isFruit, name = CheckIsFruit(obj)
-        if isFruit then
-            local handle = (obj:IsA("Tool") and obj:FindFirstChild("Handle")) or obj:FindFirstChildWhichIsA("BasePart", true) or (obj:IsA("BasePart") and obj)
-            if handle then
-                ApplyESP(handle, name)
-                table.insert(results, {object = obj, part = handle, name = name})
+        if (obj:IsA("Tool") or obj:IsA("Model")) and not Players:GetPlayerFromCharacter(obj) then
+            local lowerName = string.lower(obj.Name)
+            local isFruit = false
+            local cleanName = obj.Name
+
+            if string.find(lowerName, "fruit") and not string.find(lowerName, "dealer") and not string.find(lowerName, "gacha") then
+                isFruit = true
+            else
+                for _, fName in ipairs(ValidFruitNames) do
+                    if string.find(lowerName, string.lower(fName)) then
+                        isFruit = true
+                        cleanName = fName .. " Fruit"
+                        break
+                    end
+                end
+            end
+
+            if isFruit then
+                local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildWhichIsA("BasePart", true)
+                if handle then
+                    ApplyESP(handle, cleanName)
+                    table.insert(list, {object = obj, handle = handle, name = cleanName})
+                end
             end
         end
     end
-    return results
+    return list
 end
 
--- ==================== 60 HIZINDA FLY / GLIDE MANTIGI ====================
+-- ==================== 60 SPEED EXACT TWEEN ====================
 local function StoreFruit(fruitName)
     pcall(function()
         local remotes = ReplicatedStorage:FindFirstChild("Remotes")
@@ -193,153 +186,125 @@ local function StoreFruit(fruitName)
     end)
 end
 
-local function FlyToTarget(targetPart)
+local function TweenToFruit(item)
     local char = LocalPlayer.Character
-    if not char then return false end
+    if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not root or not humanoid or not targetPart or not targetPart.Parent then return false end
+    if not root or not item.handle or not item.handle.Parent then return end
 
-    local targetCFrame = targetPart.CFrame * CFrame.new(0, 1.5, 0)
+    SetStatus("Tweening (60 Speed): " .. item.name)
+
+    local targetCFrame = item.handle.CFrame * CFrame.new(0, 2, 0)
     local distance = (root.Position - targetCFrame.Position).Magnitude
-    local duration = distance / Cfg.FlySpeed
+    local timeToReach = distance / Cfg.Speed -- Exactly 60 speed calculation
 
-    -- Düşmeyi önlemek için geçici BodyVelocity
+    -- Anti-gravity velocity to avoid falling down during tween
     local bv = Instance.new("BodyVelocity")
-    bv.Velocity = Vector3.new(0, 0, 0)
     bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(0, 0, 0)
     bv.Parent = root
 
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tweenInfo = TweenInfo.new(timeToReach, Enum.EasingStyle.Linear)
     local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
-    
+
     tween:Play()
-    
-    local startTime = tick()
+
     while tween.PlaybackState == Enum.PlaybackState.Playing do
-        if not Cfg.Active or not targetPart or not targetPart.Parent then
+        if not Cfg.Active or not item.handle or not item.handle.Parent then
             tween:Cancel()
             bv:Destroy()
-            return false
+            return
         end
         task.wait(0.05)
     end
 
     bv:Destroy()
-    return true
-end
 
-local function CollectAndStore(item)
-    if not item.part or not item.part.Parent then return end
-    
-    Status("60 Hızında Gidiliyor: " .. item.name)
-    local reached = FlyToTarget(item.part)
-    
-    if reached then
-        local char = LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        
-        if FireTouch and root and item.part then
+    if item.handle and item.handle.Parent then
+        if FireTouch and root then
             pcall(function()
-                FireTouch(root, item.part)
-                FireTouch(item.part, root)
+                FireTouch(root, item.handle)
+                FireTouch(item.handle, root)
             end)
         end
-        
         task.wait(0.5)
         StoreFruit(item.name)
-        Status("Toplandı ve Depolandı: " .. item.name)
+        SetStatus("Stored: " .. item.name)
     end
 end
 
--- ==================== GÜVENLİ SERVER HOP ====================
-local function SafeServerHop()
-    Status("Açık ve erişilebilir sunucu aranıyor...")
+-- ==================== SAFE SERVER HOP ====================
+local function ServerHop()
+    SetStatus("Searching new server...")
     local req = (syn and syn.request) or (http and http.request) or request or http_request
     if not req then 
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
         return 
     end
-    
-    local currentPlaceId = game.PlaceId
-    local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", currentPlaceId)
-    
-    local success, response = pcall(function()
-        return req({Url = url, Method = "GET"})
-    end)
-    
+
+    local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", game.PlaceId)
+    local success, response = pcall(function() return req({Url = url, Method = "GET"}) end)
+
     if success and response and response.Body then
         local ok, data = pcall(function() return HttpService:JSONDecode(response.Body) end)
         if ok and data and data.data then
-            local validServers = {}
+            local servers = {}
             for _, s in ipairs(data.data) do
                 if type(s) == "table" and s.playable and s.id ~= game.JobId and (s.maxPlayers or 0) > (s.playing or 0) then
-                    table.insert(validServers, s.id)
+                    table.insert(servers, s.id)
                 end
             end
-            
-            if #validServers > 0 then
-                local randomServerId = validServers[math.random(1, #validServers)]
-                Status("Sunucuya bağlanılıyor...")
-                TeleportService:TeleportToPlaceInstance(currentPlaceId, randomServerId, LocalPlayer)
+            if #servers > 0 then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
                 return
             end
         end
     end
-    
-    Status("Yeniden deneniyor...")
-    TeleportService:Teleport(currentPlaceId, LocalPlayer)
+    TeleportService:Teleport(game.PlaceId, LocalPlayer)
 end
 
-TeleportService.TeleportInitFailed:Connect(function()
-    task.wait(1.5)
-    SafeServerHop()
-end)
-
--- ==================== BUTONLAR ====================
+-- ==================== BUTTON EVENTS ====================
 ToggleBtn.MouseButton1Click:Connect(function()
     Cfg.Active = not Cfg.Active
     if Cfg.Active then
-        ToggleBtn.Text = "OTO TOPLAMA: AÇIK"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(35, 140, 70)
+        ToggleBtn.Text = "AUTO FARM: ON"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 80)
     else
-        ToggleBtn.Text = "OTO TOPLAMA: KAPALI"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
-        Status("Oto-toplama durduruldu.")
+        ToggleBtn.Text = "AUTO FARM: OFF"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(160, 40, 40)
+        SetStatus("Paused.")
     end
 end)
 
-HopBtn.MouseButton1Click:Connect(function() SafeServerHop() end)
+HopBtn.MouseButton1Click:Connect(function() ServerHop() end)
 
--- ==================== ANA DÖNGÜ ====================
+-- ==================== MAIN LOOP ====================
 task.spawn(function()
     while Gui.Parent do
         AutoSelectMarine()
-        
+
         if Cfg.Active then
-            Status("Haritadaki tüm meyveler taranıyor...")
-            local foundFruits = FindAllFruitsOnMap()
-            
-            if #foundFruits > 0 then
-                Status(#foundFruits .. " adet meyve bulundu! 60 Hızında Gidiliyor...")
-                for _, item in ipairs(foundFruits) do
+            SetStatus("Scanning map...")
+            local fruits = GetGroundFruits()
+
+            if #fruits > 0 then
+                SetStatus("Found " .. #fruits .. " fruit(s)!")
+                for _, item in ipairs(fruits) do
                     if not Cfg.Active then break end
-                    CollectAndStore(item)
+                    TweenToFruit(item)
                     task.wait(0.5)
                 end
             else
                 local timer = Cfg.WaitTime
                 while timer > 0 and Cfg.Active do
-                    local instant = FindAllFruitsOnMap()
-                    if #instant > 0 then break end
-                    
-                    Status("Haritada meyve yok! Server Hop: " .. timer .. " sn")
+                    if #GetGroundFruits() > 0 then break end
+                    SetStatus("No Fruits! Hop in: " .. timer .. "s")
                     task.wait(1)
                     timer = timer - 1
                 end
-                
-                if Cfg.Active and #FindAllFruitsOnMap() == 0 then
-                    SafeServerHop()
+
+                if Cfg.Active and #GetGroundFruits() == 0 then
+                    ServerHop()
                     task.wait(8)
                 end
             end
