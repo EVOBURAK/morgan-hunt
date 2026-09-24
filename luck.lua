@@ -232,35 +232,193 @@ local function TweenToFruit(item)
     end
 end
 
--- ==================== SAFE SERVER HOP ====================
-local function ServerHop()
-    SetStatus("Searching new server...")
-    local req = (syn and syn.request) or (http and http.request) or request or http_request
-    if not req then 
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        return 
+-- ==================== FIXED SERVER HOP ====================
+
+local HopState = {
+    Busy = false,
+    Attempts = 0,
+    MaxAttempts = 5
+}
+
+local function GetRequest()
+    return (syn and syn.request)
+        or (http and http.request)
+        or request
+        or http_request
+end
+
+local function GetPublicServers()
+    local req = GetRequest()
+    if not req then
+        return {}
     end
 
-    local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", game.PlaceId)
-    local success, response = pcall(function() return req({Url = url, Method = "GET"}) end)
+    local url = string.format(
+        "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true",
+        game.PlaceId
+    )
 
-    if success and response and response.Body then
-        local ok, data = pcall(function() return HttpService:JSONDecode(response.Body) end)
-        if ok and data and data.data then
-            local servers = {}
-            for _, s in ipairs(data.data) do
-                if type(s) == "table" and s.playable and s.id ~= game.JobId and (s.maxPlayers or 0) > (s.playing or 0) then
-                    table.insert(servers, s.id)
-                end
-            end
-            if #servers > 0 then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
-                return
+    local success, response = pcall(function()
+        return req({
+            Url = url,
+            Method = "GET",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+    end)
+
+    if not success or not response or not response.Body then
+        return {}
+    end
+
+    local decodedOK, data = pcall(function()
+        return HttpService:JSONDecode(response.Body)
+    end)
+
+    if not decodedOK or type(data) ~= "table" or type(data.data) ~= "table" then
+        return {}
+    end
+
+    local servers = {}
+
+    for _, server in ipairs(data.data) do
+        if type(server) == "table" then
+            local id = server.id
+            local playing = tonumber(server.playing) or 0
+            local maxPlayers = tonumber(server.maxPlayers) or 0
+
+            if id
+                and id ~= game.JobId
+                and maxPlayers > playing
+                and server.playable ~= false
+            then
+                table.insert(servers, {
+                    id = id,
+                    playing = playing,
+                    maxPlayers = maxPlayers
+                })
             end
         end
     end
-    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+
+    return servers
 end
+
+local function TryTeleport(serverId)
+    local success, err = pcall(function()
+        TeleportService:TeleportToPlaceInstance(
+            game.PlaceId,
+            serverId,
+            LocalPlayer
+        )
+    end)
+
+    return success, err
+end
+
+local function ServerHop()
+    if HopState.Busy then
+        return
+    end
+
+    HopState.Busy = true
+    HopState.Attempts = 0
+
+    task.spawn(function()
+        for attempt = 1, HopState.MaxAttempts do
+            HopState.Attempts = attempt
+
+            SetStatus(string.format(
+                "Finding server... [%d/%d]",
+                attempt,
+                HopState.MaxAttempts
+            ))
+
+            local servers = GetPublicServers()
+
+            if #servers > 0 then
+                -- Karıştır: her denemede farklı instance seç.
+                for i = #servers, 2, -1 do
+                    local j = math.random(1, i)
+                    servers[i], servers[j] = servers[j], servers[i]
+                end
+
+                -- Aynı turda en fazla 5 farklı server dene.
+                local tryCount = math.min(#servers, 5)
+
+                for i = 1, tryCount do
+                    local server = servers[i]
+
+                    SetStatus(string.format(
+                        "Joining server...\nPlayers: %d/%d",
+                        server.playing,
+                        server.maxPlayers
+                    ))
+
+                    local success, err = TryTeleport(server.id)
+
+                    if success then
+                        task.wait(4)
+
+                        -- Hâlâ buradaysak teleport tamamlanmamış/reddedilmiş olabilir.
+                        SetStatus("Server rejected, trying another...")
+                    else
+                        SetStatus(
+                            "Teleport failed...\n" ..
+                            tostring(err or "Unknown error")
+                        )
+                    end
+
+                    task.wait(1)
+                end
+            else
+                SetStatus("No suitable public servers found.")
+            end
+
+            task.wait(1)
+        end
+
+        -- Son fallback.
+        SetStatus("Rejoining place...")
+
+        task.wait(1)
+
+        pcall(function()
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        end)
+
+        task.wait(3)
+        HopState.Busy = false
+    end)
+end
+
+-- ==================== TELEPORT FAILURE HANDLER ====================
+
+pcall(function()
+    TeleportService.TeleportInitFailed:Connect(function(
+        player,
+        teleportResult,
+        errorMessage
+    )
+        if player ~= LocalPlayer then
+            return
+        end
+
+        SetStatus(
+            "Teleport failed\n" ..
+            tostring(errorMessage or teleportResult)
+        )
+
+        -- ServerHop zaten aktifse mevcut retry döngüsü devam etsin.
+        if HopState.Busy then
+            return
+        end
+
+        task.wait(1)
+        ServerHop()
+    end)
+end)
 
 -- ==================== BUTTON EVENTS ====================
 ToggleBtn.MouseButton1Click:Connect(function()
