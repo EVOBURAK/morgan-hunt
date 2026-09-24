@@ -1,6 +1,7 @@
 --[[
-    ⛩️ BLOX FRUITS - FULL FRUIT ESP & AUTO SNIPER (Update 31)
+    ⛩️ BLOX FRUITS - AUTO MARINE + FULL FRUIT SNIPER & ESP (Update 31)
     ---------------------------------------------------------------
+    ✔ Girişte / Server Hop'ta Otomatik MARINE Takımı Seçer
     ✔ Liste + Tüm "Fruit/Meyve" Obje Tespit Mantığı
     ✔ Gelişmiş ESP (Highlight + Billboard Label)
     ✔ Otomatik Işınlanma, Toplama ve Envantere Kaldırma (Store)
@@ -16,6 +17,23 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local FireTouch   = firetouchinterest
+
+-- ==================== OTO MARINE SEÇİMİ ====================
+local function AutoSelectMarine()
+    pcall(function()
+        -- Takım henüz seçilmediyse veya neutral/pirate ise Marine seç
+        if LocalPlayer.Team == nil or LocalPlayer.Team.Name ~= "Marines" then
+            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+            local comm = remotes and remotes:FindFirstChild("CommF_")
+            if comm then
+                comm:InvokeServer("SetTeam", "Marines")
+            end
+        end
+    end)
+end
+
+-- Kod başlar başlamaz Marine seçmeyi dene
+AutoSelectMarine()
 
 -- ==================== AYARLAR & FULL MEYVE LİSTESİ ====================
 local Cfg = {
@@ -40,7 +58,7 @@ local AllFruitsDatabase = {
 
 -- ==================== ARAYÜZ (GUI) ====================
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "FullFruitSniperESP"
+Gui.Name = "FullFruitSniperESP_Marine"
 Gui.ResetOnSpawn = false
 Gui.DisplayOrder = 999
 
@@ -58,7 +76,7 @@ local Corner = Instance.new("UICorner", Main)
 Corner.CornerRadius = UDim.new(0, 10)
 
 local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Color3.fromRGB(255, 85, 85)
+Stroke.Color = Color3.fromRGB(0, 120, 255) -- Marine Teması (Mavi)
 Stroke.Thickness = 2
 
 local Layout = Instance.new("UIListLayout", Main)
@@ -73,16 +91,16 @@ Padding.PaddingTop = UDim.new(0, 12)
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 24)
 Title.BackgroundTransparency = 1
-Title.Text = "🍎 FULL FRUIT SNIPER & ESP"
-Title.TextColor3 = Color3.fromRGB(255, 170, 0)
+Title.Text = "⚓ AUTO MARINE - FRUIT SNIPER"
+Title.TextColor3 = Color3.fromRGB(100, 200, 255)
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 14
+Title.TextSize = 13
 Title.LayoutOrder = 1
 
 local StatusLbl = Instance.new("TextLabel", Main)
 StatusLbl.Size = UDim2.new(1, 0, 0, 45)
 StatusLbl.BackgroundColor3 = Color3.fromRGB(28, 24, 38)
-StatusLbl.Text = "Tarama başlatılıyor..."
+StatusLbl.Text = "Marine takımı seçildi, tarama başlatılıyor..."
 StatusLbl.TextColor3 = Color3.fromRGB(220, 220, 240)
 StatusLbl.Font = Enum.Font.Gotham
 StatusLbl.TextSize = 11
@@ -144,16 +162,13 @@ local function ApplyESP(obj, displayName)
     hl.Parent = obj
 end
 
--- "Fruit" yazan her şeyi ve listedeki meyveleri yakalama
 local function CheckIsFruit(obj)
     local name = string.lower(obj.Name)
     
-    -- "Fruit", "Meyve", "Blox Fruit" vb. içeren her obje
     if string.find(name, "fruit") or string.find(name, "meyve") then
         return true, obj.Name
     end
     
-    -- Veritabanındaki meyveler
     for _, fName in ipairs(AllFruitsDatabase) do
         if string.find(name, string.lower(fName)) then
             return true, fName .. " Fruit"
@@ -266,6 +281,8 @@ HopBtn.MouseButton1Click:Connect(function() ServerHop() end)
 -- ==================== ANA DÖNGÜ ====================
 task.spawn(function()
     while Gui.Parent do
+        AutoSelectMarine() -- Doğma anında garantiye al
+        
         if Cfg.Active then
             Status("Haritadaki tüm meyveler taranıyor...")
             local foundFruits = FindAllFruitsOnMap()
