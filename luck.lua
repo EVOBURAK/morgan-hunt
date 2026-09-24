@@ -1,7 +1,7 @@
 --[[
-    ⛩️ BLOX FRUITS - EXACT 60 SPEED TWEEN FRUIT SNIPER
+    ⛩️ BLOX FRUITS - 140 SPEED TWEEN FRUIT SNIPER
     ---------------------------------------------------
-    ✔ Pure 60 Stud/s Smooth Tween (No Instantly TP / No Physics Freeze)
+    ✔ Pure 140 Stud/s Fast & Smooth Tween
     ✔ Working ESP (Highlight + Billboard Text)
     ✔ Auto Select Marine
     ✔ English Compact GUI
@@ -36,7 +36,7 @@ AutoSelectMarine()
 -- ==================== SETTINGS & DATABASE ====================
 local Cfg = {
     Active   = true,
-    Speed    = 60, -- 60 Studs per second
+    Speed    = 140, -- Updated to 140 Studs per second
     WaitTime = 15,
 }
 
@@ -49,7 +49,7 @@ local ValidFruitNames = {
 
 -- ==================== ENGLISH COMPACT GUI ====================
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "BF_60SpeedTweenSniper"
+Gui.Name = "BF_140SpeedTweenSniper"
 Gui.ResetOnSpawn = false
 
 pcall(function() Gui.Parent = (gethui and gethui()) or game:GetService("CoreGui") end)
@@ -71,7 +71,7 @@ Stroke.Thickness = 1.5
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 28)
 Title.BackgroundTransparency = 1
-Title.Text = "⚡ 60 SPEED TWEEN SNIPER"
+Title.Text = "⚡ 140 SPEED TWEEN SNIPER"
 Title.TextColor3 = Color3.fromRGB(0, 190, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 12
@@ -173,7 +173,7 @@ local function GetGroundFruits()
     return list
 end
 
--- ==================== 60 SPEED EXACT TWEEN ====================
+-- ==================== 140 SPEED EXACT TWEEN ====================
 local function StoreFruit(fruitName)
     pcall(function()
         local remotes = ReplicatedStorage:FindFirstChild("Remotes")
@@ -192,13 +192,12 @@ local function TweenToFruit(item)
     local root = char:FindFirstChild("HumanoidRootPart")
     if not root or not item.handle or not item.handle.Parent then return end
 
-    SetStatus("Tweening (60 Speed): " .. item.name)
+    SetStatus("Tweening (140 Speed): " .. item.name)
 
     local targetCFrame = item.handle.CFrame * CFrame.new(0, 2, 0)
     local distance = (root.Position - targetCFrame.Position).Magnitude
-    local timeToReach = distance / Cfg.Speed -- Exactly 60 speed calculation
+    local timeToReach = distance / Cfg.Speed -- Exactly 140 speed calculation
 
-    -- Anti-gravity velocity to avoid falling down during tween
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bv.Velocity = Vector3.new(0, 0, 0)
