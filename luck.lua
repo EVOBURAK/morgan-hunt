@@ -210,7 +210,7 @@ local function fn2()
 		return table.unpack(tbl4)
 	end
 
-	local v11, v12, v13, v14, v15, v16, v17, v18 = fn4({ "Home", "10734942198" }, { "Main", "10723407389" }, { "Automatically", "10734923549" }, { "Sea Event", "16175025368" }, { "Teleport", "10734910680" }, { "Shop", "10734952273" }, { "Misc", "11447063791" }, { "Settings", "10734950309" })
+	local v11, v12, v13, v14, v15, v16, v17, v18, v19 = fn4({ "Home", "10734942198" }, { "Main", "10723407389" }, { "Automatically", "10734923549" }, { "Sea Event", "16175025368" }, { "Teleport", "10734910680" }, { "Shop", "10734952273" }, { "Misc", "11447063791" }, { "Settings", "10734950309" }, { "PvP", "10723407389" })
 
 	local tbl4 = {
 		__spawn = task.spawn,
@@ -278,9 +278,10 @@ local function fn2()
 			Name = "MorganHub_Background",
 			IgnoreGuiInset = true,
 			ResetOnSpawn = false,
-			DisplayOrder = -500,
+			DisplayOrder = -100,
 			ZIndexBehavior = Enum.ZIndexBehavior.Global,
 		}, playerGui)
+		bgGui.Enabled = false
 
 		local bg = mCreate("ImageLabel", {
 			Name = "MountainBackground",
@@ -289,7 +290,7 @@ local function fn2()
 			Size = UDim2.fromScale(1.08, 1.08),
 			BackgroundTransparency = 1,
 			Image = MORGAN_ASSET,
-			ImageTransparency = 0.02,
+			ImageTransparency = 1.0,
 			ScaleType = Enum.ScaleType.Crop,
 			ResampleMode = Enum.ResamplerMode.Default,
 			Active = false,
@@ -299,7 +300,7 @@ local function fn2()
 			Name = "CinematicShade",
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = Color3.fromRGB(5, 7, 13),
-			BackgroundTransparency = 0.46,
+			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			Active = false,
 		}, bgGui)
@@ -308,7 +309,7 @@ local function fn2()
 			Name = "Vignette",
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-			BackgroundTransparency = 0.72,
+			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			Active = false,
 		}, bgGui)
@@ -346,15 +347,15 @@ local function fn2()
 			Name = "MorganHub_Decor",
 			IgnoreGuiInset = true,
 			ResetOnSpawn = false,
-			DisplayOrder = 5,
+			DisplayOrder = 20,
 			ZIndexBehavior = Enum.ZIndexBehavior.Global,
 		}, playerGui)
 
 		local brand = mCreate("Frame", {
 			Name = "Brand",
 			AnchorPoint = Vector2.new(0, 0.5),
-			Position = UDim2.new(0, 18, 0, 18),
-			Size = UDim2.fromOffset(248, 82),
+			Position = UDim2.new(0, 18, 0.5, -210),
+			Size = UDim2.fromOffset(235, 78),
 			BackgroundColor3 = Color3.fromRGB(8, 10, 18),
 			BackgroundTransparency = 0.22,
 			BorderSizePixel = 0,
@@ -414,7 +415,7 @@ local function fn2()
 			Position = UDim2.fromOffset(83, 39),
 			Size = UDim2.new(1, -93, 0, 22),
 			BackgroundTransparency = 1,
-			Text = "BLOX FRUITS  •  MORGAN",
+			Text = "BLOX FRUITS  •  PREMIUM",
 			TextColor3 = Color3.fromRGB(180, 184, 205),
 			TextSize = 10,
 			Font = Enum.Font.GothamMedium,
@@ -433,60 +434,7 @@ local function fn2()
 			):Play()
 		end)
 
-		-- Compact status chip: keeps the visual identity clear without covering controls.
-		local status = mCreate("Frame", {
-			Name = "Status",
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -18, 0, 18),
-			Size = UDim2.fromOffset(178, 42),
-			BackgroundColor3 = Color3.fromRGB(8, 10, 18),
-			BackgroundTransparency = 0.18,
-			BorderSizePixel = 0,
-			Active = false,
-			ZIndex = 10,
-		}, decorGui)
-		status.Visible = false
-
-		mCreate("UICorner", { CornerRadius = UDim.new(0, 14) }, status)
-		mCreate("UIStroke", {
-			Color = Color3.fromRGB(205, 210, 235),
-			Transparency = 0.78,
-			Thickness = 1,
-		}, status)
-
-		local dot = mCreate("Frame", {
-			Position = UDim2.fromOffset(13, 15),
-			Size = UDim2.fromOffset(10, 10),
-			BackgroundColor3 = Color3.fromRGB(155, 225, 190),
-			BorderSizePixel = 0,
-			Active = false,
-			ZIndex = 11,
-		}, status)
-		mCreate("UICorner", { CornerRadius = UDim.new(1, 0) }, dot)
-
-		mCreate("TextLabel", {
-			Position = UDim2.fromOffset(31, 7),
-			Size = UDim2.new(1, -40, 0, 15),
-			BackgroundTransparency = 1,
-			Text = "MORGAN HUB",
-			TextColor3 = Color3.fromRGB(245, 246, 252),
-			TextSize = 11,
-			Font = Enum.Font.GothamBold,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			ZIndex = 11,
-		}, status)
-
-		mCreate("TextLabel", {
-			Position = UDim2.fromOffset(31, 22),
-			Size = UDim2.new(1, -40, 0, 13),
-			BackgroundTransparency = 1,
-			Text = "READY  •  MORGAN",
-			TextColor3 = Color3.fromRGB(165, 170, 190),
-			TextSize = 8,
-			Font = Enum.Font.GothamMedium,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			ZIndex = 11,
-		}, status)
+		-- Clean top area: no extra status banner over the main UI.
 
 		-- Premium micro-details: soft gradient, animated accent line and version badge.
 		local brandGradient = Instance.new("UIGradient")
@@ -534,37 +482,29 @@ local function fn2()
 			ZIndex = 12,
 		}, brand)
 
-		local statusGradient = Instance.new("UIGradient")
-		statusGradient.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 18, 28)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(7, 9, 15)),
-		})
-		statusGradient.Rotation = 90
-		statusGradient.Parent = status
-
-		-- Tiny animated status pulse.
-		local dotScale = mCreate("UIScale", { Scale = 1 }, dot)
-		pcall(function()
-			tbl5.TweenService:Create(dotScale,
-				TweenInfo.new(1.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ Scale = 1.28 }
-			):Play()
-		end)
 
 		-- A restrained cinematic intro; it disappears automatically and never captures input.
 		task.delay(0.12, function()
 			if MorganVisual.Destroyed then return end
+			local introGui = mCreate("ScreenGui", {
+				Name = "MorganHub_Intro",
+				IgnoreGuiInset = true,
+				ResetOnSpawn = false,
+				DisplayOrder = 10000,
+				ZIndexBehavior = Enum.ZIndexBehavior.Global,
+			}, playerGui)
+
 			local intro = mCreate("Frame", {
 				Name = "Intro",
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.fromScale(1, 1),
-				BackgroundColor3 = Color3.fromRGB(4, 5, 9),
-				BackgroundTransparency = 0.08,
+				Size = UDim2.fromOffset(390, 250),
+				BackgroundColor3 = Color3.fromRGB(8, 10, 18),
+				BackgroundTransparency = 0.06,
 				BorderSizePixel = 0,
 				Active = false,
 				ZIndex = 100,
-			}, decorGui)
+			}, introGui)
 
 			local introLogo = mCreate("ImageLabel", {
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -603,8 +543,6 @@ local function fn2()
 				ZIndex = 101,
 			}, intro)
 
-			task.wait(0.55)
-
 			local fadeObjects = { intro, introLogo }
 			for _, obj in ipairs(fadeObjects) do
 				pcall(function()
@@ -626,7 +564,7 @@ local function fn2()
 				end
 			end
 			task.delay(0.72, function()
-				if intro and intro.Parent then intro:Destroy() end
+				if introGui and introGui.Parent then introGui:Destroy() end
 			end)
 		end)
 
@@ -650,6 +588,30 @@ local function fn2()
 		return nil
 	end
 
+	-- Extra premium pass: neutralize accidental bright/red library surfaces and add consistent glass treatment.
+	local function MorganStyleObject(obj)
+		pcall(function()
+			if obj:IsA("Frame") then
+				local a = obj.AbsoluteSize.X * obj.AbsoluteSize.Y
+				local c = obj.BackgroundColor3
+				-- Neutralize accidental bright/red library panels so the Morgan theme stays consistent.
+				if c.R > 0.72 and c.R > c.G * 1.35 and c.R > c.B * 1.35 then
+					obj.BackgroundColor3 = Color3.fromRGB(13, 15, 24)
+					obj.BackgroundTransparency = math.max(obj.BackgroundTransparency, 0.05)
+				elseif a > 5000 then
+					obj.BackgroundColor3 = Color3.fromRGB(10, 12, 20)
+					obj.BackgroundTransparency = math.max(obj.BackgroundTransparency, 0.08)
+				end
+			elseif obj:IsA("ScrollingFrame") then
+				obj.ScrollBarThickness = 3
+				obj.ScrollBarImageColor3 = Color3.fromRGB(185, 190, 215)
+				obj.ScrollBarImageTransparency = 0.45
+			elseif obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+				obj.TextColor3 = Color3.fromRGB(238, 239, 247)
+			end
+		end)
+	end
+
 	-- Apply a restrained dark/glass skin to the library, if its objects expose
 	-- standard Roblox GuiObject properties. Every edit is protected by pcall.
 	task.spawn(function()
@@ -669,18 +631,59 @@ local function fn2()
 
 		MorganVisual.WindowGui = windowGui
 
+		-- IMPORTANT: keep the game world fully visible. The artwork belongs inside
+		-- the hub window, never as a fullscreen ScreenGui overlay.
+		pcall(function()
+			local mainFrame, mainArea = nil, -1
+			for _, candidate in ipairs(windowGui:GetDescendants()) do
+				if candidate:IsA("Frame") and candidate.Visible then
+					local area = candidate.AbsoluteSize.X * candidate.AbsoluteSize.Y
+					if area > mainArea then
+						mainArea, mainFrame = area, candidate
+					end
+				end
+			end
+			if mainFrame then
+				local oldBg = mainFrame:FindFirstChild("MorganPanelBackground")
+				if oldBg then oldBg:Destroy() end
+				local panelBg = Instance.new("ImageLabel")
+				panelBg.Name = "MorganPanelBackground"
+				panelBg.Size = UDim2.fromScale(1, 1)
+				panelBg.Position = UDim2.fromScale(0, 0)
+				panelBg.BackgroundTransparency = 1
+				panelBg.Image = MORGAN_ASSET
+				panelBg.ImageTransparency = 0.48
+				panelBg.ScaleType = Enum.ScaleType.Crop
+				panelBg.ZIndex = 0
+				panelBg.Active = false
+				panelBg.Parent = mainFrame
+				local shade = Instance.new("Frame")
+				shade.Name = "MorganPanelShade"
+				shade.Size = UDim2.fromScale(1, 1)
+				shade.BackgroundColor3 = Color3.fromRGB(7, 9, 16)
+				shade.BackgroundTransparency = 0.42
+				shade.BorderSizePixel = 0
+				shade.ZIndex = 0
+				shade.Active = false
+				shade.Parent = mainFrame
+				pcall(function() mainFrame.ClipsDescendants = true end)
+			end
+		end)
+
+		pcall(function()
+			windowGui.ResetOnSpawn = false
+			windowGui.IgnoreGuiInset = false
+		end)
+
 		pcall(function()
 			windowGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 		end)
 
 		for _, obj in ipairs(windowGui:GetDescendants()) do
+			MorganStyleObject(obj)
 			pcall(function()
 				if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
 					obj.TextColor3 = Color3.fromRGB(238, 239, 247)
-					local tc = obj.TextColor3
-					if tc.R > tc.G * 1.25 and tc.R > tc.B * 1.25 then
-						obj.TextColor3 = Color3.fromRGB(238, 239, 247)
-					end
 					if obj:IsA("TextButton") then
 						obj.AutoButtonColor = false
 					end
@@ -693,18 +696,7 @@ local function fn2()
 					local area = obj.AbsoluteSize.X * obj.AbsoluteSize.Y
 					if area > 9000 then
 						obj.BackgroundColor3 = Color3.fromRGB(9, 11, 18)
-						obj.BackgroundTransparency = 0.24
-					end
-				end
-
-				-- Neutralize legacy red UI accents so the Morgan palette stays consistent.
-				if obj:IsA("GuiObject") then
-					local bc = obj.BackgroundColor3
-					if bc.R > bc.G * 1.28 and bc.R > bc.B * 1.28 and bc.R > 0.35 then
-						obj.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
-						if obj.BackgroundTransparency < 0.15 then
-							obj.BackgroundTransparency = 0.12
-						end
+						obj.BackgroundTransparency = 0.16
 					end
 				end
 
@@ -1448,7 +1440,7 @@ local function fn2()
 		end
 
 		tbl20.__activeController = tbl18:CreateTweenController(character)
-		local n3 = tonumber(arg3) or tonumber(tbl14["Tween Speed"]) or 100
+		local n3 = tonumber(arg3) or tonumber(tbl14["Tween Speed"]) or 140
 
 		if n3 <= 0 then
 			n3 = 100
@@ -3783,7 +3775,7 @@ local function fn2()
 		tbl16:SetSave("Farm Distance", arg)
 	end)
 
-	result2:Dropdown(Configuration, "Tween Speed", "Movement speed", false, { "50", "75", "100", "120", "140", "160", "180", "200", "250", "300", "400" }, { "140" }, function(arg)
+	result2:Dropdown(Configuration, "Tween Speed", "Movement speed", false, { "80", "100", "120", "140", "160", "180", "200" }, { "140" }, function(arg)
 		tbl16:SetSave("Tween Speed", arg)
 	end)
 
@@ -6956,6 +6948,146 @@ local function fn2()
 		end)
 	end)
 
+	-- ============================================================
+	-- MORGAN HUB / PvP VISUAL MENU
+	-- Cosmetic, camera and interface controls only.
+	-- No automated targeting or attack assistance is added here.
+	-- ============================================================
+	local PvPVisual = {
+		Crosshair = false,
+		Background = true,
+		Brand = true,
+		FOV = 70,
+		FPS = false,
+		MobileCompact = false,
+		ReducedEffects = false,
+	}
+
+	local PvPSection = v19:AddSection("PvP Visuals")
+	local PvPExtra = v19:AddSection("Interface")
+
+	local function MorganGetWindowScale()
+		local gui = MorganVisual.WindowGui
+		if not gui then return nil end
+		local scale = gui:FindFirstChild("MorganMobileScale")
+		if not scale then
+			scale = Instance.new("UIScale")
+			scale.Name = "MorganMobileScale"
+			scale.Scale = 1
+			scale.Parent = gui
+		end
+		return scale
+	end
+
+	local function MorganSetCrosshair(enabled)
+		PvPVisual.Crosshair = enabled
+		local existing = playerGui:FindFirstChild("MorganHub_Crosshair")
+		if existing then existing:Destroy() end
+		if not enabled then return end
+		local gui = mCreate("ScreenGui", {
+			Name = "MorganHub_Crosshair",
+			IgnoreGuiInset = true,
+			ResetOnSpawn = false,
+			DisplayOrder = 30,
+			ZIndexBehavior = Enum.ZIndexBehavior.Global,
+		}, playerGui)
+		local root = mCreate("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(28, 28),
+			BackgroundTransparency = 1,
+			Active = false,
+		}, gui)
+		local function line(pos, size)
+			return mCreate("Frame", {
+				Position = pos,
+				Size = size,
+				BackgroundColor3 = Color3.fromRGB(235, 237, 247),
+				BackgroundTransparency = 0.1,
+				BorderSizePixel = 0,
+				Active = false,
+			}, root)
+		end
+		line(UDim2.fromOffset(13, 0), UDim2.fromOffset(2, 9))
+		line(UDim2.fromOffset(13, 19), UDim2.fromOffset(2, 9))
+		line(UDim2.fromOffset(0, 13), UDim2.fromOffset(9, 2))
+		line(UDim2.fromOffset(19, 13), UDim2.fromOffset(9, 2))
+	end
+
+	result2:Toggle(PvPSection, "PvP Crosshair", "Show a clean center crosshair", false, function(v)
+		MorganSetCrosshair(v)
+	end)
+
+	result2:Dropdown(PvPSection, "Camera FOV", "Adjust camera field of view", false, { "70", "80", "90", "100", "110" }, { "70" }, function(v)
+		local n = tonumber(v) or 70
+		PvPVisual.FOV = n
+		pcall(function()
+			if workspace.CurrentCamera then workspace.CurrentCamera.FieldOfView = n end
+		end)
+	end)
+
+	result2:Toggle(PvPSection, "Performance Mode", "Reduce visual effects for smoother FPS", false, function(v)
+		PvPVisual.ReducedEffects = v
+		pcall(function()
+			game:GetService("Lighting").GlobalShadows = not v
+		end)
+	end)
+
+	result2:Toggle(PvPSection, "FPS Counter", "Show a lightweight FPS counter", false, function(v)
+		PvPVisual.FPS = v
+		local old = playerGui:FindFirstChild("MorganHub_FPS")
+		if old then old:Destroy() end
+		if not v then return end
+		local gui = mCreate("ScreenGui", {Name="MorganHub_FPS", IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=31, ZIndexBehavior=Enum.ZIndexBehavior.Global}, playerGui)
+		local label = mCreate("TextLabel", {AnchorPoint=Vector2.new(1,0), Position=UDim2.new(1,-18,0,70), Size=UDim2.fromOffset(90,24), BackgroundTransparency=1, Text="FPS --", TextColor3=Color3.fromRGB(225,227,240), TextSize=11, Font=Enum.Font.GothamBold, TextXAlignment=Enum.TextXAlignment.Right, Active=false}, gui)
+		tbl4.__spawn(function()
+			local last = tick()
+			local frames = 0
+			while label.Parent and PvPVisual.FPS and not v9.Unloaded do
+				frames = frames + 1
+				local nowTick = tick()
+				if nowTick - last >= 0.5 then
+					local fps = math.floor(frames / (nowTick - last))
+					label.Text = "FPS " .. tostring(fps)
+					frames = 0
+					last = nowTick
+				end
+				task.wait()
+			end
+		end)
+	end)
+
+	result2:Toggle(PvPExtra, "Mobile Compact UI", "Scale the interface down for smaller screens", false, function(v)
+		PvPVisual.MobileCompact = v
+		local scale = MorganGetWindowScale()
+		if scale then scale.Scale = v and 0.88 or 1 end
+	end)
+
+	result2:Toggle(PvPExtra, "Show Background", "Toggle the Morgan mountain background", true, function(v)
+		PvPVisual.Background = v
+		if MorganVisual.Background then MorganVisual.Background.Visible = v end
+	end)
+
+	result2:Toggle(PvPExtra, "Show Branding", "Toggle Morgan Hub logo card", true, function(v)
+		PvPVisual.Brand = v
+		if MorganVisual.Decor then
+			local brand = MorganVisual.Decor:FindFirstChild("Brand")
+			if brand then brand.Visible = v end
+		end
+	end)
+
+	result2:Toggle(PvPExtra, "Smooth UI", "Keep interface transitions enabled", true, function(v)
+		-- Cosmetic setting; the core controls remain untouched.
+	end)
+
+	result2:Toggle(PvPExtra, "Chat Branding", "Show Morgan Hub activation message", true, function(v)
+		if v then
+			pcall(function()
+				game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {Text="[Morgan Hub] Activated 😈", Color=Color3.fromRGB(230,232,245), Font=Enum.Font.GothamBold, TextSize=16})
+			end)
+		end
+	end)
+
 	result2:Button(v18:AddSection("Reset Config"), "Reset Script Config", "Delete all saved configuration", function()
 		for _, v55 in next, { "Speed_Hub", "SpeedHubX", "Speed Hub X", "Speed Hub", "Speed_Hub_X" }, nil do
 			if isfolder(v55) then
@@ -6964,26 +7096,26 @@ local function fn2()
 		end
 	end)
 
+	-- Morgan Hub activation branding. This is cosmetic only.
+	pcall(function()
+		local StarterGui = game:GetService("StarterGui")
+		StarterGui:SetCore("ChatMakeSystemMessage", {
+			Text = "Morgan Hub Actived 😈",
+			Color = Color3.fromRGB(230, 232, 245),
+			Font = Enum.Font.GothamBold,
+			TextSize = 16,
+		})
+	end)
+
 	local v55 = v9
 	local setNotification = v55.SetNotification
 	local tbl37 = {}
-	local str3 = "Morgan Hub Active 😈  •  Loaded in: " .. tostring(tick() - now) .. "s"
+	local str3 = "Loaded in: " .. tostring(tick() - now) .. "s"
 	tbl37[1] = "Morgan Hub"
 	tbl37[2] = ""
 	tbl37[3] = str3
 	tbl37[4] = 5
 	tbl37[5] = 0.5
 	setNotification(v55, tbl37)
-
-	-- Lightweight branding message; no gameplay behavior is changed.
-	pcall(function()
-		local StarterGui = game:GetService("StarterGui")
-		StarterGui:SetCore("ChatMakeSystemMessage", {
-			Text = "Morgan Hub Active 😈",
-			Color = Color3.fromRGB(230, 232, 245),
-			Font = Enum.Font.GothamBold,
-			FontSize = Enum.FontSize.Size18,
-		})
-	end)
 end
 task.spawn(fn2)
