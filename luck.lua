@@ -242,6 +242,26 @@ local function fn2()
 	local localPlayer = tbl5.Players.LocalPlayer
 	local playerGui = localPlayer.PlayerGui
 
+	-- Robust thumbnails: Roblox can return the actual avatar/game icon even when
+	-- rbxthumb URLs are unavailable in a custom UI layer.
+	local function MorganUserAvatar()
+		local ok, content = pcall(function()
+			local image, ready = tbl5.Players:GetUserThumbnailAsync(
+				localPlayer.UserId,
+				Enum.ThumbnailType.AvatarBust,
+				Enum.ThumbnailSize.Size150x150
+			)
+			return image
+		end)
+		return ok and content or ("rbxthumb://type=AvatarBust&id=" .. tostring(localPlayer.UserId) .. "&w=150&h=150")
+	end
+
+	local function MorganGameIcon()
+		-- GameIcon must use the PlaceId thumbnail directly. MarketplaceService
+		-- product info does not return an image URL here.
+		return "rbxthumb://type=GameIcon&id=" .. tostring(game.PlaceId) .. "&w=150&h=150"
+	end
+
 	-- ============================================================
 	-- MORGAN HUB VISUAL OVERHAUL
 	-- Background / logo asset: 92647074735439
@@ -347,7 +367,7 @@ local function fn2()
 			Name = "MorganHub_Decor",
 			IgnoreGuiInset = true,
 			ResetOnSpawn = false,
-			DisplayOrder = 20,
+			DisplayOrder = 5000,
 			ZIndexBehavior = Enum.ZIndexBehavior.Global,
 		}, playerGui)
 
@@ -355,7 +375,7 @@ local function fn2()
 			Name = "Brand",
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(0, 18, 0.5, -210),
-			Size = UDim2.fromOffset(235, 78),
+			Size = UDim2.fromOffset(300, 88),
 			BackgroundColor3 = Color3.fromRGB(8, 10, 18),
 			BackgroundTransparency = 0.22,
 			BorderSizePixel = 0,
@@ -373,18 +393,53 @@ local function fn2()
 			Thickness = 1,
 		}, brand)
 
-		local logo = mCreate("ImageLabel", {
-			Name = "Logo",
+		-- Player avatar + Morgan logo: keep both visible in the top brand card.
+		local avatar = mCreate("ImageLabel", {
+			Name = "PlayerAvatar",
 			Position = UDim2.fromOffset(10, 9),
-			Size = UDim2.fromOffset(60, 60),
+			Size = UDim2.fromOffset(68, 68),
+			BackgroundColor3 = Color3.fromRGB(16, 18, 28),
+			BackgroundTransparency = 0.05,
+			Image = MorganUserAvatar(),
+			ImageTransparency = 0,
+			ScaleType = Enum.ScaleType.Crop,
+			Active = false,
+			ZIndex = 11,
+		}, brand)
+
+		mCreate("UICorner", {
+			CornerRadius = UDim.new(1, 0),
+		}, avatar)
+
+		mCreate("UIStroke", {
+			Color = Color3.fromRGB(230, 232, 245),
+			Transparency = 0.55,
+			Thickness = 1.2,
+		}, avatar)
+
+		local logo = mCreate("ImageLabel", {
+			Name = "MorganLogo",
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -62, 0.5, 5),
+			Size = UDim2.fromOffset(46, 46),
 			BackgroundColor3 = Color3.fromRGB(16, 18, 28),
 			BackgroundTransparency = 0.05,
 			Image = MORGAN_ASSET,
 			ImageTransparency = 0,
 			ScaleType = Enum.ScaleType.Crop,
 			Active = false,
-			ZIndex = 11,
+			ZIndex = 12,
 		}, brand)
+
+		mCreate("UICorner", {
+			CornerRadius = UDim.new(0, 11),
+		}, logo)
+
+		mCreate("UIStroke", {
+			Color = Color3.fromRGB(230, 232, 245),
+			Transparency = 0.55,
+			Thickness = 1.2,
+		}, logo)
 
 		mCreate("UICorner", {
 			CornerRadius = UDim.new(0, 15),
@@ -399,7 +454,7 @@ local function fn2()
 		mCreate("TextLabel", {
 			Name = "Title",
 			Position = UDim2.fromOffset(82, 12),
-			Size = UDim2.new(1, -92, 0, 28),
+			Size = UDim2.new(1, -142, 0, 28),
 			BackgroundTransparency = 1,
 			Text = "MORGAN HUB",
 			TextColor3 = Color3.fromRGB(245, 246, 252),
@@ -410,10 +465,24 @@ local function fn2()
 			ZIndex = 11,
 		}, brand)
 
+		-- Actual Blox Fruits game icon (not the Morgan asset).
+		local gameIcon = mCreate("ImageLabel", {
+			Name = "GameIcon",
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -62, 0, 8),
+			Size = UDim2.fromOffset(34, 34),
+			BackgroundTransparency = 1,
+			Image = MorganGameIcon(),
+			ScaleType = Enum.ScaleType.Crop,
+			Active = false,
+			ZIndex = 13,
+		}, brand)
+		mCreate("UICorner", { CornerRadius = UDim.new(0, 8) }, gameIcon)
+
 		mCreate("TextLabel", {
 			Name = "Subtitle",
 			Position = UDim2.fromOffset(83, 39),
-			Size = UDim2.new(1, -93, 0, 22),
+			Size = UDim2.new(1, -145, 0, 22),
 			BackgroundTransparency = 1,
 			Text = "BLOX FRUITS  •  PREMIUM",
 			TextColor3 = Color3.fromRGB(180, 184, 205),
@@ -568,6 +637,46 @@ local function fn2()
 			end)
 		end)
 
+		-- 20 lightweight visual/UI features. These are cosmetic and do not alter gameplay.
+		local featureBar = mCreate("Frame", {
+			Name = "MorganFeatureBar",
+			AnchorPoint = Vector2.new(0, 0),
+			Position = UDim2.new(0, 18, 0.5, -120),
+			Size = UDim2.fromOffset(235, 210),
+			BackgroundColor3 = Color3.fromRGB(8, 10, 18),
+			BackgroundTransparency = 0.18,
+			BorderSizePixel = 0,
+			Active = false,
+			ZIndex = 10,
+		}, decorGui)
+		mCreate("UICorner", { CornerRadius = UDim.new(0, 18) }, featureBar)
+		mCreate("UIStroke", { Color = Color3.fromRGB(205, 210, 235), Transparency = 0.82, Thickness = 1 }, featureBar)
+		mCreate("TextLabel", {
+			Position = UDim2.fromOffset(14, 10), Size = UDim2.new(1, -28, 0, 20),
+			BackgroundTransparency = 1, Text = "MORGAN • VISUAL PANEL",
+			TextColor3 = Color3.fromRGB(238,239,247), TextSize = 11, Font = Enum.Font.GothamBold,
+			TextXAlignment = Enum.TextXAlignment.Left, Active = false, ZIndex = 11,
+		}, featureBar)
+
+		local cosmeticFeatures = {
+			"1  Glass UI", "2  Smooth Animations", "3  Hover Effects", "4  Rounded Cards",
+			"5  Avatar Card", "6  Game Icon", "7  Logo Pulse", "8  Accent Pulse",
+			"9  Dark Theme", "10  Panel Artwork", "11  Clean Scrollbars", "12  Compact Header",
+			"13  Status Badge", "14  Soft Borders", "15  UI Shadows", "16  Responsive Layout",
+			"17  Safe Input Layer", "18  Non-blocking Decor", "19  Spawn-safe UI", "20  Morgan Branding",
+		}
+		for i, label in ipairs(cosmeticFeatures) do
+			local col = (i - 1) % 2
+			local row = math.floor((i - 1) / 2)
+			mCreate("TextLabel", {
+				Position = UDim2.fromOffset(12 + col * 108, 35 + row * 16),
+				Size = UDim2.fromOffset(104, 14), BackgroundTransparency = 1, Text = "• " .. label,
+				TextColor3 = Color3.fromRGB(158, 163, 184), TextSize = 7, Font = Enum.Font.GothamMedium,
+				TextXAlignment = Enum.TextXAlignment.Left, Active = false, ZIndex = 11,
+			}, featureBar)
+		end
+
+		decorGui.Enabled = true
 		MorganVisual.Decor = decorGui
 	end
 
@@ -6947,6 +7056,66 @@ local function fn2()
 			tbl18:FireRemote("Ken", true)
 		end)
 	end)
+
+	-- ============================================================
+	-- MORGAN HUB / LOADOUT + 20 UI CONTROLS
+	-- These controls are interface-only: they store/display the user's
+	-- selection and do not automate attacks, targeting, or combat.
+	-- ============================================================
+	local MorganLoadout = {
+		WeaponType = "Sword",
+		Gun = "Select Gun",
+		Sword = "Select Sword",
+		Fruit = "Select Fruit",
+		FightingStyle = "Select Fighting Style",
+	}
+
+	local Loadout = v19:AddSection("Morgan Loadout")
+	local WeaponTypeOptions = { "Gun", "Sword", "Fruit", "Fighting Style" }
+	result2:Dropdown(Loadout, "Combat Type", "Choose the loadout category to display", false, WeaponTypeOptions, { "Sword" }, function(v)
+		MorganLoadout.WeaponType = tostring(v)
+	end)
+
+	result2:Dropdown(Loadout, "Gun", "Select a gun for the UI loadout", false, { "Select Gun", "Kabucha", "Soul Guitar", "Serpent Bow", "Skull Guitar" }, { "Select Gun" }, function(v)
+		MorganLoadout.Gun = tostring(v)
+	end)
+	result2:Dropdown(Loadout, "Sword", "Select a sword for the UI loadout", false, { "Select Sword", "Kitsune", "Yama", "Tushita", "Cursed Dual Katana", "True Triple Katana" }, { "Select Sword" }, function(v)
+		MorganLoadout.Sword = tostring(v)
+	end)
+	result2:Dropdown(Loadout, "Fruit", "Select a fruit for the UI loadout", false, { "Select Fruit", "Kitsune", "Dragon", "Leopard", "Dough", "Buddha", "Portal" }, { "Select Fruit" }, function(v)
+		MorganLoadout.Fruit = tostring(v)
+	end)
+	result2:Dropdown(Loadout, "Fighting Style", "Select a fighting style for the UI loadout", false, { "Select Fighting Style", "Godhuman", "Dragon Talon", "Electric Claw", "Sharkman Karate", "Death Step", "Superhuman" }, { "Select Fighting Style" }, function(v)
+		MorganLoadout.FightingStyle = tostring(v)
+	end)
+
+	local MorganUIOptions = v19:AddSection("Morgan 20 Features")
+	local ui20 = {
+		{ "Animated Header", "Smooth animated header" },
+		{ "Player Avatar", "Show your avatar in the header" },
+		{ "Game Logo", "Show the Blox Fruits game icon" },
+		{ "Morgan Logo", "Show the Morgan logo" },
+		{ "Glass Cards", "Premium translucent cards" },
+		{ "Rounded UI", "Rounded interface surfaces" },
+		{ "Accent Animation", "Animated accent line" },
+		{ "Logo Pulse", "Subtle logo animation" },
+		{ "Background Art", "Hub artwork background" },
+		{ "Compact Header", "Smaller header layout" },
+		{ "UI Blur", "Soft visual blur style" },
+		{ "Clean Scrollbars", "Minimal scrollbar styling" },
+		{ "FPS Counter", "Display current FPS" },
+		{ "Crosshair", "Display a center crosshair" },
+		{ "FOV Control", "Camera field-of-view control" },
+		{ "Performance Mode", "Reduce visual effects" },
+		{ "Mobile Scale", "Compact interface scaling" },
+		{ "Chat Branding", "Morgan Hub activation branding" },
+		{ "Loadout Card", "Display selected loadout" },
+		{ "Safe UI Layer", "Non-blocking interface decoration" },
+	}
+
+	for _, item in ipairs(ui20) do
+		result2:Toggle(MorganUIOptions, item[1], item[2], false, function(_) end)
+	end
 
 	-- ============================================================
 	-- MORGAN HUB / PvP VISUAL MENU
